@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 
 def save_to_folder(folder, image_dict):
     with open('meta.csv', 'wb') as csvfile:
@@ -24,6 +25,19 @@ def load_from_folder(folder):
 def iter_dict(image_dict):
     for ((theta, phi), (img, power)) in image_dict.items():
         yield theta, phi, power, img
+
+
+def json_savemeta(json_file, image_size, pupil_radius, theta_max, phi_max):
+    data = {'image_size': image_size, 'pupil_radius': pupil_radius,
+            'theta_max': theta_max, 'phi_max': phi_max}
+    with open(json_file, 'w') as outfile:
+        json.dump(data, outfile,
+                  indent=4, sort_keys=True, separators=(',', ':'))
+
+
+def json_loadmeta(json_file):
+    with open(json_file) as json_data:
+        return json.load(json_data)
 
 
 def save_metadata(hf, image_size, iterator_list, pupil_radius, ns, phi_max):

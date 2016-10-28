@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-""" File remote_sample.py
+""" File sample.py
 
 Last update: 28/10/2016
 To be used as a remote client for a microscope.

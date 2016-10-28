@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import h5py
 from scipy import misc
 import numpy as np
+import json
 
 from pyfpm import web
 from pyfpm.fpmmath import iter_positions, recontruct
