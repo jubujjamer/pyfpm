@@ -11,7 +11,6 @@ Usage:
 import time
 
 import matplotlib.pyplot as plt
-import h5py
 import numpy as np
 
 import pyfpm.local as local
@@ -50,15 +49,6 @@ if task is "acquire":
         image_dict[(theta, phi)] = client.acquire(theta, phi, power)
     np.save(out_file, image_dict)
 
-# if task is "acquire":
-#     with h5py.File(out_hf, 'w') as hf:
-#         print("I will take %s images" % len(iterator_list))
-#         save_metadata(hf, image_size, iterator_list, pupil_radius, ns, phi_max)
-#         for index, theta, phi, power in iterator_list:
-#             print(index, theta, phi, power)
-#             image_dict[(theta, phi)] = client.acquire(theta, phi, power)
-#             # hf.create_dataset(str(index), data=img)
-
 elif task is "reconstruct":
     start_time = time.time()
     data = json_loadmeta(json_file)
@@ -66,13 +56,3 @@ elif task is "reconstruct":
     print("--- %s seconds ---" % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()
-
-elif task is "inspect":
-    with h5py.File(out_hf, 'r') as hf:
-        for index, theta, phi, power in iterator_list:
-            print(index)
-            im_array = hf[str(int(index))][:]
-            ax = plt.gca() or plt
-            ax.imshow(im_array, cmap=plt.get_cmap('gray'))
-            ax.get_figure().canvas.draw()
-            plt.show(block=False)
