@@ -12,14 +12,11 @@ from itertools import ifilter, product
 from StringIO import StringIO
 import time
 
-import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
 from PIL import Image
 from scipy import misc
-
-from pyfpm.data import get_metadata
 
 
 def laser_power(theta, phi):
@@ -105,62 +102,61 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     ky = np.floor(np.sin(theta_rad)*r)
     pup_pos = [image_center[0]+ky, image_center[1]+kx]
     # Put ones in a circle of radius defined in class
-    coords = product(range(0,nx),range(0,ny))
-    def dist(a,m):
+    coords = product(range(0, nx), range(0, ny))
+
+    def dist(a, m):
         return np.linalg.norm(np.asarray(a)-m)
-    c = list(ifilter(lambda a : dist(a, pup_pos) < pup_rad, coords))
-    pup_matrix[[np.asarray(c)[:,0], np.asarray(c)[:,1]]] = 1
+    c = list(ifilter(lambda a: dist(a, pup_pos) < pup_rad, coords))
+    pup_matrix[[np.asarray(c)[:, 0], np.asarray(c)[:, 1]]] = 1
     return pup_matrix
 
 
 def filter_by_pupil(image, theta, phi, power, pup_rad, image_size):
     pupil = generate_pupil(theta, phi, power, pup_rad, image_size)
-    #pupil.astype(dtype=complex)
-    im_array = misc.imread(StringIO(image),'RGB')
+    im_array = misc.imread(StringIO(image), 'RGB')
     print np.shape(im_array)
     f_ih = fft2(im_array)
     # Step 2: lr of the estimated image using the known pupil
-    # f_il = ifft2(f_ih.*pupil_shift) # space pupil * fourier image
     shifted_pupil = fftshift(pupil)
-    proc_array = np.multiply(shifted_pupil, f_ih)
+    proc_array = np.multiply(shifted_pupil, f_ih)  # space pupil * fourier im
     proc_array = ifft2(proc_array)
-    #proc_array = shifted_pupil
-    #proc_array = ifft2(f_ih)
-    #proc_array *= (1.0/proc_array.max())
-    # proc_array = proc_array *1.0/proc_array.max()
-    proc_array = np.power(np.abs(proc_array),2)
+    proc_array = np.power(np.abs(proc_array), 2)
     return proc_array
+
 
 def show_filtered_image(self, image, theta, phi, power, pup_rad):
     img = self.filter_by_pupil(image, theta, phi, power, pup_rad)
     img = Image.fromarray(np.uint8((proc_array)*255))
     with BytesIO() as output:
-         img.save(output, 'png')
-         proc_image = output.getvalue()
+        img.save(output, 'png')
+        proc_image = output.getvalue()
     return bytearray(proc_image)
+
 
 def show_pupil(theta, phi, power, pup_rad):
     pup_matrix = generate_pupil(theta, phi, power, pup_rad)
     # Converts the image to 8 bit png and stores it into ram
     img = Image.fromarray(pup_matrix*255, 'L')
     with BytesIO() as output:
-         img.save(output, 'png')
-         pupil = output.getvalue()
+        img.save(output, 'png')
+        pupil = output.getvalue()
     return pupil
+
 
 def array_as_image(image_array):
     image_array *= (1.0/image_array.max())
     # Converts the image to 8 bit png and stores it into ram
     img = Image.fromarray(image_array*255, 'L')
     with BytesIO() as output:
-         img.save(output, 'png')
-         output = output.getvalue()
+        img.save(output, 'png')
+        output = output.getvalue()
     return output
 
 
-def show_image(imtype = 'original', image = None, theta = 0, phi = 0, power = 0, pup_rad = 0):
-    arg_dict = {'pupil'      : show_pupil(theta, phi, power, pup_rad),
-                'filtered'   : show_filtered_image(image, theta, phi, power, pup_rad)}
+def show_image(imtype='original', image=None, theta=0, phi=0,
+               power=0, pup_rad=0):
+    arg_dict = {'pupil': show_pupil(theta, phi, power, pup_rad),
+                'filtered': show_filtered_image(image, theta, phi, power, pup_rad)}
     return bytearray(arg_dict[imtype])
 
 
@@ -168,7 +164,7 @@ def resample_image(image_array, new_size):
     return np.resize(image_array, new_size)
 
 
-def recontruct(input_file, iterator, debug=False, ax=None, data = None):
+def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     """ FPM reconstructon from pupil images
     """
     image_dict = np.load(input_file)
