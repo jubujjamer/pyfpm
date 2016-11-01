@@ -7,10 +7,12 @@
 
 import base64
 import json
+import socket
 
 from flask import Flask, Response
 
 from .. import local
+
 
 def create_server(client):
     app = Flask("FPM")
@@ -21,32 +23,30 @@ def create_server(client):
 
     @app.route("/testcam")
     def testcam():
-    	return Response(client.acquire(), mimetype='image/png')
+        return Response(client.acquire(), mimetype='image/png')
 
     @app.route("/acquire/<theta>/<phi>/<power>/<color>")
-    def acquire(theta, phi, power,color):
+    def acquire(theta, phi, power, color):
         print ("app", float(theta), float(phi), color)
-        return Response(client.acquire(theta, phi, power, color), mimetype='image/png')
+        try:
+            return Response(client.acquire(theta, phi, power, color),
+                            mimetype='image/png')
+        except socket.error:
+            pass
 
-    @app.route("/show_pupil/<theta>/<phi>/<power>")
-    def show_pupil(theta, phi, power):
-        print ("app", float(theta), float(phi))
-        return Response(client.show_pupil(theta, phi, power), mimetype='image/png')
-
-    @app.route("/show_filtered_image/<theta>/<phi>/<power>")
-    def show_filtered_image(theta, phi, power):
-        print ("app", float(theta), float(phi))
-        return Response(client.show_pupil(theta, phi, power), mimetype='image/png')
-
-    @app.route("/compare/<theta>/<phi>/<power>")
-    def compare(theta, phi, power):
-        return r'<html><div style="width:640px;height:480px;padding:2px;border:5px solid yellowgreen;"><body><img src="/acquire/%s/%s/%s"></div><img src="/show_pupil/%s/%s/%s"></body></html>' % (theta, phi, power, theta, phi, power)
-    return app
+    @app.route("/complete_scan/<color>")
+    def complete_scan(color):
+        print ("app", color)
+        try:
+            return Response(client.complete_scan(color), mimetype='image/png')
+        except socket.error:
+            pass
 
     @app.route("/metadata")
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
 
+    return app
 
 def create_sim_server(mic_client, sim_client):
     app = Flask("FPM")

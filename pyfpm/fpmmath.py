@@ -58,7 +58,7 @@ def iterlaser(pupil_radius=50, ns=0.5, phi_max=90, image_size=(480, 640)):
         yield index, np.degrees(theta), np.degrees(phi), power
 
 
-def iterleds(theta_max=180, phi_max=90, theta_step=10):
+def iterleds(theta_max=180, phi_max=80, theta_step=10):
     """ Constructs an iterator of pupil center positions.
 
         Keywords:
@@ -66,7 +66,7 @@ def iterleds(theta_max=180, phi_max=90, theta_step=10):
         phi_max     spherical angles in sexagesimal degrees
         theta_step  1-radial_overlap (radius segment overlap)
     """
-    yield 0, -90, 0, 0
+    yield 0, -80, 0, 0
     index = 0
     phi_step = 20  # Already defined by the geometry
     phi_range = range(-phi_max, phi_max+1, phi_step)
