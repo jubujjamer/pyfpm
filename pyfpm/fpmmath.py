@@ -22,6 +22,8 @@ from scipy import misc
 def laser_power(theta, phi):
     """ Returns power 0-255 given the theta, phi coordinates
     """
+    if phi == 0:
+        return 50
     return 255
 
 

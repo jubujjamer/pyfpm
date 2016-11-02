@@ -7,6 +7,7 @@ Last update: 28/10/2016
 Usage:
 
 """
+import os
 import serial
 import time
 
@@ -97,12 +98,13 @@ class LedAim(object):
         """ Set acquisition as the client requires.
         """
         allowed_intensities = range(256)
-        allowed_modes = [0,1,2,3]
+        allowed_modes = [0, 1, 2, 3]
 
         mode = {"red": 0, "green": 1, "blue": 2, "white": 3}
-        allowed_phi = {-80:8,-60:7,-40:6,-20:5,0:4,20:3,40:2,60:1,80:0}
+        allowed_phi = {-80: 8, -60: 7, -40: 6, -20: 5,
+                       0: 4, 20: 3, 40: 2, 60: 1, 80: 0}
         led = allowed_phi[min(allowed_phi, key=lambda x: abs(x-phi))]
-        if not mode[color] in allowed_modes or not  power in allowed_intensities:
+        if not mode[color] in allowed_modes or not power in allowed_intensities:
             serial_message = "LED %d %d %d" % (0, 0, 0)
             print("Please set the parameters correctly. I'll leave it all shut.")
         else: serial_message = "LED %d %d %d" % (int(led), int(mode[color]), int(power))
@@ -145,6 +147,7 @@ class Camera(object):
              -c exposure_absolute=10
     """
     def __init__(self, video_id=0):
+        # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
         cap = cv2.VideoCapture(video_id)
         self.config_cap(cap)
         self.cap = cap
@@ -166,18 +169,23 @@ class Camera(object):
                      13: 'CAP_PROP_HUE',
                      14: 'CAP_PROP_GAIN',
                      15: 'CAP_PROP_EXPOSURE'}
-        props = [a for a in dir(cv2) if "PROP" in a]
-        for p in range(0, 16):
-            if cap.get(p) != -10.0:
-                print p, cap.get(p), prop_dict[p]
-        cap.set(15, 10)
-
-        print cap.get(cv2.CAP_PROP_EXPOSURE)
+        # props = [a for a in dir(cv2) if "PROP" in a]
+        # for p in range(0, 16):
+        #     if cap.get(p) != -10.0:
+        #         print p, cap.get(p), prop_dict[p]
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
+        cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
+        cap.set(cv2.CAP_PROP_SATURATION, 0.0)
+        # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
+        # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
     def capture_png(self):
         print("Adding a time delay to leave time the led to set.")
         time.sleep(.5)
-        ret, frame = self.cap.read()
+        # Don't know why it doesn't updates up to the 5th reading
+        # a buffer flush thing
+        for i in range(5):
+            ret, frame = self.cap.read()
         ret, buf = cv2.imencode('.png', frame)
         return buf.tobytes()
 
