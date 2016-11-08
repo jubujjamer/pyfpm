@@ -19,13 +19,22 @@ from PIL import Image
 from scipy import misc
 
 
-def laser_power(theta, phi):
+def laser_power(theta, phi, mode='simulation'):
     """ Returns power 0-255 given the theta, phi coordinates
     """
-    return 255
+    power = 255
+    if mode is 'simulation':
+        pass
+    elif mode is 'sampling' or 'calibration':
+        if phi == 0:
+            power = 50
+        else:
+            power = 255
+    return power
 
 
-def iterlaser(pupil_radius=50, ns=0.5, phi_max=90, image_size=(480, 640)):
+def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
+              image_size=(480, 640), mode='simulation'):
     """ Constructs an iterator of pupil center positions.
 
         Keywords:
@@ -54,11 +63,11 @@ def iterlaser(pupil_radius=50, ns=0.5, phi_max=90, image_size=(480, 640)):
             theta = 0
         phi = np.arcsin(r/rmax_abs)  # See how to get phi
         index = index + 1
-        power = laser_power(theta, phi)
+        power = laser_power(theta, phi, mode)
         yield index, np.degrees(theta), np.degrees(phi), power
 
 
-def iterleds(theta_max=180, phi_max=90, theta_step=10):
+def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
     """ Constructs an iterator of pupil center positions.
 
         Keywords:
@@ -66,15 +75,15 @@ def iterleds(theta_max=180, phi_max=90, theta_step=10):
         phi_max     spherical angles in sexagesimal degrees
         theta_step  1-radial_overlap (radius segment overlap)
     """
-    yield 0, -90, 0, 0
+    yield 0, -80, 0, 0
+    theta_range = range(0, theta_max, theta_step)
     index = 0
     phi_step = 20  # Already defined by the geometry
     phi_range = range(-phi_max, phi_max+1, phi_step)
-    theta_range = range(0, theta_max, theta_step)
     for theta in theta_range:
         for phi in phi_range:
             index += 1
-            power = laser_power(theta, phi)
+            power = laser_power(theta, phi, mode)
             yield index, theta, phi, power
 
 

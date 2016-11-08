@@ -8,7 +8,7 @@ Usage:
 """
 import shutil
 
-from fpmmath import filter_by_pupil
+from fpmmath import filter_by_pupil, iterleds
 
 
 class BaseClient(object):
@@ -39,6 +39,7 @@ class Client(BaseClient):
     def get_pupil_size(self):
         return self.metadata['pupil_size']
 
+
 class LedClient(BaseClient):
     def __init__(self, camera, ledaim, **metadata):
         self.camera = camera
@@ -50,10 +51,23 @@ class LedClient(BaseClient):
             print("Moving motor")
             self.ledaim.move_theta(int(theta))
         if phi is not None and power is not None and color is not None:
-            print("parameters",phi, power, color)
+            print("parameters", phi, power, color)
             self.ledaim.set_parameters(int(phi), int(power), str(color))
-        else: self.ledaim.set_parameters(0, 0, "red")
+        else:
+            self.ledaim.set_parameters(0, 0, "red")
         return self.camera.capture_png()
+
+    def complete_scan(self, color=None):
+        theta_max = 180
+        phi_max = 60
+        theta_step = 20
+        iterator = iterleds(theta_max, phi_max, theta_step)
+        for index, theta, phi, power in iterator:
+            print(index, theta, phi, power)
+            self.ledaim.move_theta(int(theta))
+            self.ledaim.set_parameters(int(phi), int(power), str(color))
+            self.camera.capture_png()
+        self.reset()
 
     def get_pupil_size(self):
         return self.metadata['pupil_size']

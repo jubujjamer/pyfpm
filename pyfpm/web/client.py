@@ -16,10 +16,21 @@ class Client(BaseClient):
 
     def acquire(self, theta, phi, power, color):
         print(self.url + '/%d/%d/%d/%s' % (theta, phi, power, color))
-        response = requests.get(self.url + '/%d/%d/%d/%s' % (theta, phi, power, color), stream=True)
+        response = requests.get(self.url +
+                                '/%d/%d/%d/%s' % (theta, phi, power, color),
+                                stream=True)
         if response.status_code == 200:
             return response.raw
-        else: print("Failed to load webpage")
+        else:
+            print("Failed to load webpage")
+
+    def complete_scan(self, color):
+        print(self.url + '/%s' % (color))
+        response = requests.get(self.url + '/%s' % (color), stream=True)
+        if response.status_code == 200:
+            return response.raw
+        else:
+            print("Failed to load webpage")
 
     def get_pupil_size(self):
         return self.metadata['pupil_size']
