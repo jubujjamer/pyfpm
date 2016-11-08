@@ -35,6 +35,7 @@ def laser_power(theta, phi, mode='simulation'):
 
 def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
               image_size=(480, 640), mode='simulation'):
+
     """ Constructs an iterator of pupil center positions.
 
         Keywords:

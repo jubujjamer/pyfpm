@@ -32,7 +32,6 @@ def create_server(client):
             return Response(client.acquire(theta, phi, power, color),
                             mimetype='image/png')
         except socket.error:
-            print("Error")
             pass
 
     @app.route("/complete_scan/<color>")

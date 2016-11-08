@@ -94,6 +94,7 @@ if task is 'calibration':
                 ax.get_figure().canvas.draw()
                 plt.show(block=False)
                 time.sleep(5)
+
 # iterator_list = list(iterleds(phi_max=phi_max, mode="leds"))
 # task = "inspect"
 # if task is "acquire":
