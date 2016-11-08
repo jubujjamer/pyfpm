@@ -88,13 +88,29 @@ def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
             yield index, theta, phi, power
 
 
+def itertest(iterator):
+    """ Itetrator with a particular behavior used for testing purposes.
+
+    e.g. Tilted plane acquisition for calibration correction
+    """
+    yield 0, -80, 0, 0
+    theta_range = range(0, theta_max, theta_step)
+    index = 0
+    phi_step = 20  # Already defined by the geometry
+    phi_range = range(-phi_max, phi_max+1, phi_step)
+    for theta in theta_range:
+        for phi in phi_range:
+            index += 1
+            power = laser_power(theta, phi, mode)
+            yield index, theta, phi, power
+
+
 def normsort_iterator(iterator):
     """ Normalize coordinates for compatibility of different types of sweeps.
         It also selects non suitable (non repeated and equally spaced)
         coordinates for the reconstrution.
     """
     return True
-
 
 def generate_pupil(theta, phi, power, pup_rad, image_size):
     rmax = image_size[1]/2  # Half image size  each side

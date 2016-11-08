@@ -21,10 +21,9 @@ from scipy import misc
 from StringIO import StringIO
 
 # Simulation parameters
-input_image = './imgs/pinholes_calibration.png'
-output_folder = './outputs/pinholes_simulated.png'
-out_file = './output/pinholes_calibration.npy'
-json_file = './output/pinholes_calibration.json'
+input_image = './imgs/pinholes_calibration_squared.png'
+out_file = './output_sim/pinholes_calibration_squared.npy'
+json_file = './output_sim/pinholes_calibration_squared.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 ns = 0.3  # Complement of the overlap between sampling pupils
 phi_max = 40
@@ -60,10 +59,10 @@ elif task is 'reconstruct':
 if task is 'test_and_measure':
     image_dict = np.load(out_file)
     for index, theta, phi, power in iterator:
-        if phi == 20:
+        if phi == 20 or phi == 40:
             im_array = image_dict[()][(theta, phi)]
             intensity = np.mean(im_array)
-            print(intensity, theta)
+            print('int: %f, theta: %d, phi: %d' % (intensity, theta, phi))
             ax = plt.gca() or plt
             ax.imshow(im_array, cmap=plt.get_cmap('gray'))
             ax.get_figure().canvas.draw()
