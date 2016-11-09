@@ -15,6 +15,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
+from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
 
@@ -76,7 +77,7 @@ def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
         phi_max     spherical angles in sexagesimal degrees
         theta_step  1-radial_overlap (radius segment overlap)
     """
-    yield 0, -80, 0, 0
+    # yield 0, -80, 0, 0
     theta_range = range(0, theta_max, theta_step)
     index = 0
     phi_step = 20  # Already defined by the geometry
@@ -88,20 +89,44 @@ def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
             yield index, theta, phi, power
 
 
-def itertest(iterator):
+def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
+    """ Returns the phi angle considering a tilted plane of rotation.
+
+    Parameters
+    alpha   the tilt angle
+    ypos    the y coordinate of the plane
+    """
+    # c is the R/a ratio related to the initial plane of the rotating leds
+    c = slice_ratio  # aprox cos(phi_0)
+    theta_rad = np.radians(theta)
+    alpha = np.radians(alpha)
+
+    def opt_func(phi):
+        return np.tan(phi)-1/(np.cos(theta_rad)*np.tan(alpha)+c/(np.sin(phi)))
+    phi_initial_guess = 1.4
+    # Use the numerical solver to find the roots
+    phi_solved = fsolve(opt_func, phi_initial_guess)[0]
+    phi_solved = round(np.degrees(phi_solved), 2)
+    return phi_solved
+
+
+def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
     """ Itetrator with a particular behavior used for testing purposes.
 
     e.g. Tilted plane acquisition for calibration correction
     """
-    yield 0, -80, 0, 0
     theta_range = range(0, theta_max, theta_step)
+    phi_0 = np.radians([0, 20, 40])
+    slice_ratios = [np.cos(phi_0)][0]
     index = 0
-    phi_step = 20  # Already defined by the geometry
-    phi_range = range(-phi_max, phi_max+1, phi_step)
+    tilt = 5
+    # yield 0, -80, 0, 0
+
     for theta in theta_range:
-        for phi in phi_range:
-            index += 1
+        for c in slice_ratios:
+            phi = get_tilted_phi(theta, tilt, c)
             power = laser_power(theta, phi, mode)
+            index += 1
             yield index, theta, phi, power
 
 
@@ -111,6 +136,7 @@ def normsort_iterator(iterator):
         coordinates for the reconstrution.
     """
     return True
+
 
 def generate_pupil(theta, phi, power, pup_rad, image_size):
     rmax = image_size[1]/2  # Half image size  each side

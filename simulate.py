@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyfpm.local as local
-from pyfpm.fpmmath import iterleds, recontruct
+from pyfpm.fpmmath import iterleds, recontruct, itertest
 from pyfpm.data import json_savemeta, json_loadmeta
 
 from scipy import misc
@@ -38,9 +38,17 @@ with open(input_image, "r") as imageFile:
     image = imageFile.read()
     image_size = np.shape(misc.imread(StringIO(image), 'RGB'))
 client = local.SimClient(image, image_size, pupil_radius, ns)
-iterator = iterleds(theta_max, phi_max, theta_step, 'simulation')
+iterator = itertest(theta_max, phi_max, theta_step, 'simulation')
+iterator2 = iterleds(theta_max, phi_max, theta_step, 'simulation')
 
-task = 'test_and_measure'
+# print(len(list(iterator)), len(list(iterator2)))
+for (index, theta, phi, power) in iterator:
+     print(index, theta, phi)
+print("Leds")
+for (index, theta, phi, power) in iterator2:
+     print (index, theta, phi)
+
+task = 'none'
 if task is 'acquire':
     json_savemeta(json_file, image_size, pupil_radius, theta_max, phi_max)
     for index, theta, phi, power in iterator:
