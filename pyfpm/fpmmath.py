@@ -69,8 +69,27 @@ def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
         yield index, np.degrees(theta), np.degrees(phi), power
 
 
-def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
-    """ Constructs an iterator of pupil center positions.
+# def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
+#     """ Constructs an iterator of pupil center positions.
+#
+#         Keywords:
+#         theta_max   radius of the pupil in the Fourier plane, given by NA
+#         phi_max     spherical angles in sexagesimal degrees
+#         theta_step  1-radial_overlap (radius segment overlap)
+#     """
+#     # yield 0, -80, 0, 0
+#     theta_range = range(0, theta_max, theta_step)
+#     index = 0
+#     phi_step = 20  # Already defined by the geometry
+#     phi_range = range(-phi_max, phi_max+1, phi_step)
+#     for theta in theta_range:
+#         for phi in phi_range:
+#             index += 1
+#             power = laser_power(theta, phi, mode)
+#             yield index, theta, phi, power
+def iterleds(theta_max=360, phi_max=80, theta_step=10, mode='simulation'):
+    """ Constructs an iterator of pupil center positions in the correct order
+        for de LEDs sweep.
 
         Keywords:
         theta_max   radius of the pupil in the Fourier plane, given by NA
@@ -78,15 +97,19 @@ def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
         theta_step  1-radial_overlap (radius segment overlap)
     """
     # yield 0, -80, 0, 0
-    theta_range = range(0, theta_max, theta_step)
+    theta_range = range(0, int(theta_max/2), theta_step)
     index = 0
     phi_step = 20  # Already defined by the geometry
-    phi_range = range(-phi_max, phi_max+1, phi_step)
+    phi_range = range(0, phi_max+1, phi_step)
     for theta in theta_range:
         for phi in phi_range:
             index += 1
             power = laser_power(theta, phi, mode)
             yield index, theta, phi, power
+            if theta + 180 <= theta_max:
+                index += 1
+                power = laser_power(theta + 180, phi, mode)
+                yield index, theta + 180, phi, power
 
 
 def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
@@ -130,19 +153,25 @@ def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
             yield index, theta, phi, power
 
 
-def normsort_iterator(iterator):
+def sort_iterator(iterator, mode='leds'):
     """ Normalize coordinates for compatibility of different types of sweeps.
-        It also selects non suitable (non repeated and equally spaced)
-        coordinates for the reconstrution.
+
     """
-    return True
+    # In this mode the leds are considered well distributed and the movement
+    # spherically symmetrical (theta and theta + 180 are equivalent)
+    if mode is 'leds':
+        for (index, theta, phi, power) in iterator:
+            if theta >= 180:
+                theta = theta - 180
+                phi = -phi
+            yield index, theta, phi, power
 
 
 def generate_pupil(theta, phi, power, pup_rad, image_size):
     rmax = image_size[1]/2  # Half image size  each side
     phi_rad = np.radians(phi)
-    if phi_rad < 0:
-        theta = theta + 180  # To make it compatible with the "leds" sweep
+    # if phi_rad < 0:
+    #     theta = theta + 180  # To make it compatible with the "leds" sweep
     theta_rad = np.radians(theta)
     pup_matrix = np.zeros(image_size, dtype=np.uint8)
     nx, ny = image_size
