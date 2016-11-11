@@ -255,7 +255,7 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     theta_max = data['theta_max']
     phi_max = data['phi_max']
     theta_step = data['theta_step']
-    pupil_radius = 100
+    pupil_radius = 90
 
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
@@ -265,18 +265,18 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     # Steps 2-5
-    iterations_number = 5  # Total iterations on the reconstruction
+    iterations_number = 2  # Total iterations on the reconstruction
     if debug:
         f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     for l in range(iterations_number):
         iterator = iterleds(theta_max, phi_max, theta_step, 'sample')
         print('iteration %d' % l)
         for index, theta, phi, power in iterator:
-            scaling_factor = 1.0
+            scaling_factor = 2.0
             if phi == 20 or phi == 40:
                 print('scaling')
-                scaling_factor = 0.05
-            if index == 1 or index > 30 or phi == 40:
+                scaling_factor = 0.10
+            if index == 1 or index > 100:
                 print('passing')
                 continue
             # Final step: squared inverse fft for visualization

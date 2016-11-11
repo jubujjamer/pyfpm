@@ -26,10 +26,10 @@ from pyfpm.data import json_savemeta, json_loadmeta
 
 # Connect to a web client running serve_microscope.py
 client = web.Client('http://10.99.38.48:5000/acquire')
-out_file = './out_sampling/calibrate.npy'
-json_file = './out_sampling/calibrate.json'
+out_file = './out_sampling/sample_intest.npy'
+json_file = './out_sampling/sample_intest.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
-color = "green"
+color = "red"
 ns = 0.3   # Complement of the overlap between sampling pupils
 pupil_radius = 80
 phi_max = 40
@@ -83,8 +83,8 @@ if task is 'test_and_measure':
             plt.show(block=False)
 
 if task is 'calibration':
-    # json_savemeta(json_file, image_size, pupil_radius, theta_max,
-                #   theta_step, phi_max)
+    json_savemeta(json_file, image_size, pupil_radius, theta_max,
+                  theta_step, phi_max)
     print('calibration')
     iterator = iterleds(theta_max, phi_max, theta_step, 'sampling')
     for index, theta, phi, power in iterator:
