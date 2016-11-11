@@ -27,9 +27,11 @@ def iter_dict(image_dict):
         yield theta, phi, power, img
 
 
-def json_savemeta(json_file, image_size, pupil_radius, theta_max, phi_max):
+def json_savemeta(json_file, image_size, pupil_radius, theta_max,
+                  theta_step, phi_max):
     data = {'image_size': image_size, 'pupil_radius': pupil_radius,
-            'theta_max': theta_max, 'phi_max': phi_max}
+            'theta_max': theta_max, 'theta_step': theta_step,
+            'phi_max': phi_max}
     with open(json_file, 'w') as outfile:
         json.dump(data, outfile,
                   indent=4, sort_keys=True, separators=(',', ':'))

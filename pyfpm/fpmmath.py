@@ -26,11 +26,13 @@ def laser_power(theta, phi, mode='simulation'):
     power = 255
     if mode is 'simulation':
         pass
-    elif mode is 'sampling' or 'calibration':
+    elif mode is 'sampling':
         if phi == 0:
             power = 50
         else:
             power = 255
+    elif mode is 'calibration':
+            power = 1
     return power
 
 
@@ -153,18 +155,17 @@ def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
             yield index, theta, phi, power
 
 
-def sort_iterator(iterator, mode='leds'):
+def to_leds_coords(theta, phi):
     """ Normalize coordinates for compatibility of different types of sweeps.
-
     """
     # In this mode the leds are considered well distributed and the movement
     # spherically symmetrical (theta and theta + 180 are equivalent)
-    if mode is 'leds':
-        for (index, theta, phi, power) in iterator:
-            if theta >= 180:
-                theta = theta - 180
-                phi = -phi
-            yield index, theta, phi, power
+    theta_leds = theta
+    phi_leds = phi
+    if theta >= 180:
+        theta_leds = theta - 180
+        phi_leds = -phi
+    return theta_leds, phi_leds
 
 
 def generate_pupil(theta, phi, power, pup_rad, image_size):
@@ -251,6 +252,11 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     image_dict = np.load(input_file)
     image_size = data['image_size']
     pupil_radius = data['pupil_radius']
+    theta_max = data['theta_max']
+    phi_max = data['phi_max']
+    theta_step = data['theta_step']
+    pupil_radius = 100
+
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -263,11 +269,19 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     if debug:
         f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     for l in range(iterations_number):
+        iterator = iterleds(theta_max, phi_max, theta_step, 'sample')
+        print('iteration %d' % l)
         for index, theta, phi, power in iterator:
+            scaling_factor = 1.0
+            if phi == 20 or phi == 40:
+                print('scaling')
+                scaling_factor = 0.05
+            if index == 1 or index > 30 or phi == 40:
+                print('passing')
+                continue
             # Final step: squared inverse fft for visualization
             # im_array = hf[str(int(index))]
-            im_array = image_dict[()][(theta, phi)]
-            print np.shape(im_array)
+            im_array = image_dict[()][(theta, phi)]*scaling_factor
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
             pupil_shift = fftshift(pupil)
@@ -302,5 +316,5 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
                 im = Image.fromarray(np.uint8(array*255), 'L')
                 ax4.imshow(im, cmap=plt.get_cmap('gray'))
                 plt.show(block=False)
-                time.sleep(.5)
-        return np.abs(np.power(ifft2(f_ih), 2))
+                # time.sleep(.5)
+    return np.abs(np.power(ifft2(f_ih), 2))

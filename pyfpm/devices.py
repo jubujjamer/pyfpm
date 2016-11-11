@@ -198,7 +198,7 @@ class Camera(object):
         #         print p, cap.get(p), prop_dict[p]
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
         cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
-        cap.set(cv2.CAP_PROP_SATURATION, 0.0)
+        cap.set(cv2.CAP_PROP_SATURATION, 0.5)
         # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
