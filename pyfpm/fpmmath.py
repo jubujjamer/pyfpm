@@ -128,11 +128,11 @@ def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
 
     def opt_func(phi):
         return np.tan(phi)-1/(np.cos(theta_rad)*np.tan(alpha)+c/(np.sin(phi)))
-    phi_initial_guess = 1.4
+    phi_initial_guess = 1.5
     # Use the numerical solver to find the roots
     phi_solved = fsolve(opt_func, phi_initial_guess)[0]
     phi_solved = round(np.degrees(phi_solved), 2)
-    return phi_solved
+    return np.abs(phi_solved)
 
 
 def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
@@ -255,7 +255,9 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     theta_max = data['theta_max']
     phi_max = data['phi_max']
     theta_step = data['theta_step']
-    pupil_radius = 90
+    pupil_radius = 80
+    ip = 300
+    image_size=(ip, ip)
 
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
@@ -267,22 +269,38 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     # Steps 2-5
     iterations_number = 2  # Total iterations on the reconstruction
     if debug:
-        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        # f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        f, ax2 = plt.subplots(1, 1)
     for l in range(iterations_number):
         iterator = iterleds(theta_max, phi_max, theta_step, 'sample')
         print('iteration %d' % l)
+
+        # Patching for testing
         for index, theta, phi, power in iterator:
-            scaling_factor = 2.0
-            if phi == 20 or phi == 40:
-                print('scaling')
-                scaling_factor = 0.10
-            if index == 1 or index > 100:
-                print('passing')
-                continue
             # Final step: squared inverse fft for visualization
             # im_array = hf[str(int(index))]
-            im_array = image_dict[()][(theta, phi)]*scaling_factor
-            pupil = generate_pupil(theta, phi, power, pupil_radius,
+            im_array = image_dict[()][(theta, phi)]
+            im_array = im_array[220-ip/2:220+ip/2, 220-ip/2:220+ip/2]
+            theta = theta + 50
+            if phi == 0:
+                phi = 2
+
+            if phi == 20 or phi == 40:
+                phi
+                print('scaling')
+                scaling_factor = 0.20
+            if index == 1 or phi >= 20:
+                print('passing')
+                continue
+
+
+            slice_ratio = np.cos(np.radians(phi))
+            phi_tilted = get_tilted_phi(theta=theta, alpha=-2, slice_ratio=slice_ratio)
+            print('theta: %d, phi: %d, phi_tilted: %f' % (theta, phi, phi_tilted))
+            scaling_factor = 0.5*np.cos(np.radians(phi))
+            im_array = im_array*scaling_factor
+
+            pupil = generate_pupil(theta, phi_tilted, power, pupil_radius,
                                    image_size)
             pupil_shift = fftshift(pupil)
             # Step 2: lr of the estimated image using the known pupil
@@ -300,21 +318,30 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
             # Fourier update
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
             if debug:
+                # fig_size = plt.rcParams["figure.figsize"]
                 print("Debugging")
-                print("i = %d, theta = %d, phi = %d" % (index, theta, phi))
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
-                ax1.get_figure().canvas.draw()
+                # ax1.get_figure().canvas.draw()
                 ax2.get_figure().canvas.draw()
-                ax3.get_figure().canvas.draw()
-                ax4.get_figure().canvas.draw()
-                ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
+                # ax3.get_figure().canvas.draw()
+                # ax4.get_figure().canvas.draw()
+                # ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
                 ax2.imshow(im_rec, cmap=plt.get_cmap('gray'))
-                ax3.imshow(Im, cmap=plt.get_cmap('gray'))
+                # ax3.imshow(Im, cmap=plt.get_cmap('gray'))
                 array = np.abs(f_ih)
                 array *= (1.0/array.max())
                 array = fftshift(array)
                 im = Image.fromarray(np.uint8(array*255), 'L')
-                ax4.imshow(im, cmap=plt.get_cmap('gray'))
+                # ax4.imshow(im, cmap=plt.get_cmap('gray'))
+                # fig_size[0] = 20
+                # fig_size[1] = 20
+
                 plt.show(block=False)
+                # f.set_size_inches(20, 20)
+
+                # plt.rcParams["figure.figsize"] = fig_size
+
+
+
                 # time.sleep(.5)
     return np.abs(np.power(ifft2(f_ih), 2))

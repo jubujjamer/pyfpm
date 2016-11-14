@@ -19,7 +19,7 @@ from scipy import misc
 import numpy as np
 
 from pyfpm import web
-from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords
+from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords, get_tilted_phi
 from pyfpm.data import save_metadata
 from pyfpm.data import json_savemeta, json_loadmeta
 
@@ -101,3 +101,10 @@ if task is 'calibration':
     print(out_file)
     np.save(out_file, image_dict)
     client.acquire(0, 0, 0, color)
+
+if task is 'testing':
+    iterator = iterleds(theta_max, phi_max, theta_step, 'sampling')
+    for index, theta, phi, power in iterator:
+        slice_ratio = np.cos(np.radians(phi))
+        phi_tilted = get_tilted_phi(theta=theta, alpha=-3, slice_ratio=slice_ratio)
+        print('theta: %d, phi: %d, phi_tilted: %f' % (theta, phi, phi_tilted))
