@@ -71,8 +71,9 @@ def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
         yield index, np.degrees(theta), np.degrees(phi), power
 
 
-# def iterleds(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
-#     """ Constructs an iterator of pupil center positions.
+# def iterleds(theta_max=360, phi_max=80, theta_step=10, mode='simulation'):
+#     """ Constructs an iterator of pupil center positions in the correct order
+#         for de LEDs sweep.
 #
 #         Keywords:
 #         theta_max   radius of the pupil in the Fourier plane, given by NA
@@ -80,15 +81,21 @@ def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
 #         theta_step  1-radial_overlap (radius segment overlap)
 #     """
 #     # yield 0, -80, 0, 0
-#     theta_range = range(0, theta_max, theta_step)
+#     theta_range = range(0, int(theta_max/2), theta_step)
 #     index = 0
 #     phi_step = 20  # Already defined by the geometry
-#     phi_range = range(-phi_max, phi_max+1, phi_step)
+#     phi_range = range(0, phi_max+1, phi_step)
 #     for theta in theta_range:
 #         for phi in phi_range:
 #             index += 1
 #             power = laser_power(theta, phi, mode)
 #             yield index, theta, phi, power
+#             if theta + 180 <= theta_max:
+#                 index += 1
+#                 power = laser_power(theta + 180, phi, mode)
+#                 yield index, theta + 180, phi, power
+
+
 def iterleds(theta_max=360, phi_max=80, theta_step=10, mode='simulation'):
     """ Constructs an iterator of pupil center positions in the correct order
         for de LEDs sweep.
@@ -99,19 +106,15 @@ def iterleds(theta_max=360, phi_max=80, theta_step=10, mode='simulation'):
         theta_step  1-radial_overlap (radius segment overlap)
     """
     # yield 0, -80, 0, 0
-    theta_range = range(0, int(theta_max/2), theta_step)
+    theta_range = range(-180, 180, theta_step)
     index = 0
     phi_step = 20  # Already defined by the geometry
-    phi_range = range(0, phi_max+1, phi_step)
+    phi_range = [-20, 0, 20, 40]
     for theta in theta_range:
         for phi in phi_range:
             index += 1
             power = laser_power(theta, phi, mode)
             yield index, theta, phi, power
-            if theta + 180 <= theta_max:
-                index += 1
-                power = laser_power(theta + 180, phi, mode)
-                yield index, theta + 180, phi, power
 
 
 def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
@@ -133,6 +136,41 @@ def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
     phi_solved = fsolve(opt_func, phi_initial_guess)[0]
     phi_solved = round(np.degrees(phi_solved), 2)
     return np.abs(phi_solved)
+
+
+# def correct_angles(theta=0, phi=0):
+#     """ Returns the phi angle considering a tilted plane of rotation.
+#
+#     Parameters
+#     alpha   the tilt angle
+#     ypos    the y coordinate of the plane
+#     """
+#     # c is the R/a ratio related to the initial plane of the rotating leds
+#     if phi == -20:
+#         phi = 17-abs(0.05*(abs(theta)-180))
+#     if phi == 0:
+#         phi = 7.37-abs(0.04*(abs(theta)-180))
+#     if phi == 20:
+#         theta = theta + 180
+#         phi = 22.38-abs(0.048*(abs(theta)-180))
+#     return theta, phi
+
+def correct_angles(theta=0, phi=0):
+    """ Returns the phi angle considering a tilted plane of rotation.
+
+    Parameters
+    alpha   the tilt angle
+    ypos    the y coordinate of the plane
+    """
+    # c is the R/a ratio related to the initial plane of the rotating leds
+    if phi == -20:
+        phi = 17 - abs(0.05*(abs(theta) - 180))
+    if phi == 0:
+        phi = 7.37 - abs(0.04*(abs(theta) - 180))
+    if phi == 20:
+        theta = theta + 180
+        phi = 22.38 - abs(0.048*(abs(theta) - 180))
+    return theta, phi
 
 
 def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
@@ -177,7 +215,8 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     pup_matrix = np.zeros(image_size, dtype=np.uint8)
     nx, ny = image_size
     image_center = (nx/2, ny/2)
-    # CHECK conversion from phi to r
+    # CHECK
+    # conversion from phi to r
     r = np.abs(rmax * np.sin(phi_rad))
     # Pupil positioning
     kx = np.floor(np.cos(theta_rad)*r)
@@ -255,52 +294,45 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     theta_max = data['theta_max']
     phi_max = data['phi_max']
     theta_step = data['theta_step']
-    pupil_radius = 80
-    ip = 300
-    image_size=(ip, ip)
+    pupil_radius = 95
+    ip = 440
+    image_size = (480, 640)
 
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
-    # Ih_sq = np.sqrt(hf[str(int(0))])
+    Ih_sq = np.sqrt(image_dict[()][(10, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     # Steps 2-5
     iterations_number = 2  # Total iterations on the reconstruction
     if debug:
-        # f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        f, ax2 = plt.subplots(1, 1)
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        # f, ax2 = plt.subplots(1, 1)
     for l in range(iterations_number):
         iterator = iterleds(theta_max, phi_max, theta_step, 'sample')
         print('iteration %d' % l)
-
         # Patching for testing
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
             # im_array = hf[str(int(index))]
             im_array = image_dict[()][(theta, phi)]
-            im_array = im_array[220-ip/2:220+ip/2, 220-ip/2:220+ip/2]
-            theta = theta + 50
-            if phi == 0:
-                phi = 2
+            # im_array = im_array[220-ip/2:220+ip/2, 220-ip/2:220+ip/2]
+            (theta_corr, phi_corr) = correct_angles(theta, phi)
+            scaling_factor = 1.
 
-            if phi == 20 or phi == 40:
-                phi
-                print('scaling')
-                scaling_factor = 0.20
-            if index == 1 or phi >= 20:
+            if phi == 20 or phi == -20:
+                scaling_factor = 1.
+            if index == 1 or phi == 20 or phi == 20 or phi == 40:
                 print('passing')
                 continue
 
-
-            slice_ratio = np.cos(np.radians(phi))
-            phi_tilted = get_tilted_phi(theta=theta, alpha=-2, slice_ratio=slice_ratio)
-            print('theta: %d, phi: %d, phi_tilted: %f' % (theta, phi, phi_tilted))
-            scaling_factor = 0.5*np.cos(np.radians(phi))
+            print('theta: %d, phi: %d, theta_corr=%f, phi_corr: %f'
+                  % (theta, phi, theta_corr, phi_corr))
+            print(power)
             im_array = im_array*scaling_factor
-
-            pupil = generate_pupil(theta, phi_tilted, power, pupil_radius,
+            pupil = generate_pupil(theta_corr, phi_corr, power, pupil_radius,
                                    image_size)
             pupil_shift = fftshift(pupil)
             # Step 2: lr of the estimated image using the known pupil
@@ -321,18 +353,18 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
                 # fig_size = plt.rcParams["figure.figsize"]
                 print("Debugging")
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
-                # ax1.get_figure().canvas.draw()
+                ax1.get_figure().canvas.draw()
                 ax2.get_figure().canvas.draw()
-                # ax3.get_figure().canvas.draw()
-                # ax4.get_figure().canvas.draw()
-                # ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
+                ax3.get_figure().canvas.draw()
+                ax4.get_figure().canvas.draw()
+                ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
                 ax2.imshow(im_rec, cmap=plt.get_cmap('gray'))
-                # ax3.imshow(Im, cmap=plt.get_cmap('gray'))
-                array = np.abs(f_ih)
+                ax3.imshow(Im, cmap=plt.get_cmap('gray'))
+                array = np.log10(np.abs(f_ih))
                 array *= (1.0/array.max())
                 array = fftshift(array)
                 im = Image.fromarray(np.uint8(array*255), 'L')
-                # ax4.imshow(im, cmap=plt.get_cmap('gray'))
+                ax4.imshow(im, cmap=plt.get_cmap('gray'))
                 # fig_size[0] = 20
                 # fig_size[1] = 20
 
