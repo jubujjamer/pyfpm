@@ -17,21 +17,22 @@ import matplotlib.pyplot as plt
 import h5py
 from scipy import misc
 import numpy as np
+import time
 
 from pyfpm import web
-from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords
+from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords, correct_angles
 from pyfpm.data import save_metadata
 from pyfpm.data import json_savemeta, json_loadmeta
 
 
 # Connect to a web client running serve_microscope.py
 client = web.Client('http://10.99.38.48:5000/acquire')
-out_file = './out_sampling/calibrate.npy'
-json_file = './out_sampling/calibrate.json'
+out_file = './out_sampling/2016_11_17_1.npy'
+json_file = './out_sampling/2016_11_17_1.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
-color = "green"
+color = 'green'
 ns = 0.3   # Complement of the overlap between sampling pupils
-pupil_radius = 80
+pupil_radius = 120
 phi_max = 40
 image_size = (480, 640)
 theta_max = 360
@@ -74,7 +75,6 @@ if task is 'test_and_measure':
         if phi == 20:
             im_array = image_dict[()][(theta, phi)]
             circle = np.zeros_like(im_array)
-            led_on = [a for a in im_array if a > 50]
             # intensity = np.mean(im_array)
             # print(intensity, theta)
             ax = plt.gca() or plt
@@ -83,8 +83,8 @@ if task is 'test_and_measure':
             plt.show(block=False)
 
 if task is 'calibration':
-    # json_savemeta(json_file, image_size, pupil_radius, theta_max,
-                #   theta_step, phi_max)
+    json_savemeta(json_file, image_size, pupil_radius, theta_max,
+                  theta_step, phi_max)
     print('calibration')
     iterator = iterleds(theta_max, phi_max, theta_step, 'sampling')
     for index, theta, phi, power in iterator:
@@ -101,3 +101,12 @@ if task is 'calibration':
     print(out_file)
     np.save(out_file, image_dict)
     client.acquire(0, 0, 0, color)
+
+if task is 'testing':
+    iterator = iterleds(theta_max, phi_max, theta_step, 'sampling')
+    for index, theta, phi, power in iterator:
+        # slice_ratio = np.cos(np.radians(phi))
+        # phi_tilted = get_tilted_phi(theta=theta, alpha=-3, slice_ratio=slice_ratio)
+        (theta_corr, phi_corr) = correct_angles(theta, phi)
+        print('theta: %d, phi: %d' % (theta, phi))
+        print('theta_corr: %f, phi_corr: %f' % (theta_corr, phi_corr))
