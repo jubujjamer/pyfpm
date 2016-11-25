@@ -163,13 +163,15 @@ def correct_angles(theta=0, phi=0):
     ypos    the y coordinate of the plane
     """
     # c is the R/a ratio related to the initial plane of the rotating leds
+    theta = theta - 110
+
     if phi == -20:
-        phi = 17 - abs(0.05*(abs(theta) - 180))
+        phi = 25 - abs(0.05*(abs(theta) - 180))
     if phi == 0:
-        phi = 7.37 - abs(0.04*(abs(theta) - 180))
+        phi = 1
     if phi == 20:
-        theta = theta + 180
-        phi = 22.38 - abs(0.048*(abs(theta) - 180))
+        # theta = theta + 180
+        phi = 25 - abs(0.048*(abs(theta) - 180))
     return theta, phi
 
 
@@ -294,19 +296,21 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     theta_max = data['theta_max']
     phi_max = data['phi_max']
     theta_step = data['theta_step']
-    pupil_radius = 95
-    ip = 440
-    image_size = (480, 640)
+    pupil_radius = 80
+    ip = 350
+    cx = 450
+    cy = 250
+    image_size = (ip, ip)
 
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
-    Ih_sq = np.sqrt(image_dict[()][(10, 0)])
+    # Ih_sq = np.sqrt(image_dict[()][(10, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     # Steps 2-5
-    iterations_number = 2  # Total iterations on the reconstruction
+    iterations_number = 4  # Total iterations on the reconstruction
     if debug:
         f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
         # f, ax2 = plt.subplots(1, 1)
@@ -318,10 +322,13 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
             # Final step: squared inverse fft for visualization
             # im_array = hf[str(int(index))]
             im_array = image_dict[()][(theta, phi)]
-            # im_array = im_array[220-ip/2:220+ip/2, 220-ip/2:220+ip/2]
+            im_array = im_array[cy-ip/2:cy+ip/2, cx-ip/2:cx+ip/2]
             (theta_corr, phi_corr) = correct_angles(theta, phi)
             scaling_factor = 1.
 
+            # if phi == 0 and theta != -90:
+            #     print('passing')
+            #     continue
             if phi == 20 or phi == -20:
                 scaling_factor = 1.
             if index == 1 or phi == 20 or phi == 20 or phi == 40:

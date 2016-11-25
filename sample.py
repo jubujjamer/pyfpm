@@ -59,7 +59,7 @@ if task is 'acquire':
 elif task is 'reconstruct':
     start_time = time.time()
     data = json_loadmeta(json_file)
-    rec = recontruct(out_file, iterator, debug=True, ax=None, data=data)
+    rec = recontruct(out_file, iterator, debug=False, ax=None, data=data)
     print("--- %s seconds ---" % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()
