@@ -21,7 +21,7 @@
 #define SERVO_MAX_ANGLE 30
 #define LC_PIN 6 // Laser power control pin
 #define LEDS_DI 10
-#define LED_NUMBER 6
+#define LED_NUMBER 14
 
 // Initiate variables
 SerialCommand sCmd; // Rename command
