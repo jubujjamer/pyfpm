@@ -9,10 +9,14 @@
 #define BAUD_RATE 9600
 #define MOTOR_PINS 2 //Number of pins per motor
 #define NOT_ENABLE_GENERAL 7 //Enables both motors
+// #define STEPPER2_DIR_PIN 4 // CHANGED FROM 1!!
+// #define STEPPER2_STEP_PIN 2
+// #define STEPPER1_DIR_PIN 10 // CHECK
+// #define STEPPER1_STEP_PIN 11 //CHECK
 #define STEPPER2_DIR_PIN 4 // CHANGED FROM 1!!
 #define STEPPER2_STEP_PIN 2
-#define STEPPER1_DIR_PIN 10 // CHECK
-#define STEPPER1_STEP_PIN 11 //CHECK
+#define STEPPER1_DIR_PIN 9 // CHECK
+#define STEPPER1_STEP_PIN 8 //CHECK
 #define MS1 13
 #define MS2 12
 #define MS3 3
