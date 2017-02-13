@@ -18,6 +18,7 @@ import h5py
 from scipy import misc
 import numpy as np
 import time
+import yaml
 
 from pyfpm import web
 from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords, correct_angles

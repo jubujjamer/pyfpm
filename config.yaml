@@ -1,0 +1,19 @@
+# Configuration file for both server and clients
+# Let's start with the server first
+serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
+video_id: 3
+vide_size: [640, 480]
+client: ledclient
+server_host: '0.0.0.0'
+server_ip: 10.99.39.174:5000/acquire
+objective_na: 0.6
+pupil_size: 60 # Function of NA, wavelength video size and magnification
+color: red
+theta: [-180, 180, 10] # [min, max, step]
+phi: [0, 90, 5] # [min, max, step]
+# The client side of the equation
+task: simulation
+action: reconstruct
+output_file: 2017-02-13.npy
+input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
+debug: True # Show me images and be verbose

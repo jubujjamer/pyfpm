@@ -8,7 +8,7 @@ Usage:
 """
 import shutil
 
-from fpmmath import filter_by_pupil, iterleds
+from fpmmath import filter_by_pupil, set_iterator
 
 
 class BaseClient(object):
@@ -73,12 +73,11 @@ class LedClient(BaseClient):
         return self.metadata['pupil_size']
 
 class SimClient(BaseClient):
-    def __init__(self, image, image_size, pupil_rad, overlap): # Y Datos del microscopio
+    def __init__(self, image, image_size, pupil_rad): # Y Datos del microscopio
         # self.init_image = image
         # self.proc_image = image
         self.image = image
         self.pupil_rad = pupil_rad
-        self.overlap = overlap
         self.image_size = image_size
         # self.pir = PupilIterator(self.init_image, self.size, self.overlap, self.pup_rad)
 
