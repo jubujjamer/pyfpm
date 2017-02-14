@@ -1,6 +1,6 @@
 # Configuration file for both server and clients
 # Let's start with the server first
-serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
+serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
 video_id: 3
 vide_size: [640, 480]
 client: ledclient
@@ -11,6 +11,9 @@ pupil_size: 60 # Function of NA, wavelength video size and magnification
 color: red
 theta: [-180, 180, 10] # [min, max, step]
 phi: [0, 90, 5] # [min, max, step]
+shift_step: 0.075 # mm by step
+sample_height: 60 # mm above led
+servo_init: 85 # Zero angle for the servo motor
 # The client side of the equation
 task: simulation
 action: reconstruct

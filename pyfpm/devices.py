@@ -169,11 +169,15 @@ class Camera(object):
     v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_auto_priority=0
              -c exposure_absolute=10
     """
-    def __init__(self, video_id=0):
+    def __init__(self, video_id=0, camtype='picamera'):
         # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
-        cap = cv2.VideoCapture(video_id)
-        self.config_cap(cap)
-        self.cap = cap
+        if(camtype == 'opencv'):
+            cap = cv2.VideoCapture(video_id)
+            self.config_cap(cap)
+            self.cap = cap
+        elif(camtype == 'picamera'):
+            print("please do something")
+
 
     def config_cap(self, cap):
         prop_dict = {0: 'CAP_PROP_POS_MSEC',
