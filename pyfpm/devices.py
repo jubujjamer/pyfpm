@@ -10,9 +10,10 @@ Usage:
 import os
 import serial
 import time
-
+import yaml
 import cv2
 
+CONFIG_FILE = '../config.yaml'
 
 class LaserAim(object):
     """Hello
@@ -146,6 +147,66 @@ class LedAim(object):
         self.ser_dev.close()
 
 
+class Laser3d(object):
+
+    def __init__(self, port=None, theta=None, phi=None, shift=None, power=None):
+        self.ser_dev = None
+        self.theta = None
+        self.phi = None
+        self.shift = None
+        self.power = None
+        self.set_parameters(port, theta, phi, shift, power)
+
+    def set_parameters(self, port, theta, phi, shift, power):
+        params = yaml.load(CONFIG_FILE)
+        if port is None:
+            port = '/dev/ttyACM0'
+        if theta is None:
+            theta = 0
+        if phi is None:
+            phi = params['servo_init']
+        if shift is None:
+            theta = 0
+        if power is None:
+            theta = 0
+        self.ser_dev = serial.Serial(port, baudrate=9600, timeout=1)
+        self.theta = theta
+        self.phi = phi
+        self.shift = shift
+        self.power = power
+
+
+    def move_to(self, theta, phi, shift):
+        # ser_dev.flushInput()
+        tcom = 'STMOV 1 %i' % shift
+        pcom = 'STMOV 2 %i' % theta
+        scom = 'SVMOV %i' % phi
+        self._send_command(tcom)
+        self._send_command(scom)
+        self._send_command(pcom)
+        self.theta = theta
+        self.phi = phi
+        self.shift = shift
+        print(ser_dev.read())
+
+    def set_power(self, power):
+        lcom = 'LPOW %i' % power
+        self._send_command(lcom)
+        self.power = power
+
+    def _send_command(self, command):
+        # ser_dev.flushOutput()
+        ser_dev.write(command + '\r'.encode())
+        out = ser_dev.read()
+        i = 0
+        while out != '0' and i < 10:
+            out = ser_dev.read()
+            print(out == '0', i)
+            i += 1
+        #ser_dev.flush()
+    def __del__(self):
+        self.ser_dev.close()
+
 class Camera(object):
     """Microscope camera interface with opencv.
 
@@ -171,15 +232,17 @@ class Camera(object):
     """
     def __init__(self, video_id=0, camtype='picamera'):
         # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
+        print("Trying to select a camera")
         if(camtype == 'opencv'):
             cap = cv2.VideoCapture(video_id)
-            self.config_cap(cap)
             self.cap = cap
+            self.config_cap()
+            print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
             print("please do something")
 
 
-    def config_cap(self, cap):
+    def config_cap(self):
         prop_dict = {0: 'CAP_PROP_POS_MSEC',
                      1: 'CAP_PROP_POS_FRAMES',
                      2: 'CAP_PROP_POS_AVI_RATIO',
@@ -197,12 +260,12 @@ class Camera(object):
                      14: 'CAP_PROP_GAIN',
                      15: 'CAP_PROP_EXPOSURE'}
         # props = [a for a in dir(cv2) if "PROP" in a]
-        # for p in range(0, 16):
-        #     if cap.get(p) != -10.0:
-        #         print p, cap.get(p), prop_dict[p]
-        cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.5)
-        cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
-        cap.set(cv2.CAP_PROP_SATURATION, 0.5)
+        for p in range(0, 16):
+            if self.cap.get(p) != -10.0:
+                print p, self.cap.get(p), prop_dict[p]
+        self.cap.set(10, 0.5)
+        # self.cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
+        # cap.set(cv2.CAP_PROP_SATURATION, 0.5)
         # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
@@ -214,7 +277,8 @@ class Camera(object):
         for i in range(5):
             ret, frame = self.cap.read()
         ret, buf = cv2.imencode('.png', frame)
-        return buf.tobytes()
+        print(len(buf))
+        return bytearray(buf)
 
     def __del__(self):
         # When everything done, release the capture

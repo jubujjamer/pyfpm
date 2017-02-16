@@ -27,7 +27,7 @@ from pyfpm.data import json_savemeta, json_loadmeta
 
 
 # Connect to a web client running serve_microscope.py
-client = web.Client('http://10.99.38.48:5000/acquire')
+client = web.Client('http://10.99.39.174:5000/acquire')
 out_file = './out_sampling/2016_11_17_1.npy'
 json_file = './out_sampling/2016_11_17_1.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium

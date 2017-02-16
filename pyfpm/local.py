@@ -72,6 +72,19 @@ class LedClient(BaseClient):
     def get_pupil_size(self):
         return self.metadata['pupil_size']
 
+
+class Laser3dCalibrate(BaseClient):
+    def __init__(self, camera, laser3d, **metadata):
+        self.camera = camera
+        self.laser3d = laser3d
+        self.metadata = metadata
+
+    def acquire(self, theta=None, phi=None, power=None, color=None):
+        return self.camera.capture_png()
+
+    def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
+        return self.camera.capture_png()
+
 class SimClient(BaseClient):
     def __init__(self, image, image_size, pupil_rad): # Y Datos del microscopio
         # self.init_image = image

@@ -1,7 +1,7 @@
 # Configuration file for both server and clients
 # Let's start with the server first
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
-video_id: 3
+video_id: 0
 vide_size: [640, 480]
 client: ledclient
 server_host: '0.0.0.0'
@@ -9,14 +9,15 @@ server_ip: 10.99.39.174:5000/acquire
 objective_na: 0.6
 pupil_size: 60 # Function of NA, wavelength video size and magnification
 color: red
-theta: [-180, 180, 10] # [min, max, step]
+theta: [-40, 40, 10] # [min, max, step]
 phi: [0, 90, 5] # [min, max, step]
+shift: [0, 400, 1]
 shift_step: 0.075 # mm by step
 sample_height: 60 # mm above led
-servo_init: 85 # Zero angle for the servo motor
+servo_init: 80 # Zero angle for the servo motor
 # The client side of the equation
-task: simulation
+task: test
 action: reconstruct
-output_file: 2017-02-13.npy
+output_file: ./out_sampling/2017-02-15.npy
 input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
 debug: True # Show me images and be verbose

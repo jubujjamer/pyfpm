@@ -8,18 +8,34 @@
 import base64
 import json
 import socket
+import os
 
-from flask import Flask, Response
+from flask import Flask, Response, render_template
 
 from .. import local
 
-
 def create_server(client):
-    app = Flask("FPM")
+    app = Flask("FPM", template_folder='/home/pi/pyfpm/pyfpm/web/templates/')
+    app.config.update(PROPAGATE_EXCEPTIONS = True)
 
     @app.route("/")
-    def hello():
-        return "Hello World!"
+    def init():
+        return Response("Testing")
+
+    @app.route('/index')
+    def index():
+        image_title = {'calibration': 'Image for calibration'}  # fake user
+        image = client.acquire()
+        return render_template('index.html',
+                               title='Home',
+                               image_title=image_title, image=image)
+
+    @app.route('/foo', methods=['GET', 'POST'])
+    def foo():
+        if request.method == 'POST':
+            if request.form['submit'] == 'Send Email':
+                print("done")
+                pass # do something
 
     @app.route("/testcam")
     def testcam():
@@ -32,6 +48,7 @@ def create_server(client):
             return Response(client.acquire(theta, phi, power, color),
                             mimetype='image/png')
         except socket.error:
+            print("An error")
             pass
 
     @app.route("/complete_scan/<color>")
@@ -45,7 +62,6 @@ def create_server(client):
     @app.route("/metadata")
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
-
     return app
 
 def create_sim_server(mic_client, sim_client):
