@@ -13,7 +13,7 @@ import time
 import yaml
 import cv2
 
-CONFIG_FILE = '../config.yaml'
+CONFIG_FILE = 'config.yaml'
 
 class LaserAim(object):
     """Hello
@@ -150,30 +150,38 @@ class LedAim(object):
 class Laser3d(object):
 
     def __init__(self, port=None, theta=None, phi=None, shift=None, power=None):
-        self.ser_dev = None
-        self.theta = None
-        self.phi = None
-        self.shift = None
-        self.power = None
+        self._ser_dev = None
+        self._theta = None
+        self._phi = None
+        self._shift = None
+        self._power = None
         self.set_parameters(port, theta, phi, shift, power)
 
     def set_parameters(self, port, theta, phi, shift, power):
-        params = yaml.load(CONFIG_FILE)
+        params = yaml.load(open(CONFIG_FILE, 'r'))
         if port is None:
             port = '/dev/ttyACM0'
         if theta is None:
             theta = 0
         if phi is None:
-            phi = params['servo_init']
+            phi = int(params['servo_init'])
         if shift is None:
-            theta = 0
+            shift = 0
         if power is None:
-            theta = 0
-        self.ser_dev = serial.Serial(port, baudrate=9600, timeout=1)
-        self.theta = theta
-        self.phi = phi
-        self.shift = shift
-        self.power = power
+            power = 0
+        self._ser_dev = serial.Serial(port, baudrate=9600, timeout=1)
+        self._theta = theta
+        self._phi = phi
+        self._shift = shift
+        self._power = power
+        print("phi installed", self._phi)
+
+    def move_servo(self, phi=0, mode='relative'):
+        if mode == 'relative':
+            scom = 'SVMOV %i' % (phi+self._phi)
+        self._phi = phi+self._phi
+        self._send_command(scom)
+        return
 
 
     def move_to(self, theta, phi, shift):
@@ -184,28 +192,63 @@ class Laser3d(object):
         self._send_command(tcom)
         self._send_command(scom)
         self._send_command(pcom)
-        self.theta = theta
-        self.phi = phi
-        self.shift = shift
+        self._theta = theta
+        self._phi = phi
+        self._shift = shift
         print(ser_dev.read())
 
     def set_power(self, power):
         lcom = 'LPOW %i' % power
         self._send_command(lcom)
-        self.power = power
+        self._power = power
 
     def _send_command(self, command):
+        print("sending")
         # ser_dev.flushOutput()
-        ser_dev.write(command + '\r'.encode())
-        out = ser_dev.read()
+        self._ser_dev.write(command + '\r'.encode())
+        out = self._ser_dev.read()
         i = 0
         while out != '0' and i < 10:
-            out = ser_dev.read()
+            out = self._ser_dev.read()
             print(out == '0', i)
             i += 1
         #ser_dev.flush()
+
+    @property
+    def phi(self):
+        return self._phi
+
+    @phi.setter
+    def phi(self, phi):
+        self.move_to(self._theta, phi, self._shift)
+
+    @property
+    def theta(self):
+        return self._theta
+
+    @theta.setter
+    def theta(self, theta):
+        self.move_to(theta, self._phi, self._shift)
+
+    @property
+    def power(self):
+        return self._power
+
+    @power.setter
+    def power(self, power):
+        self.set_power(self, power)
+
+    @property
+    def shift(self):
+        return self._shift
+
+    @shift.setter
+    def shift(self, shift):
+        self.move_to(self._theta, self._phi, shift)
+
     def __del__(self):
-        self.ser_dev.close()
+        self._ser_dev.close()
+
 
 class Camera(object):
     """Microscope camera interface with opencv.
@@ -236,6 +279,10 @@ class Camera(object):
         if(camtype == 'opencv'):
             cap = cv2.VideoCapture(video_id)
             self.cap = cap
+            self.cap.open(video_id)
+            print ("Initializing the camera")
+            print("Is opened?", self.cap.isOpened())
+
             self.config_cap()
             print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
@@ -260,9 +307,9 @@ class Camera(object):
                      14: 'CAP_PROP_GAIN',
                      15: 'CAP_PROP_EXPOSURE'}
         # props = [a for a in dir(cv2) if "PROP" in a]
-        for p in range(0, 16):
-            if self.cap.get(p) != -10.0:
-                print p, self.cap.get(p), prop_dict[p]
+        # for p in range(0, 16):
+        #     if self.cap.get(p) != -10.0:
+        #         print p, self.cap.get(p), prop_dict[p]
         self.cap.set(10, 0.5)
         # self.cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
         # cap.set(cv2.CAP_PROP_SATURATION, 0.5)
@@ -274,10 +321,12 @@ class Camera(object):
         time.sleep(.5)
         # Don't know why it doesn't updates up to the 5th reading
         # a buffer flush thing
+        print("Is opened?", self.cap.isOpened())
         for i in range(5):
             ret, frame = self.cap.read()
+        print('ret value %i' % ret)
         ret, buf = cv2.imencode('.png', frame)
-        print(len(buf))
+        print('ret value %i' % ret)
         return bytearray(buf)
 
     def __del__(self):
