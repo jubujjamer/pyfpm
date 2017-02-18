@@ -31,20 +31,21 @@ def create_server(client):
                                title='Home',
                                image_title=image_title, image=image)
         print("Template folder is set in ", app.template_folder)
+
     @app.route('/action', methods=['GET', 'POST'])
     def action():
+        print(request.form['controls'])
         if request.method == 'POST':
-            user = request.form['nm']
-        if request.form['controls'] == 'phi++':
-            client.move_servo(1, mode='relative')
-            print(request.form['controls'])
-        if request.form['controls'] == 'phi--':
-            client.move_servo(-1, mode='relative')
-            print(request.form['controls'])
-        if request.form['controls'] == 'toggle led':
-            client.set_power(1)
-            print(request.form['controls'])
-        theta, phi, shift = client.get_parameters()
+            if request.form['controls'] == 'phi++':
+                client.move_servo(1, mode='relative')
+                print(request.form['controls'])
+            if request.form['controls'] == 'phi--':
+                client.move_servo(-1, mode='relative')
+                print(request.form['controls'])
+            if request.form['controls'] == 'toggle led':
+                client.set_power(1)
+                print(request.form['controls'])
+            theta, phi, shift = client.get_parameters()
         return render_template('index.html',
                                title='Home', theta=theta, phi=phi,
                                shift=shift)

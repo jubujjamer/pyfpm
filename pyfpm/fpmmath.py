@@ -11,6 +11,7 @@ from io import BytesIO
 from itertools import ifilter, product
 from StringIO import StringIO
 import time
+import yaml
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,50 @@ from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
 import matplotlib
-matplotlib.use('gtkagg')
+# matplotlib.use('gtkagg')
+
+config_dict = yaml.load(open('config.yaml', 'r'))
+
+
+class PlatformCoordinates(object):
+    servo_init = config_dict['servo_init']
+    sample_height = config_dict['sample_height']
+
+    def __init__(self, theta=0, phi=servo_init, shift=0, height=sample_height):
+        self._theta = theta
+        self._phi = phi
+        self._shift = shift
+        self._height = height
+
+
+    def expected_spot_center():
+        return "23"
+
+
+    @property
+    def phi(self):
+        return self._phi
+
+    @phi.setter
+    def phi(self, phi):
+        self.phi = phi
+
+    @property
+    def theta(self):
+        return self._theta
+
+    @theta.setter
+    def theta(self, theta):
+        self._theta = theta
+
+    @property
+    def shift(self):
+        return self._shift
+
+    @shift.setter
+    def shift(self, shift):
+        self._shift = shift
+
 
 
 def laser_power(theta, phi, mode='simulation'):

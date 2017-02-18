@@ -11,36 +11,41 @@
         <span class="site-name">Moving platform testing</span>
       </a> <!-- / #logo-header -->
     </header><!-- / #main-header -->
-      <p>
-        <img src='\testcam' onerror="this.src='static/img/lines0_0.png'" class = "test">
+        <img src='\testcam' onerror="this.src='static/img/lines0_0.png'" class = "viewer">
       <!-- <img src='static/img/lines0_0.png' class = "test"/> -->
       <div align = "middle" class="buttons">
       <form action = "./action" method = "post">
-            <p>Change angles to see its output:</p>
-            <p><input type = "text" name = "nm" /></p>
-            Raw parameters
-            <!-- <div class="boxed">&theta;: {{theta}}</div>
-            <div class="boxed">&phi;: {{phi}}</div>
-            <div class="boxed">&Delta;: {{shift}}</div> -->
-            &theta;: {{theta}}, &phi;: {{phi}}, 	&Delta;: {{shift}}
+            <p>Change coordinates to fit the spot</p>
             <div id="from">
               <label for="phi"> &phi;</label>
               <button name="controls" value="phi++" type="submit">&phi;&uarr;</button>
               <button name="controls" value="phi--" type="submit">&phi;&darr;</button>
+              <input type = "text" name = "controls" value={{phi}}>
             </div>
             <div id="from">
               <label for="theta"> &theta;</label>
               <button name="controls" value="theta++" type="submit">&theta;&uarr;</button>
               <button name="controls" value="theta--" type="submit">&theta;&darr;</button>
+              <input type = "text" name = "controls" value={{theta}}>
             </div>
             <div id="from">
               <label for="shift"> &Delta;</label>
               <button name="controls" value="shift++" type="submit">&Delta;&larr;</button>
               <button name="controls" value="shift--" type="submit">&Delta;&rarr;</button>
+              <input type = "text" name = "controls" value={{shift}}>
+            </div>
+            <div id="from" >
+              <label for="shift"> &Delta;</label>
+              <input name="controls" type="range"  min="0" max="100" class="slider-width100" value={{shift}} step="1" onchange="showValue(this.value)"/>
+              <span id="range">0</span>
             </div>
         </form>
-
       </div>
-    </p>
+      <script type="text/javascript">
+        function showValue(newValue)
+        {
+        	document.getElementById("range").innerHTML=newValue;
+        }
+      </script>
   </body>
 </html>

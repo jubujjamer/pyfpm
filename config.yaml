@@ -15,6 +15,11 @@ shift: [0, 400, 1]
 shift_step: 0.075 # mm by step
 sample_height: 60 # mm above led
 servo_init: 84 # Zero angle for the servo motor
+# posible defects
+platform_tilt: [0, 0] #[spherical theta, shperical phi]
+source_center: [0, 0] #[xcoord, ycoord] of the calibrated center
+source_tilt: [0, 0] #[spherical theta, shperical phi]
+
 # The client side of the equation
 task: test
 action: reconstruct
