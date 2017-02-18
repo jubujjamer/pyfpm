@@ -8,7 +8,7 @@ Usage:
 """
 import shutil
 
-from fpmmath import filter_by_pupil, iterleds
+from fpmmath import filter_by_pupil, set_iterator
 
 
 class BaseClient(object):
@@ -72,13 +72,41 @@ class LedClient(BaseClient):
     def get_pupil_size(self):
         return self.metadata['pupil_size']
 
+
+class Laser3dCalibrate(BaseClient):
+    def __init__(self, camera, laser3d, **metadata):
+        self.camera = camera
+        self.laser3d = laser3d
+        self.metadata = metadata
+
+    def acquire(self, theta=None, phi=None, power=None, color=None):
+        return self.camera.capture_png()
+
+    def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
+        return self.camera.capture_png()
+
+    def move_servo(self, phi, mode='relative'):
+        self.laser3d.move_servo(phi, mode)
+        return
+
+    def set_power(self, power):
+        print("power", power)
+        self.laser3d.set_power(power)
+        return
+
+    def get_parameters(self):
+        theta = self.laser3d.theta
+        phi = self.laser3d.phi
+        shift = self.laser3d.shift
+        return [theta, phi, shift]
+
+
 class SimClient(BaseClient):
-    def __init__(self, image, image_size, pupil_rad, overlap): # Y Datos del microscopio
+    def __init__(self, image, image_size, pupil_rad): # Y Datos del microscopio
         # self.init_image = image
         # self.proc_image = image
         self.image = image
         self.pupil_rad = pupil_rad
-        self.overlap = overlap
         self.image_size = image_size
         # self.pir = PupilIterator(self.init_image, self.size, self.overlap, self.pup_rad)
 
@@ -101,3 +129,19 @@ class SimClient(BaseClient):
 
     def get_pupil_rad(self):
         return self.pupil_rad
+
+class DummyClient(BaseClient):
+    def __init__(self): # Y Datos del microscopio
+        # self.init_image = image
+        # self.proc_image = image
+        self.dumb = 100
+
+    def acquire(self, theta=None, phi=None, power=None):
+        theta = float(theta)
+        phi = float(phi)
+        # Return np.array processed using laser aiming data
+        return "print"
+
+    def move_servo(self, phi, type='relative'):
+        print("Ooookay")
+        return "I'm moving but I'm lazy"

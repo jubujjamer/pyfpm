@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyfpm.local as local
-from pyfpm.fpmmath import iterleds, recontruct, itertest, sort_iterator
+from pyfpm.fpmmath import set_iterator, recontruct, itertest
 from pyfpm.data import json_savemeta, json_loadmeta
 
 from scipy import misc
@@ -25,34 +25,37 @@ input_image = './imgs/pinholes_calibration_squared.png'
 out_file = './output_sim/pinholes_calibration_squared.npy'
 json_file = './output_sim/pinholes_calibration_squared.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
-ns = 0.3  # Complement of the overlap between sampling pupils
+# ns = 0.3  # Complement of the overlap between sampling pupils
+# Simulation parameters
+wavelength = 500E-9
+pixelsize = 500E-9# See jupyter notebook
+phi_min = 0
 phi_max = 40
+phi_step = 5
+theta_min = 0
 theta_max = 360
-theta_step = 60
+theta_step = 10
 pupil_radius = 20
 image_dict = {}
+mode = 'simulation'
+itertype = 'neopixels'
 
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
 with open(input_image, "r") as imageFile:
     image = imageFile.read()
     image_size = np.shape(misc.imread(StringIO(image), 'RGB'))
-client = local.SimClient(image, image_size, pupil_radius, ns)
-test_iterator = itertest(theta_max, phi_max, theta_step, 'simulation')
-iterator = iterleds(theta_max, phi_max, theta_step, 'simulation')
-
-# print(len(list(iterator)), len(list(iterator2)))
-# print("Leds")
-# for (index, theta, phi, power) in iterator:
-#     print(index, theta, phi)
-# print("Test")
-# for (index, theta, phi, power) in test_iterator:
-#     print (index, theta, phi)
-# iterator = sort_iterator(iterator, mode='leds')
+    client = local.SimClient(image, image_size, pupil_radius)
+    test_iterator = itertest(theta_max, phi_max, theta_step, 'simulation')
+    iterator = set_iterator(theta_max=theta_max, phi_max=phi_max,
+                            theta_step=theta_step, mode='simulation',
+                            itertype='neopixels')
 
 task = 'reconstruct'
 if task is 'acquire':
-    json_savemeta(json_file, image_size, pupil_radius, theta_max, phi_max)
+    json_savemeta(json_file, image_size, pupil_radius, theta_min, theta_max,
+                  theta_step, phi_min, phi_max, wavelength, pixelsize,
+                  mode, itertype)
     for index, theta, phi, power in iterator:
         print(index, theta, phi, power)
         image_dict[(theta, phi)] = client.acquire(theta, phi, power)
@@ -79,6 +82,8 @@ if task is 'test_and_measure':
             plt.show(block=False)
 
 if task is 'other':
-    iterator = sort_iterator(iterator, mode='leds')
     for (index, theta, phi, power) in iterator:
         print(index, theta, phi)
+    print([i for i in set_iterator(theta_max=theta_max, phi_max=phi_max,
+                            theta_step=theta_step, mode='simulation',
+                            itertype='neopixels')])

@@ -1,0 +1,32 @@
+<html>
+<link rel=stylesheet type=text/css href="{{url_for('static', filename='style.css')}}?<?php echo time(); ? "/>
+
+  <head>
+    <title> FPM Imaging </title>
+  </head>
+  <body>
+      <p><strong>Moving platform testing</strong></p>
+      <p>
+        <img src='\testcam' class = "test">
+
+      <!-- <img src='static/img/lines0_0.png' class = "test"/> -->
+      <!-- <form action="/foo" method="post">
+         <input type="submit" name="submit" value="Do Something">
+        <button type="submit" value="Send Email"/>Click Me!</button>
+      </form> -->
+      <div align = "middle" class="buttons">
+      <form action = "http://10.99.39.174:5000/action" method = "post">
+            <p>Change angles to see its output:</p>
+            <p><input type = "text" name = "nm" /></p>
+            <p><input type = "submit" name = "controls"  value = "phi++"/><input type = "submit" name = "controls" value = "phi--"/></p>
+            <p><input type = "submit" name = "controls"  value = "shift++"/><input type = "submit" name = "controls"  value = "shift--"/></p>
+            <p><input type = "submit" name = "controls" value = "theta++"/><input type = "submit" name = "controls"  value = "theta--"/></p>
+            <p><input type = "submit" name = "controls" value = "toggle led"/></p>
+            Raw parameters
+            &Theta;: {{theta}}, phi: {{phi}}, shift: {{shift}}
+        </form>
+      </div>
+    </p>
+  </body>
+
+</html>

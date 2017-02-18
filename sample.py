@@ -18,6 +18,7 @@ import h5py
 from scipy import misc
 import numpy as np
 import time
+import yaml
 
 from pyfpm import web
 from pyfpm.fpmmath import iterleds, recontruct, to_leds_coords, correct_angles
@@ -26,7 +27,7 @@ from pyfpm.data import json_savemeta, json_loadmeta
 
 
 # Connect to a web client running serve_microscope.py
-client = web.Client('http://10.99.38.48:5000/acquire')
+client = web.Client('http://10.99.39.174:5000/acquire')
 out_file = './out_sampling/2016_11_17_1.npy'
 json_file = './out_sampling/2016_11_17_1.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
@@ -59,7 +60,7 @@ if task is 'acquire':
 elif task is 'reconstruct':
     start_time = time.time()
     data = json_loadmeta(json_file)
-    rec = recontruct(out_file, iterator, debug=True, ax=None, data=data)
+    rec = recontruct(out_file, iterator, debug=False, ax=None, data=data)
     print("--- %s seconds ---" % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

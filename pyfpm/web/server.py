@@ -8,18 +8,51 @@
 import base64
 import json
 import socket
+import os
 
-from flask import Flask, Response
+from flask import Flask, Response, render_template, request
 
 from .. import local
 
-
 def create_server(client):
-    app = Flask("FPM")
+    app = Flask("FPM", template_folder='/home/pi/pyfpm/pyfpm/web/templates/',
+                       static_folder='/home/pi/pyfpm/pyfpm/web/static')
+    # app.config.update(PROPAGATE_EXCEPTIONS = True)
 
     @app.route("/")
-    def hello():
-        return "Hello World!"
+    def init():
+        return Response("Testing")
+
+    @app.route('/index')
+    def index():
+        image_title = {'calibration': 'Image for calibration'}  # fake user
+        image = client.acquire()
+        return render_template('index.html',
+                               title='Home',
+                               image_title=image_title, image=image)
+
+    @app.route('/action', methods=['GET', 'POST'])
+    def action():
+        if request.method == 'POST':
+            user = request.form['nm']
+        if request.form['controls'] == 'phi++':
+            client.move_servo(1, mode='relative')
+        if request.form['controls'] == 'phi--':
+            client.move_servo(-1, mode='relative')
+        if request.form['controls'] == 'toggle led':
+            client.set_power(1)
+        theta, phi, shift = client.get_parameters()
+        return render_template('index.html',
+                               title='Home', theta=theta, phi=phi,
+                               shift=shift)
+
+    @app.route('/calibrate', methods=['GET', 'POST'])
+    def temptest():
+        print(app.template_folder)
+        theta, phi, shift = client.get_parameters()
+        return render_template('index.html',
+                                title='Home', theta = theta, phi=phi,
+                                shift = shift)
 
     @app.route("/testcam")
     def testcam():
@@ -32,6 +65,7 @@ def create_server(client):
             return Response(client.acquire(theta, phi, power, color),
                             mimetype='image/png')
         except socket.error:
+            print("An error")
             pass
 
     @app.route("/complete_scan/<color>")
@@ -45,8 +79,9 @@ def create_server(client):
     @app.route("/metadata")
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
-
     return app
+
+
 
 def create_sim_server(mic_client, sim_client):
     app = Flask("FPM")

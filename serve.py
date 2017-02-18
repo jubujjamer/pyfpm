@@ -10,19 +10,28 @@ camera and serial devices.
 Usage:
 
 """
+import yaml
+
 from pyfpm.web import create_server
 import pyfpm.local as local
-from pyfpm.devices import LedAim, Camera
-
+from pyfpm.devices import Laser3d, Camera
 # Find serial controller of the light supply
-ser_dev = '/dev/ttyACM'
-try:
-    ledaim = LedAim(port=ser_dev+str(0), theta=0, phi=0, power=0, color="red")
-except:
-    print(ser_dev+str(0) + " not available, testing with another.")
-    ledaim = LedAim(port=ser_dev+str(1), theta=0, phi=0, power=0, color="red")
-# Run the camera with open cv
-cam = Camera(video_id=3)
-client = local.LedClient(cam, ledaim)
+config_dict = yaml.load(open('config.yaml', 'r'))
+serialport = config_dict['serialport']
+server_type = config_dict['servertype']
+
+if server_type == 'sampling':
+    try:
+        laser3d = Laser3d(port=serialport+str(0))
+    except:
+        print(serialport+str(0) + " not available, testing with another.")
+        laser3d = Laser3d(port=serialport+str(1))
+    # Run the camera with open cv
+    cam = Camera(video_id=config_dict['video_id'], camtype='opencv')
+    client = local.Laser3dCalibrate(cam, laser3d)
+elif server_type == 'simulation':
+    client = local.DummyClient()
+
 app = create_server(client)
-app.run(host='0.0.0.0')
+print(config_dict['server_host'])
+app.run(host=config_dict['server_host'], debug=False)

@@ -27,11 +27,15 @@ def iter_dict(image_dict):
         yield theta, phi, power, img
 
 
-def json_savemeta(json_file, image_size, pupil_radius, theta_max,
-                  theta_step, phi_max):
+def json_savemeta(json_file, image_size=(640, 480), pupil_radius=0,
+                  theta_min=0, theta_max=360, theta_step=0, phi_min=0, phi_max=90,
+                  phi_step=10, wavelength=500E-9, pixelsize=500E-9,
+                  mode='unespecified', itertype='simulation'):
     data = {'image_size': image_size, 'pupil_radius': pupil_radius,
-            'theta_max': theta_max, 'theta_step': theta_step,
-            'phi_max': phi_max}
+            'theta_min': theta_min, 'theta_max': theta_max, 'theta_step': theta_step,
+            'phi_min': phi_min, 'phi_max': phi_max, 'phi_step': phi_step,
+            'wavelength': wavelength, 'pixelsize': pixelsize, 'mode': mode,
+            'itertype': itertype}
     with open(json_file, 'w') as outfile:
         json.dump(data, outfile,
                   indent=4, sort_keys=True, separators=(',', ':'))
@@ -43,7 +47,7 @@ def json_loadmeta(json_file):
 
 
 def save_metadata(hf, image_size, iterator_list, pupil_radius, ns, phi_max):
-    hf.create_dataset("image_size",     data = image_size   )
+    hf.create_dataset("image_size",     data = image_size)
     hf.create_dataset("iterator_list",  data = iterator_list) # Double check
     hf.create_dataset("pupil_radius",   data = pupil_radius )
     hf.create_dataset("ns",             data = ns           )

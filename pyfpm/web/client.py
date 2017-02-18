@@ -34,3 +34,11 @@ class Client(BaseClient):
 
     def get_pupil_size(self):
         return self.metadata['pupil_size']
+
+    def get_camera_picture(self):
+        print(self.url + '/testcam')
+        response = requests.get(self.url + '/testcam', stream=True)
+        if response.status_code == 200:
+            return response.raw
+        else:
+            print("Failed to load webpage")
