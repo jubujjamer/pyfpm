@@ -18,7 +18,7 @@ servo_init: 84 # Zero angle for the servo motor
 # The client side of the equation
 task: test
 action: reconstruct
-servertype: sampling # or sampling
+servertype: simulation # or sampling
 output_file: ./out_sampling/2017-02-15.npy
 input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
 debug: True # Show me images and be verbose

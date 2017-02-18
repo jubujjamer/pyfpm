@@ -1,32 +1,46 @@
 <html>
-<link rel=stylesheet type=text/css href="{{url_for('static', filename='style.css')}}?<?php echo time(); ? "/>
-
   <head>
     <title> FPM Imaging </title>
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel=stylesheet type=text/css href="{{url_for('static', filename='style.css')}}"/>
   </head>
   <body>
-      <p><strong>Moving platform testing</strong></p>
+    <header id="main-header">
+      <a id="logo-header" href="#">
+        <span class="site-name">Moving platform testing</span>
+      </a> <!-- / #logo-header -->
+    </header><!-- / #main-header -->
       <p>
-        <img src='\testcam' class = "test">
-
+        <img src='\testcam' onerror="this.src='static/img/lines0_0.png'" class = "test">
       <!-- <img src='static/img/lines0_0.png' class = "test"/> -->
-      <!-- <form action="/foo" method="post">
-         <input type="submit" name="submit" value="Do Something">
-        <button type="submit" value="Send Email"/>Click Me!</button>
-      </form> -->
       <div align = "middle" class="buttons">
-      <form action = "http://10.99.39.174:5000/action" method = "post">
+      <form action = "./action" method = "post">
             <p>Change angles to see its output:</p>
             <p><input type = "text" name = "nm" /></p>
-            <p><input type = "submit" name = "controls"  value = "phi++"/><input type = "submit" name = "controls" value = "phi--"/></p>
-            <p><input type = "submit" name = "controls"  value = "shift++"/><input type = "submit" name = "controls"  value = "shift--"/></p>
-            <p><input type = "submit" name = "controls" value = "theta++"/><input type = "submit" name = "controls"  value = "theta--"/></p>
-            <p><input type = "submit" name = "controls" value = "toggle led"/></p>
             Raw parameters
-            &Theta;: {{theta}}, phi: {{phi}}, shift: {{shift}}
+            <!-- <div class="boxed">&theta;: {{theta}}</div>
+            <div class="boxed">&phi;: {{phi}}</div>
+            <div class="boxed">&Delta;: {{shift}}</div> -->
+            &theta;: {{theta}}, &phi;: {{phi}}, 	&Delta;: {{shift}}
+            <div id="from">
+              <label for="phi"> &phi;</label>
+              <button name="controls" value="phi++" type="submit">&phi;&uarr;</button>
+              <button name="controls" value="phi--" type="submit">&phi;&darr;</button>
+            </div>
+            <div id="from">
+              <label for="theta"> &theta;</label>
+              <button name="controls" value="theta++" type="submit">&theta;&uarr;</button>
+              <button name="controls" value="theta--" type="submit">&theta;&darr;</button>
+            </div>
+            <div id="from">
+              <label for="shift"> &Delta;</label>
+              <button name="controls" value="shift++" type="submit">&Delta;&larr;</button>
+              <button name="controls" value="shift--" type="submit">&Delta;&rarr;</button>
+            </div>
         </form>
+
       </div>
     </p>
   </body>
-
 </html>

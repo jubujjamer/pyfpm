@@ -137,11 +137,19 @@ class DummyClient(BaseClient):
         self.dumb = 100
 
     def acquire(self, theta=None, phi=None, power=None):
-        theta = float(theta)
-        phi = float(phi)
         # Return np.array processed using laser aiming data
         return "print"
 
-    def move_servo(self, phi, type='relative'):
+    def move_servo(self, phi, mode='relative'):
         print("Ooookay")
         return "I'm moving but I'm lazy"
+
+    def set_power(self, power):
+        print("power", power)
+        return
+
+    def get_parameters(self):
+        theta = 0
+        phi = 0
+        shift = 0
+        return [theta, phi, shift]
