@@ -9,6 +9,7 @@ Usage:
 
 import yaml
 import numpy as np
+from itertools import ifilter, product
 
 config_dict = yaml.load(open('config.yaml', 'r'))
 servo_init = config_dict['servo_init']
@@ -16,6 +17,7 @@ sample_height = config_dict['sample_height']
 platform_tilt = config_dict['platform_tilt']
 source_center = config_dict['source_center']
 source_tilt = config_dict['source_tilt']
+video_size = config_dict['video_size']
 
 
 class PlatformCoordinates(object):
@@ -39,7 +41,7 @@ class PlatformCoordinates(object):
 
     @phi.setter
     def phi(self, phi):
-        self.phi = phi
+        self.phi = np.radians(phi)
 
     @property
     def theta(self):
@@ -47,7 +49,7 @@ class PlatformCoordinates(object):
 
     @theta.setter
     def theta(self, theta):
-        self._theta = theta
+        self._theta = np.radians(theta)
 
     @property
     def shift(self):
@@ -73,7 +75,7 @@ class PlatformCoordinates(object):
     def source_center(self, source_center):
         self._source_center = source_center
 
-    def expected_spot_center(self):
+    def calculate_spot_center(self):
         """In 2D cartesian coordinates on the sample plane.
         """
         rot_mat = np.array([[np.cos(self.theta), -np.sin(self.theta)],
@@ -81,4 +83,20 @@ class PlatformCoordinates(object):
         x_prime =  self.shift + self.height*np.tan(self.phi)+ source_center[0]
         y_prime = self.source_center[1]
         x, y =  rot_mat.dot([x_prime, y_prime])
+        return [x, y]
+
+    def spot_image(self):
+        """Image on the sample plane.
+
+        """
+        image = np.zeros(video_size)
+        image_center = np.asarray(np.shape(image))/2
+        spot_center = self.calculate_spot_center() + image_center
+        xx, yy = np.meshgrid(range(video_size[0]), range(video_size[1]))
+        c = (xx-spot_center[0])**2+(yy-spot_center[1])**2
+        image = [c < 40**2]
+        return 1*(image[0])
+
+
+
         return [x, y]
