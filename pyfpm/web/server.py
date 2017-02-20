@@ -15,8 +15,8 @@ from flask import Flask, Response, render_template, request
 from .. import local
 
 def create_server(client):
-    app = Flask("FPM", template_folder='/home/pi/pyfpm/pyfpm/web/templates/',
-                       static_folder='/home/pi/pyfpm/pyfpm/web/static')
+    app = Flask("FPM", template_folder='/home/juan/pyfpm/pyfpm/web/templates/',
+                       static_folder='/home/juan/pyfpm/pyfpm/web/static')
     # app.config.update(PROPAGATE_EXCEPTIONS = True)
 
     @app.route("/")
@@ -30,18 +30,22 @@ def create_server(client):
         return render_template('index.html',
                                title='Home',
                                image_title=image_title, image=image)
+        print("Template folder is set in ", app.template_folder)
 
     @app.route('/action', methods=['GET', 'POST'])
     def action():
+        print(request.form['controls'])
         if request.method == 'POST':
-            user = request.form['nm']
-        if request.form['controls'] == 'phi++':
-            client.move_servo(1, mode='relative')
-        if request.form['controls'] == 'phi--':
-            client.move_servo(-1, mode='relative')
-        if request.form['controls'] == 'toggle led':
-            client.set_power(1)
-        theta, phi, shift = client.get_parameters()
+            if request.form['controls'] == 'phi++':
+                client.move_servo(1, mode='relative')
+                print(request.form['controls'])
+            if request.form['controls'] == 'phi--':
+                client.move_servo(-1, mode='relative')
+                print(request.form['controls'])
+            if request.form['controls'] == 'toggle led':
+                client.set_power(1)
+                print(request.form['controls'])
+            theta, phi, shift = client.get_parameters()
         return render_template('index.html',
                                title='Home', theta=theta, phi=phi,
                                shift=shift)

@@ -2,7 +2,7 @@
 # Let's start with the server first
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
 video_id: 0
-vide_size: [640, 480]
+video_size: [640, 480]
 client: ledclient
 server_host: '0.0.0.0'
 server_ip: 10.99.39.174:5000/acquire
@@ -15,10 +15,15 @@ shift: [0, 400, 1]
 shift_step: 0.075 # mm by step
 sample_height: 60 # mm above led
 servo_init: 84 # Zero angle for the servo motor
+# posible defects
+platform_tilt: [0, 0] #[spherical theta, shperical phi]
+source_center: [20, 0] #[xcoord, ycoord] of the calibrated center
+source_tilt: [0, 0] #[spherical theta, shperical phi]
+
 # The client side of the equation
 task: test
 action: reconstruct
-servertype: sampling # or sampling
+servertype: simulation # or sampling
 output_file: ./out_sampling/2017-02-15.npy
 input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
 debug: True # Show me images and be verbose

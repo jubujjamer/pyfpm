@@ -11,6 +11,7 @@ Usage:
 
 """
 import yaml
+import difflib
 
 from pyfpm.web import create_server
 import pyfpm.local as local
@@ -19,6 +20,7 @@ from pyfpm.devices import Laser3d, Camera
 config_dict = yaml.load(open('config.yaml', 'r'))
 serialport = config_dict['serialport']
 server_type = config_dict['servertype']
+debug_mode = (config_dict['debug'] == 'True')
 
 if server_type == 'sampling':
     try:
@@ -34,4 +36,4 @@ elif server_type == 'simulation':
 
 app = create_server(client)
 print(config_dict['server_host'])
-app.run(host=config_dict['server_host'], debug=False)
+app.run(host=config_dict['server_host'], debug=config_dict['debug'])
