@@ -64,8 +64,8 @@ def rotate(prime_pos, theta, phi):
     origin_prime = np.array(prime_pos)
     light_dir = phi_rot(light_dir, phi)
     light_dir = theta_rot(light_dir, theta)
-    origin = phi_rot(origin_prime, phi)
-    origin = theta_rot(origin, theta)
+    # origin = phi_rot(origin_prime, phi)
+    origin = theta_rot(origin_prime, theta)
     return origin, light_dir
 
 
@@ -155,19 +155,19 @@ class PlatformCoordinates(object):
         theta and shift.
         """
         image_center = np.asarray(video_size)/2
+        print(self.phi)
         original_phi = self.phi
         c = list()
-        for phi in range(-90, 90):
+        for phi in range(-70, 70):
             self.phi = phi
-            print(self.phi)
+            # print(self.phi)
             spot_center = self.calculate_spot_center()
             c.append([np.linalg.norm((spot_center-image_center)), phi])
-            print(spot_center, image_center, phi, np.linalg.norm((spot_center-image_center)))
-
+            # print(spot_center, image_center, phi, np.linalg.norm((spot_center-image_center)))
         c = np.array(c)
         argmin = np.argmin(c, axis=0)[0]
         phi_min = c[argmin][1]
-        self.phi = original_phi
+        self.phi = np.degrees(original_phi)
         self.centered_coords.append([self.theta, phi_min, self.shift])
         return phi_min
 
