@@ -14,9 +14,11 @@ from flask import Flask, Response, render_template, request
 
 from .. import local
 
+FOLDER = os.path.abspath(os.path.dirname(__file__))
+
 def create_server(client):
-    app = Flask("FPM", template_folder='/home/juan/pyfpm/pyfpm/web/templates/',
-                       static_folder='/home/juan/pyfpm/pyfpm/web/static')
+    app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
+                       static_folder=os.path.join(FOLDER, 'static'))
     # app.config.update(PROPAGATE_EXCEPTIONS = True)
 
     @app.route("/")
@@ -34,17 +36,44 @@ def create_server(client):
 
     @app.route('/action', methods=['GET', 'POST'])
     def action():
-        print(request.form['controls'])
+        def move_servo_up():
+            client.move_servo(1, mode='relative')
+
+        def move_servo_down():
+            client.move_servo(-1, mode='relative')
+
+        def move_theta_up():
+            client.move_theta(40, mode='relative')
+            print("moved")
+
+        def move_theta_down():
+            client.move_theta(-40, mode='relative')
+
+        def move_shift_up():
+            client.move_shift(40, mode='relative')
+
+        def move_shift_down():
+            client.move_shift(-40, mode='relative')
+
+        def ls_up():
+            client.set_power(1)
+
+        def ls_down():
+            client.set_power(0)
+
+        def save_parameters():
+            print(client.get_parameters())
+
+        actions_dict = {'phi_up': move_servo_up, 'phi_down': move_servo_down,
+                        'theta_up': move_theta_up, 'theta_down': move_theta_down,
+                        'shift_up': move_shift_up, 'shift_down': move_shift_down,
+                        'ls_up': ls_up, 'ls_down': ls_down,
+                        'save_parameters': save_parameters}
+
+        print("data in texbox is", request.form['input_phi'])
         if request.method == 'POST':
-            if request.form['controls'] == 'phi++':
-                client.move_servo(1, mode='relative')
-                print(request.form['controls'])
-            if request.form['controls'] == 'phi--':
-                client.move_servo(-1, mode='relative')
-                print(request.form['controls'])
-            if request.form['controls'] == 'toggle led':
-                client.set_power(1)
-                print(request.form['controls'])
+            print("Select action", request.form['controls'])
+            actions_dict[request.form['controls']]()
             theta, phi, shift = client.get_parameters()
         return render_template('index.html',
                                title='Home', theta=theta, phi=phi,
@@ -55,8 +84,8 @@ def create_server(client):
         print(app.template_folder)
         theta, phi, shift = client.get_parameters()
         return render_template('index.html',
-                                title='Home', theta = theta, phi=phi,
-                                shift = shift)
+                                title='Home', theta=theta, phi=phi,
+                                shift=shift)
 
     @app.route("/testcam")
     def testcam():

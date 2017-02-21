@@ -32,14 +32,15 @@ div.controls {
   position: relative;
 }
 div.buttons {
-
   width: 50%;
   height: 50%;
   position: relative;
   top: 20px;
   left: auto;
   float:left;
-
+}
+#bigbutton {
+    width: 60%;  height: 2em;
 }
 #main-header {
 	background: #333;

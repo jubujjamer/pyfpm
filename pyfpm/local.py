@@ -89,6 +89,16 @@ class Laser3dCalibrate(BaseClient):
         self.laser3d.move_servo(phi, mode)
         return
 
+    def move_theta(self, theta, mode='relative'):
+        theta_init = self.laser3d.theta
+        self.laser3d.theta = theta_init + theta
+        return
+
+    def move_shift(self, shift, mode='relative'):
+        shift_init = self.laser3d.shift
+        self.laser3d.shift = shift_init + shift
+        return
+
     def set_power(self, power):
         print("power", power)
         self.laser3d.set_power(power)

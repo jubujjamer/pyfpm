@@ -195,7 +195,6 @@ class Laser3d(object):
         self._theta = theta
         self._phi = phi
         self._shift = shift
-        print(ser_dev.read())
 
     def set_power(self, power):
         lcom = 'LPOW %i' % power
@@ -203,7 +202,7 @@ class Laser3d(object):
         self._power = power
 
     def _send_command(self, command):
-        print("sending")
+        print("sending", command)
         # ser_dev.flushOutput()
         self._ser_dev.write(command + '\r'.encode())
         out = self._ser_dev.read()

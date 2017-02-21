@@ -78,7 +78,8 @@ class PlatformCoordinates(object):
         self._phi = np.radians(phi)
         self._shift = shift
         self._height = height
-        self._centered_coords = list()
+        self._center_coords = [0, 0, -height]
+        self._source_dir = [0, 0, 1]
         # platform defects as taken from config file, check the docs
         # for definitions
         self._platform_tilt = platform_tilt
@@ -126,12 +127,20 @@ class PlatformCoordinates(object):
         self._source_center = source_center
 
     @property
-    def centered_coords(self):
-        return self._centered_coords
+    def center_coords(self):
+        return self._center_coords
 
-    @centered_coords.setter
-    def phi_centered(self, _centered_coords):
-        self._centered_coords = centered_coords
+    @center_coords.setter
+    def center_coords(self, center_coords):
+        self._center_coords = center_coords
+
+    @property
+    def source_dir(self):
+        return self._source_dir
+
+    @source_dir.setter
+    def source_dir(self, source_dir):
+        self._source_dir = source_dir
 
     def calculate_spot_center(self):
         """In 2D cartesian coordinates on the sample plane.
@@ -143,6 +152,10 @@ class PlatformCoordinates(object):
                                                   source_center,
                                                   source_tilt,
                                                   platform_tilt)
+        self.center_coords = origin_corr
+        self.source_dir = dir_corr
+        self.height = origin_corr[2]
+
         # line - plane intersection
         x_spot = origin_corr[0] - dir_corr[0]*origin_corr[2]/dir_corr[2]
         y_spot = origin_corr[1] - dir_corr[1]*origin_corr[2]/dir_corr[2]
@@ -155,21 +168,23 @@ class PlatformCoordinates(object):
         theta and shift.
         """
         image_center = np.asarray(video_size)/2
-        print(self.phi)
-        original_phi = self.phi
-        c = list()
-        for phi in range(-70, 70):
-            self.phi = phi
-            # print(self.phi)
-            spot_center = self.calculate_spot_center()
-            c.append([np.linalg.norm((spot_center-image_center)), phi])
-            # print(spot_center, image_center, phi, np.linalg.norm((spot_center-image_center)))
-        c = np.array(c)
-        argmin = np.argmin(c, axis=0)[0]
-        phi_min = c[argmin][1]
-        self.phi = np.degrees(original_phi)
-        self.centered_coords.append([self.theta, phi_min, self.shift])
-        return phi_min
+        center = self.center_coords
+        phi_result = np.arccos(center.dot([0,0,1])/np.linalg.norm(center))
+        phi_result = np.degrees(phi_result)
+        # original_phi = self.phi
+        # c = list()
+        # for phi in range(-70, 70):
+        #     self.phi = phi
+        #     # print(self.phi)
+        #     spot_center = self.calculate_spot_center()
+        #     c.append([np.linalg.norm((spot_center-image_center)), phi])
+        #     print(self.height)
+        # c = np.array(c)
+        # argmin = np.argmin(c, axis=0)[0]
+        # phi_min = c[argmin][1]
+        # self.phi = np.degrees(original_phi)
+        # self.centered_coords.append([self.theta, phi_min, self.shift])
+        return phi_result
 
 
     def spot_image(self, radius=40, color='r'):

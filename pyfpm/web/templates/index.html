@@ -17,22 +17,30 @@
       <form action = "./action" method = "post">
             <p>Change coordinates to fit the spot</p>
             <div id="from">
-              <label for="phi"> &phi;</label>
-              <button name="controls" value="phi++" type="submit">&phi;&uarr;</button>
-              <button name="controls" value="phi--" type="submit">&phi;&darr;</button>
-              <input type = "text" name = "controls" value={{phi}}>
+              <button name="controls" value="phi_up" type="submit">&phi;&uarr;</button>
+              <button name="controls" value="phi_down" type="submit">&phi;&darr;</button>
+              <input type = "text" name = "input_phi" value={{phi}}>
+              <label for="phi"> &phi;: {{phi}} </label>
             </div>
             <div id="from">
-              <label for="theta"> &theta;</label>
-              <button name="controls" value="theta++" type="submit">&theta;&uarr;</button>
-              <button name="controls" value="theta--" type="submit">&theta;&darr;</button>
-              <input type = "text" name = "controls" value={{theta}}>
+              <button name="controls" value="theta_up" type="submit">&theta;&uarr;</button>
+              <button name="controls" value="theta_down" type="submit">&theta;&darr;</button>
+              <input type = "text" name = "input_theta" value={{theta}}>
+              <label for="theta"> &theta;: {{theta}} </label>
             </div>
             <div id="from">
-              <label for="shift"> &Delta;</label>
-              <button name="controls" value="shift++" type="submit">&Delta;&larr;</button>
-              <button name="controls" value="shift--" type="submit">&Delta;&rarr;</button>
-              <input type = "text" name = "controls" value={{shift}}>
+              <button name="controls" value="shift_up" type="submit">&Delta;&larr;</button>
+              <button name="controls" value="shift_down" type="submit">&Delta;&rarr;</button>
+              <input type = "text" name = "input_shift" value={{shift}}>
+              <label for="shift"> &Delta;: {{shift}} </label>
+            </div>
+            <div id="from">
+              <button name="controls" value="ls_up" type="submit">LON</button>
+              <button name="controls" value="ls_down" type="submit">LOFF</button>
+            </div>
+            <div id="from" >
+              <label for="saveparams"> Once fit, save this parameters </label>
+              <p><button name="controls" value="save_parameters" type="submit" id="bigbutton" >Save parameters</button></p>
             </div>
             <div id="from" >
               <label for="shift"> &Delta;</label>

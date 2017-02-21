@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 from pyfpm.coordinates import PlatformCoordinates, phi_rot, theta_rot
-pc = PlatformCoordinates(theta=0, phi=0, shift=100, height=60)
+pc = PlatformCoordinates(theta=0, phi=0, shift=100, height=600)
 #
 # print(pc.calculate_spot_center())
 fig, ax = plt.subplots()
@@ -16,7 +16,6 @@ fig.show()
 
 for theta in range(0, 360, 5):
     pc.theta = theta
-    # print(pc.phi)
     print(pc.phi_to_center())
     centers_accum = centers_accum + pc.spot_image(5, 'g')
     image = pc.spot_image(40, 'r') + centers_accum
