@@ -11,7 +11,6 @@ Usage:
 
 """
 import yaml
-import difflib
 
 from pyfpm.web import create_server
 import pyfpm.local as local
@@ -21,6 +20,8 @@ config_dict = yaml.load(open('config.yaml', 'r'))
 serialport = config_dict['serialport']
 server_type = config_dict['servertype']
 debug_mode = (config_dict['debug'] == 'True')
+
+output_file = open(config_dict['output_cal'], "w")
 
 if server_type == 'sampling':
     try:

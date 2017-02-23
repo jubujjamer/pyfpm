@@ -9,7 +9,7 @@ Usage:
 import shutil
 
 from fpmmath import filter_by_pupil, set_iterator
-
+import numpy as np
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -74,19 +74,28 @@ class LedClient(BaseClient):
 
 
 class Laser3dCalibrate(BaseClient):
-    def __init__(self, camera, laser3d, **metadata):
+    def __init__(self, camera, laser3d):
         self.camera = camera
         self.laser3d = laser3d
-        self.metadata = metadata
+        self.cal_data = list()
+
+    def set_parameters(self, theta, phi, shift, power=1):
+        self.laser3d.theta = theta
+        self.laser3d.phi = phi
+        self.laser3d.shift = shift
+        self.laser3d.power = power
+        return
 
     def acquire(self, theta=None, phi=None, power=None, color=None):
+        self.set_parameters(theta, phi, )
         return self.camera.capture_png()
 
     def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
         return self.camera.capture_png()
 
-    def move_servo(self, phi, mode='relative'):
-        self.laser3d.move_servo(phi, mode)
+    def move_phi(self, phi, mode='relative'):
+        phi_init = self.laser3d.phi
+        self.laser3d.phi = phi_init + phi
         return
 
     def move_theta(self, theta, mode='relative'):
@@ -101,18 +110,31 @@ class Laser3dCalibrate(BaseClient):
 
     def set_power(self, power):
         print("power", power)
-        self.laser3d.set_power(power)
+        self.laser3d.power = power
         return
 
     def get_parameters(self):
         theta = self.laser3d.theta
         phi = self.laser3d.phi
         shift = self.laser3d.shift
-        return [theta, phi, shift]
+        # print("parameters", theta, phi, shift)
+        # print("Centered parameters", self.laser3d.pc.parameters_to_platform())
+        # print(self.laser3d.pc.shift_adjusted())
+        return theta, phi, shift
 
+    def append_parameter(self):
+        theta, phi, shift = self.get_parameters()
+        self.cal_data.append([theta, phi, shift])
+        return
+
+    def get_cal_parameters(self):
+        return self.cal_data
+
+    def get_shift(self):
+        return self.laser3d.pc.shift_adjusted(self)
 
 class SimClient(BaseClient):
-    def __init__(self, image, image_size, pupil_rad): # Y Datos del microscopio
+    def __init__(self, image, image_size, pupil_rad):# Y Datos del microscopio
         # self.init_image = image
         # self.proc_image = image
         self.image = image
@@ -140,6 +162,7 @@ class SimClient(BaseClient):
     def get_pupil_rad(self):
         return self.pupil_rad
 
+
 class DummyClient(BaseClient):
     def __init__(self): # Y Datos del microscopio
         # self.init_image = image
@@ -150,7 +173,11 @@ class DummyClient(BaseClient):
         # Return np.array processed using laser aiming data
         return "print"
 
-    def move_servo(self, phi, mode='relative'):
+    def move_phi(self, phi, mode='relative'):
+        print("Ooookay")
+        return "I'm moving but I'm lazy"
+
+    def move_theta(self, phi, mode='relative'):
         print("Ooookay")
         return "I'm moving but I'm lazy"
 

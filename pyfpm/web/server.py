@@ -10,11 +10,14 @@ import json
 import socket
 import os
 
+import numpy as np
+import yaml
 from flask import Flask, Response, render_template, request
 
 from .. import local
 
 FOLDER = os.path.abspath(os.path.dirname(__file__))
+
 
 def create_server(client):
     app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
@@ -37,10 +40,10 @@ def create_server(client):
     @app.route('/action', methods=['GET', 'POST'])
     def action():
         def move_servo_up():
-            client.move_servo(1, mode='relative')
+            client.move_phi(1, mode='relative')
 
         def move_servo_down():
-            client.move_servo(-1, mode='relative')
+            client.move_phi(-1, mode='relative')
 
         def move_theta_up():
             client.move_theta(40, mode='relative')
@@ -62,15 +65,28 @@ def create_server(client):
             client.set_power(0)
 
         def save_parameters():
-            print(client.get_parameters())
+            config_dict = yaml.load(open('config.yaml', 'r'))
+            parameters = client.get_cal_parameters()
+            np.save(config_dict['output_cal'], parameters)
+
+        def append_parameter():
+            client.append_parameter()
+
+        def textboxes_input():
+            phi =  float(request.form['input_phi'])
+            theta =  float(request.form['input_theta'])
+            shift =  float(request.form['input_shift'])
+            client.set_parameters(theta, phi, shift)
+
 
         actions_dict = {'phi_up': move_servo_up, 'phi_down': move_servo_down,
                         'theta_up': move_theta_up, 'theta_down': move_theta_down,
                         'shift_up': move_shift_up, 'shift_down': move_shift_down,
                         'ls_up': ls_up, 'ls_down': ls_down,
-                        'save_parameters': save_parameters}
+                        'save_parameters': save_parameters,
+                        'append_parameter': append_parameter,
+                        'textboxes_input': textboxes_input}
 
-        print("data in texbox is", request.form['input_phi'])
         if request.method == 'POST':
             print("Select action", request.form['controls'])
             actions_dict[request.form['controls']]()

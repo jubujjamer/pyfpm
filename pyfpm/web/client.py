@@ -8,6 +8,7 @@ import requests
 
 from ..local import BaseClient
 
+
 class Client(BaseClient):
 
     def __init__(self, url):

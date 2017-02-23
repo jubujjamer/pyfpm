@@ -12,18 +12,20 @@ color: red
 theta: [-40, 40, 10] # [min, max, step]
 phi: [0, 90, 5] # [min, max, step]
 shift: [0, 400, 1]
-shift_step: 0.075 # mm by step
-sample_height: 60 # mm above led
-servo_init: 85 # Zero angle for the servo motor
+shift_step: 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
+theta_spr: 200
+shift_max: 1400 # max steps to border
+sample_height: 62 # mm above led
+servo_init: 60 # Zero angle for the servo motor
 # posible defects
 platform_tilt: [0, 0] #[spherical theta, shperical phi]
 source_center: [0, 0] #[xcoord, ycoord] of the calibrated center
 source_tilt: [0, 0] #[spherical theta, shperical phi]
-
 # The client side of the equation
 task: test
 action: reconstruct
-servertype: simulation # simulation or sampling
+servertype: sampling # simulation or sampling
+output_cal: ./out/calibration.npy
 output_file: ./out_sampling/2017-02-15.npy
 input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
-debug: True # Show me images and be verbose
+debug: False # Show me images and be verbose
