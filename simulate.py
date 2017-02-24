@@ -21,9 +21,9 @@ from scipy import misc
 from StringIO import StringIO
 
 # Simulation parameters
-input_image = './imgs/pinholes_calibration_squared.png'
-out_file = './output_sim/pinholes_calibration_squared.npy'
-json_file = './output_sim/pinholes_calibration_squared.json'
+input_image = './imgs/alambre.png'
+out_file = './output_sim/alambre.npy'
+json_file = './output_sim/alambre.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
 # Simulation parameters
@@ -35,10 +35,10 @@ phi_step = 5
 theta_min = 0
 theta_max = 360
 theta_step = 10
-pupil_radius = 20
+pupil_radius = 40
 image_dict = {}
 mode = 'simulation'
-itertype = 'neopixels'
+itertype = 'laser'
 
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
@@ -49,7 +49,7 @@ with open(input_image, "r") as imageFile:
     test_iterator = itertest(theta_max, phi_max, theta_step, 'simulation')
     iterator = set_iterator(theta_max=theta_max, phi_max=phi_max,
                             theta_step=theta_step, mode='simulation',
-                            itertype='neopixels')
+                            itertype='laser')
 
 task = 'reconstruct'
 if task is 'acquire':

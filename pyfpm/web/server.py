@@ -76,8 +76,8 @@ def create_server(client):
             phi =  float(request.form['input_phi'])
             theta =  float(request.form['input_theta'])
             shift =  float(request.form['input_shift'])
-            client.set_parameters(theta, phi, shift)
-
+            power = 1
+            client.set_parameters(theta, phi, shift, power,  mode='corrected')
 
         actions_dict = {'phi_up': move_servo_up, 'phi_down': move_servo_down,
                         'theta_up': move_theta_up, 'theta_down': move_theta_down,

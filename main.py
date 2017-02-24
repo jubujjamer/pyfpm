@@ -12,8 +12,8 @@ pc = PlatformCoordinates(theta=0, phi=0, shift=100, height=60)
 # image = pc.spot_image(40, 'r') + centers_accum
 # im = ax.imshow(image, cmap="hot")
 # fig.show()
-# # plt.show()
-#
+# # # plt.show()
+# #
 # for theta in range(0, 360, 5):
 #     pc.theta = theta
 #     print(pc.phi_to_center())
@@ -24,5 +24,8 @@ pc = PlatformCoordinates(theta=0, phi=0, shift=100, height=60)
 #     time.sleep(.01)
 # plt.show()
 
-pc.phi=75
-print(pc.shift_adjusted())
+
+pc.generate_model()
+for phi in range(60,81):
+    pc.phi = phi
+    print(pc.parameters_to_platform())

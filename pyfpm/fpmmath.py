@@ -12,15 +12,16 @@ from itertools import ifilter, product
 from StringIO import StringIO
 import time
 import yaml
-
+# import matplotlib
+# matplotlib.use('gtkagg')
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
 from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
-import matplotlib
-# matplotlib.use('gtkagg')
+
+#
 
 config_dict = yaml.load(open('config.yaml', 'r'))
 
@@ -261,13 +262,18 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     ky = np.floor(np.sin(theta_rad)*r)
     pup_pos = [image_center[0]+ky, image_center[1]+kx]
     # Put ones in a circle of radius defined in class
-    coords = product(range(0, nx), range(0, ny))
+    # coords = product(range(0, nx), range(0, ny))
 
-    def dist(a, m):
-        return np.linalg.norm(np.asarray(a)-m)
-    c = list(ifilter(lambda a: dist(a, pup_pos) < pup_rad, coords))
-    pup_matrix[[np.asarray(c)[:, 0], np.asarray(c)[:, 1]]] = 1
-    return pup_matrix
+
+    xx, yy = np.meshgrid(range(ny), range(nx))
+    c = (xx-pup_pos[1])**2+(yy-pup_pos[0])**2
+    image_gray = [c < pup_rad**2]
+    # This could be slow, see in coords
+    # def dist(a, m):
+    #     return np.linalg.norm(np.asarray(a)-m)
+    # c = list(ifilter(lambda a: dist(a, pup_pos) < pup_rad, coords))
+    # pup_matrix[[np.asarray(c)[:, 0], np.asarray(c)[:, 1]]] = 1
+    return image_gray[0]*1
 
 
 def filter_by_pupil(image, theta, phi, power, pup_rad, image_size):
@@ -333,7 +339,6 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
     theta_max = data['theta_max']
     phi_max = data['phi_max']
     theta_step = data['theta_step']
-
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -350,32 +355,16 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
         im3 = ax3.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         im4 = ax4.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         fig.show()
-        # f, ax2 = plt.subplots(1, 1)
     for l in range(iterations_number):
         iterator = set_iterator(theta_max=theta_max, phi_max=phi_max,
                                 theta_step=theta_step, mode='sampling',
-                                itertype='neopixels')
+                                itertype='laser')
         print('iteration %d' % l)
         # Patching for testing
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
-            # im_array = hf[str(int(index))]
             im_array = image_dict[()][(theta, phi)]
-            #im_array = im_array[cy-ip/2:cy+ip/2, cx-ip/2:cx+ip/2]
-            #(theta_corr, phi_corr) = correct_angles(theta, phi)
-            #scaling_factor = 1.
-
-            # if phi == 0 ad theta != -90:
-            #     print('passing')
-            #     continue
-            # if phi == 20 or phi == -20:
-            #     scaling_factor = 1.
-            # if index == 1 or phi == 20 or phi == 20 or phi == 40:
-            #     print('passing')
-            #     continue
-
             print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
-            # im_array = im_array*scaling_factor
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
             pupil_shift = fftshift(pupil)
@@ -388,7 +377,7 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
             Im = np.resize(im_array, image_size)
             Im_sq = np.sqrt(Im)
             # Il_sq update in the pupil area using Im_sq
-            # Step 3 ()cont.: Fourier space hr image update
+            # Step 3 (cont.): Fourier space hr image update
             Il = Im_sq * Expl  # Spacial update
             f_il = fft2(Il)
             # Fourier update
@@ -401,12 +390,15 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
                 # ax2.get_figure().canvas.draw()
                 # ax3.get_figure().canvas.draw()
                 # ax4.get_figure().canvas.draw()
-                # ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
-                # ax2.imshow(im_rec, cmap=plt.get_cmap('gray'))
-                # ax3.imshow(Im, cmap=plt.get_cmap('gray'))
-                im1.set_data(pupil)
-                im2.set_data(im_rec)
-                im3.set_data(Im)
+                ax1.cla()
+                ax2.cla()
+                ax3.cla()
+                ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
+                ax2.imshow(im_rec, cmap=plt.get_cmap('gray'))
+                ax3.imshow(Im, cmap=plt.get_cmap('gray'))
+                # im1.set_data(pupil)
+                # im2.set_data(im_rec)
+                # im3.set_data(Im)
                 array = np.log10(np.abs(f_ih))
                 array *= (1.0/array.max())
                 array = fftshift(array)

@@ -25,7 +25,8 @@ source_tilt: [0, 0] #[spherical theta, shperical phi]
 task: test
 action: reconstruct
 servertype: sampling # simulation or sampling
-output_cal: ./out/calibration.npy
+output_cal: ./out/calibration_20170224.npy
 output_file: ./out_sampling/2017-02-15.npy
 input_image: './imgs/pinholes_calibration_squared.png' # If task is simulation
+model_file: ./out/model.yaml
 debug: False # Show me images and be verbose

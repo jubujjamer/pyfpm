@@ -228,6 +228,7 @@ class Laser3d(object):
         self._shift = shift
         self.pc.theta = theta
         self.pc.shift = shift
+        self.pc.phi = phi
 
     # def move_servo(self, phi=0, mode='relative'):
     #     if mode == 'relative':

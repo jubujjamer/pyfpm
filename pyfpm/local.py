@@ -79,15 +79,28 @@ class Laser3dCalibrate(BaseClient):
         self.laser3d = laser3d
         self.cal_data = list()
 
-    def set_parameters(self, theta, phi, shift, power=1):
-        self.laser3d.theta = theta
-        self.laser3d.phi = phi
-        self.laser3d.shift = shift
-        self.laser3d.power = power
+    def set_parameters(self, theta, phi, shift, power=1, mode='nocorrected'):
+        if mode == 'nocorrected':
+            print(theta, phi, shift, mode)
+            self.laser3d.theta = theta
+            self.laser3d.phi = phi
+            self.laser3d.shift = shift
+            self.laser3d.power = power
+        if mode == 'corrected':
+            self.laser3d.pc.shift = shift
+            self.laser3d.pc.phi = phi
+            self.laser3d.pc.theta = theta
+            self.laser3d.pc.power = power
+            [theta, phi, shift, power] = self.laser3d.pc.parameters_to_platform()
+            print(theta, phi, shift, power)
+            self.laser3d.theta = theta
+            self.laser3d.phi = phi
+            self.laser3d.shift = shift
+            self.laser3d.power = power
         return
 
     def acquire(self, theta=None, phi=None, power=None, color=None):
-        self.set_parameters(theta, phi, )
+        # self.set_parameters(theta, phi, shift, power)
         return self.camera.capture_png()
 
     def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
@@ -129,9 +142,6 @@ class Laser3dCalibrate(BaseClient):
 
     def get_cal_parameters(self):
         return self.cal_data
-
-    def get_shift(self):
-        return self.laser3d.pc.shift_adjusted(self)
 
 class SimClient(BaseClient):
     def __init__(self, image, image_size, pupil_rad):# Y Datos del microscopio

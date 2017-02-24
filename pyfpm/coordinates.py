@@ -21,6 +21,9 @@ video_size = config_dict['video_size']
 servo_init = config_dict['servo_init']
 shift_step = config_dict['shift_step']
 shift_max = config_dict['shift_max']
+model_file = config_dict['model_file']
+cal_file = config_dict['output_cal']
+theta_spr = config_dict['theta_spr']
 
 
 def phi_rot(od, phi):
@@ -87,6 +90,7 @@ class PlatformCoordinates(object):
         self._platform_tilt = platform_tilt
         self._source_center = source_center
         self._source_tilt = source_tilt
+        self.model = None # no model without data
 
     def get_cartesian(self):
         prime_pos = [self._shift, 0, -self._height]
@@ -96,7 +100,6 @@ class PlatformCoordinates(object):
                                                         source_tilt,
                                                         platform_tilt)
         return geo_center, point_direction
-
 
     def update_spot_center(self):
         """In 2D cartesian coordinates on the sample plane.
@@ -127,7 +130,7 @@ class PlatformCoordinates(object):
 
     @theta.setter
     def theta(self, theta):
-        self._theta = np.radians(theta)
+        self._theta = np.radians(theta*360/theta_spr)
         self.update_spot_center()
 
     @property
@@ -187,21 +190,46 @@ class PlatformCoordinates(object):
     def parameters_to_platform(self):
         """ Corrected values for the parameters_to_platform
         """
-        theta = self.theta
-        phi = self.phi_to_center() + servo_init
-        shift = int(self.shift/shift_step)
-        return theta, phi, shift
+        try:
+            model_dict = yaml.load(open(model_file, 'r'))
+        except:
+            print "No model created, run 'generate_model' first"
+            return
+        model = model_dict['model_type']
+        if model == 'nomodel':
+            theta = self.theta
+            phi = self.phi_to_center() + servo_init
+            shift = int(self.shift/shift_step)
+            power = self.power
+        elif model == 'shift_fit':
+            slope = model_dict['slope']
+            origin = model_dict['origin']
+            phi_degrees = np.degrees(self.phi)
+            shift_adjusted = int((slope*phi_degrees + origin))
+            if shift_adjusted < 0:
+                shift_adjusted = 0
+            if shift_adjusted > shift_max:
+                shift_adjusted = shift_max
+            shift = int(shift_adjusted)
+            theta = self.theta*theta_spr/(2*np.pi)
+            phi = np.degrees(self.phi) + servo_init
+            power = self.power
+        return theta, phi, shift, power
 
-    def shift_adjusted(self):
-        # data = np.load('./out/calibration.npy')
-        phi = np.radians([62.0, 62.0, 64.0, 65.0, 67.0, 68.0, 69.0, 70.0, 72.0,
-                73.0, 74.0, 76.0, 77.0, 78.0, 80.0])-servo_init
-        shift = np.array([50.0, 100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0,
-        800.0, 900.0, 1000.0, 1100.0, 1200.0, 1300.0, 1400.0])*shift_step
-        m, b = np.polyfit(phi, shift, 1)
-        shift_adjusted = int((m*self.phi+b)/shift_step)
-        if shift_adjusted < 0:
-            shift_adjusted = 0
-        if shift_adjusted > shift_max:
-            shift_adjusted = shift_max
-        return shift_adjusted
+    def generate_model(self):
+        try:
+            data = np.load(cal_file)
+        except:
+            print("generate calibration data first")
+            return
+        phi = np.array([d[1] for d in data])-servo_init
+        shift = np.array([d[2] for d in data])
+        print(data)
+        slope, origin = np.polyfit(phi, shift, 1)
+        model = {'model_type': 'shift_fit',
+                 'slope': float(slope),
+                 'origin': float(origin)}
+        with open(model_file, 'w') as outfile:
+
+            yaml.dump(model, outfile, default_flow_style=False)
+        return
