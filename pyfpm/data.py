@@ -1,6 +1,15 @@
 import os
 import csv
 import json
+import yaml
+import collections
+
+
+def load_config(config_file='config.yaml'):
+    config_dict = yaml.load(open(config_file, 'r'))
+    config = collections.namedtuple('config', config_dict.keys())
+    cfg = config(*config_dict.values())
+    return cfg
 
 def save_to_folder(folder, image_dict):
     with open('meta.csv', 'wb') as csvfile:
@@ -18,7 +27,7 @@ def load_from_folder(folder):
         csv.readline()
         cr = csv.reader(csvfile, delimiter=',')
         for theta, phi, power, filename in reader:
-            with open(os.path,join(folder, filename)) as fi:
+            with open(os.path, join(folder, filename)) as fi:
                 out[(theta, phi)] = fi.read(), power
     return out
 

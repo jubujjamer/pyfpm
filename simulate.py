@@ -16,25 +16,27 @@ import numpy as np
 import pyfpm.local as local
 from pyfpm.fpmmath import set_iterator, recontruct, itertest
 from pyfpm.data import json_savemeta, json_loadmeta
+import pyfpm.data as dt
 
 from scipy import misc
 from StringIO import StringIO
 
 # Simulation parameters
-input_image = './imgs/alambre.png'
-out_file = './output_sim/alambre.npy'
-json_file = './output_sim/alambre.json'
+CONFIG_FILE = 'config.yaml'
+cfg = dt.load_config(CONFIG_FILE)
+
+input_image = cfg.input_image
+out_file = cfg.output_file
+json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
 # Simulation parameters
-wavelength = 500E-9
-pixelsize = 500E-9# See jupyter notebook
-phi_min = 0
-phi_max = 40
-phi_step = 5
-theta_min = 0
-theta_max = 360
-theta_step = 10
+
+
+wavelength = cfg.wavelength
+pixelsize = cfg.pixelsize# See jupyter notebook
+phi_min, phi_max, phi_step = cfg.phi
+theta_min, theta_max, theta_step = cfg.theta
 pupil_radius = 40
 image_dict = {}
 mode = 'simulation'
