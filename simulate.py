@@ -25,22 +25,21 @@ from StringIO import StringIO
 CONFIG_FILE = 'config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
-input_image = cfg.input_image
+input_image = cfg.input_mag
 out_file = cfg.output_file
 json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
 # Simulation parameters
-
-
+image_size = cfg.video_size
 wavelength = cfg.wavelength
-pixelsize = cfg.pixelsize# See jupyter notebook
+pixelsize = cfg.pixelsize  # See jupyter notebook
 phi_min, phi_max, phi_step = cfg.phi
 theta_min, theta_max, theta_step = cfg.theta
-pupil_radius = 40
+pupil_radius = cfg.pupil_size/2
 image_dict = {}
-mode = 'simulation'
-itertype = 'laser'
+mode = cfg.task
+itertype = cfg.sweep
 
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
@@ -48,10 +47,7 @@ with open(input_image, "r") as imageFile:
     image = imageFile.read()
     image_size = np.shape(misc.imread(StringIO(image), 'RGB'))
     client = local.SimClient(image, image_size, pupil_radius)
-    test_iterator = itertest(theta_max, phi_max, theta_step, 'simulation')
-    iterator = set_iterator(theta_max=theta_max, phi_max=phi_max,
-                            theta_step=theta_step, mode='simulation',
-                            itertype='laser')
+    iterator = set_iterator(cfg)
 
 task = 'reconstruct'
 if task is 'acquire':
@@ -66,7 +62,7 @@ if task is 'acquire':
 elif task is 'reconstruct':
     start_time = time.time()
     data = json_loadmeta(json_file)
-    rec = recontruct(out_file, iterator, debug=True, ax=None, data=data)
+    rec = recontruct(out_file, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

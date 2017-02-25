@@ -2,12 +2,12 @@
 # Let's start with the server first
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
 video_id: 0
-video_size: [640, 480]
+video_size: [150, 150] #[640, 480]
 client: ledclient
 server_host: '0.0.0.0'
 server_ip: 10.99.39.174:5000/acquire
 objective_na: 0.6
-pupil_size: 60 # Function of NA, wavelength video size and magnification
+pupil_size: 10 # Function of NA, wavelength video size and magnification
 wavelength: 500E-9
 pixelsize: 500E-9
 color: red
@@ -24,7 +24,7 @@ platform_tilt: [0, 0] #[spherical theta, shperical phi]
 source_center: [0, 0] #[xcoord, ycoord] of the calibrated center
 source_tilt: [0, 0] #[spherical theta, shperical phi]
 # The client side of the equation
-sweep: radial
+sweep: radial # The other is neopixels, have to change that name
 task: simulation
 action: reconstruct
 servertype: sampling # simulation or sampling

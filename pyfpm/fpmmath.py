@@ -41,11 +41,18 @@ def laser_power(theta, phi, mode='simulation'):
             power = 1
     return power
 
-def set_iterator(pupil_radius=50, ns=0.5, phi_min=0, phi_max=90, phi_step=10,
-                 theta_min=0, theta_max=360, theta_step=10,
-                 image_size=(640, 480), mode='simulation', itertype='neopixels'):
+def set_iterator(cfg=None):
+    wavelength = cfg.wavelength
+    pixelsize = cfg.pixelsize  # See jupyter notebook
+    image_size = cfg.video_size
+    phi_min, phi_max, phi_step = cfg.phi
+    theta_min, theta_max, theta_step = cfg.theta
+    pupil_radius = cfg.pupil_size/2
+    image_dict = {}
+    mode = cfg.task
+    itertype = cfg.sweep
 
-    if itertype is 'neopixels':
+    if itertype == 'neopixels':
             """ Constructs an iterator of pupil center positions in the correct order
                 for de LEDs sweep.
 
@@ -65,7 +72,7 @@ def set_iterator(pupil_radius=50, ns=0.5, phi_min=0, phi_max=90, phi_step=10,
                     power = laser_power(theta, phi, mode)
                     yield index, theta, phi, power
 
-    elif itertype is 'laser':
+    elif itertype == 'radial':
             """ Constructs an iterator of pupil center positions.
 
                 Keywords:
@@ -76,6 +83,7 @@ def set_iterator(pupil_radius=50, ns=0.5, phi_min=0, phi_max=90, phi_step=10,
                 image_size      size of the created pupil image
             """
             yield 0, 0, 0, 0
+            ns = 0.5
             index = 0
             cycle = 1
             r = 0
@@ -97,100 +105,6 @@ def set_iterator(pupil_radius=50, ns=0.5, phi_min=0, phi_max=90, phi_step=10,
                 power = laser_power(theta, phi, mode)
                 yield index, np.degrees(theta), np.degrees(phi), power
 
-
-# def iterlaser(pupil_radius=50, ns=0.5, phi_max=90,
-#               image_size=(480, 640), mode='simulation'):
-#
-#     """ Constructs an iterator of pupil center positions.
-#
-#         Keywords:
-#         pupil_radius    radius of the pupil in the Fourier plane, given by NA
-#         phi,theta       spherical angles in sexagesimal degrees
-#         ns              1-radial_overlap (radius segment overlap)
-#         phi_max         maximum phi for the acquisition
-#         image_size      size of the created pupil image
-#     """
-#     yield 0, 0, 0, 0
-#     index = 0
-#     cycle = 1
-#     r = 0
-#     theta = 0
-#     rmax_abs = image_size[1]  # Absolute maximum for pupil center
-#     rmax_iter = np.abs(rmax_abs*np.sin(phi_max*np.pi/180))
-#     while r < rmax_iter:
-#         # Iterator update
-#         r = 2*pupil_radius*ns*cycle
-#         # delta_theta = np.arctan(2 * pupil_radius * ns / r)
-#         delta_theta = 2*np.arctan(1/(2.*cycle))
-#         theta = theta + delta_theta
-#         if theta > 2*np.pi:  # cycle ended
-#             cycle = cycle + 1
-#             r = 2*pupil_radius*ns*cycle
-#             theta = 0
-#         phi = np.arcsin(r/rmax_abs)  # See how to get phi
-#         index = index + 1
-#         power = laser_power(theta, phi, mode)
-#         yield index, np.degrees(theta), np.degrees(phi), power
-#
-#
-# def iterleds(theta_max=360, phi_max=80, theta_step=10, mode='simulation'):
-#     """ Constructs an iterator of pupil center positions in the correct order
-#         for de LEDs sweep.
-#
-#         Keywords:
-#         theta_max   radius of the pupil in the Fourier plane, given by NA
-#         phi_max     spherical angles in sexagesimal degrees
-#         theta_step  1-radial_overlap (radius segment overlap)
-#     """
-#     # yield 0, -80, 0, 0
-#     theta_range = range(-180, 180, theta_step)
-#     index = 0
-#     phi_step = 20  # Already defined by the geometry
-#     phi_range = [-20, 0, 20, 40]
-#     for theta in theta_range:
-#         for phi in phi_range:
-#             index += 1
-#             power = laser_power(theta, phi, mode)
-#             yield index, theta, phi, power
-
-
-def get_tilted_phi(theta=0, alpha=0, slice_ratio=1):
-    """ Returns the phi angle considering a tilted plane of rotation.
-
-    Parameters
-    alpha   the tilt angle
-    ypos    the y coordinate of the plane
-    """
-    # c is the R/a ratio related to the initial plane of the rotating leds
-    c = slice_ratio  # aprox cos(phi_0)
-    theta_rad = np.radians(theta)
-    alpha = np.radians(alpha)
-
-    def opt_func(phi):
-        return np.tan(phi)-1/(np.cos(theta_rad)*np.tan(alpha)+c/(np.sin(phi)))
-    phi_initial_guess = 1.5
-    # Use the numerical solver to find the roots
-    phi_solved = fsolve(opt_func, phi_initial_guess)[0]
-    phi_solved = round(np.degrees(phi_solved), 2)
-    return np.abs(phi_solved)
-
-
-# def correct_angles(theta=0, phi=0):
-#     """ Returns the phi angle considering a tilted plane of rotation.
-#
-#     Parameters
-#     alpha   the tilt angle
-#     ypos    the y coordinate of the plane
-#     """
-#     # c is the R/a ratio related to the initial plane of the rotating leds
-#     if phi == -20:
-#         phi = 17-abs(0.05*(abs(theta)-180))
-#     if phi == 0:
-#         phi = 7.37-abs(0.04*(abs(theta)-180))
-#     if phi == 20:
-#         theta = theta + 180
-#         phi = 22.38-abs(0.048*(abs(theta)-180))
-#     return theta, phi
 
 def correct_angles(theta=0, phi=0):
     """ Returns the phi angle considering a tilted plane of rotation.
@@ -261,10 +175,6 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     kx = np.floor(np.cos(theta_rad)*r)
     ky = np.floor(np.sin(theta_rad)*r)
     pup_pos = [image_center[0]+ky, image_center[1]+kx]
-    # Put ones in a circle of radius defined in class
-    # coords = product(range(0, nx), range(0, ny))
-
-
     xx, yy = np.meshgrid(range(ny), range(nx))
     c = (xx-pup_pos[1])**2+(yy-pup_pos[0])**2
     image_gray = [c < pup_rad**2]
@@ -329,16 +239,16 @@ def resample_image(image_array, new_size):
     return np.resize(image_array, new_size)
 
 
-def recontruct(input_file, iterator, debug=False, ax=None, data=None):
+def recontruct(input_file, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
     input_file: the image dictionary
     """
     image_dict = np.load(input_file)
-    image_size = data['image_size']
-    pupil_radius = data['pupil_radius']
-    theta_max = data['theta_max']
-    phi_max = data['phi_max']
-    theta_step = data['theta_step']
+    image_size = cfg.video_size
+    phi_min, phi_max, phi_step = cfg.phi
+    theta_min, theta_max, theta_step = cfg.theta
+    pupil_radius = cfg.pupil_size/2
+    mode = cfg.task
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -356,9 +266,7 @@ def recontruct(input_file, iterator, debug=False, ax=None, data=None):
         im4 = ax4.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         fig.show()
     for l in range(iterations_number):
-        iterator = set_iterator(theta_max=theta_max, phi_max=phi_max,
-                                theta_step=theta_step, mode='sampling',
-                                itertype='laser')
+        iterator = set_iterator(cfg)
         print('iteration %d' % l)
         # Patching for testing
         for index, theta, phi, power in iterator:
