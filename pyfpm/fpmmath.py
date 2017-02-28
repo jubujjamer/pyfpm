@@ -20,6 +20,7 @@ from numpy.fft import fft2, ifft2, fftshift
 from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
+import random
 
 #
 
@@ -83,27 +84,48 @@ def set_iterator(cfg=None):
                 image_size      size of the created pupil image
             """
             yield 0, 0, 0, 0
-            ns = 0.5
             index = 0
-            cycle = 1
-            r = 0
-            theta = 0
-            rmax_abs = image_size[1]  # Absolute maximum for pupil center
-            rmax_iter = np.abs(rmax_abs*np.sin(phi_max*np.pi/180))
-            while r < rmax_iter:
-                # Iterator update
-                r = 2*pupil_radius*ns*cycle
-                # delta_theta = np.arctan(2 * pupil_radius * ns / r)
-                delta_theta = 2*np.arctan(1/(2.*cycle))
-                theta = theta + delta_theta
-                if theta > 2*np.pi:  # cycle ended
-                    cycle = cycle + 1
-                    r = 2*pupil_radius*ns*cycle
-                    theta = 0
-                phi = np.arcsin(r/rmax_abs)  # See how to get phi
-                index = index + 1
-                power = laser_power(theta, phi, mode)
-                yield index, np.degrees(theta), np.degrees(phi), power
+            for phi in range(phi_min, phi_max, phi_step):
+                for theta in range(theta_min, theta_max, theta_step):
+                    if phi == 0 and index > 0:
+                        continue
+                    power = laser_power(theta, phi, mode)
+                    yield index, theta, phi, power
+                    index += 1
+
+
+    # elif itertype == 'radial':
+    #         """ Constructs an iterator of pupil center positions.
+    #
+    #             Keywords:
+    #             pupil_radius    radius of the pupil in the Fourier plane, given by NA
+    #             phi,theta       spherical angles in sexagesimal degrees
+    #             ns              1-radial_overlap (radius segment overlap)
+    #             phi_max         maximum phi for the acquisition
+    #             image_size      size of the created pupil image
+    #         """
+    #         yield 0, 0, 0, 0
+    #         ns = 0.5
+    #         index = 0
+    #         cycle = 1
+    #         r = 0
+    #         theta = 0
+    #         rmax_abs = image_size[1]  # Absolute maximum for pupil center
+    #         rmax_iter = np.abs(rmax_abs*np.sin(phi_max*np.pi/180))
+    #         while r < rmax_iter:
+    #             # Iterator update
+    #             r = 2*pupil_radius*ns*cycle
+    #             # delta_theta = np.arctan(2 * pupil_radius * ns / r)
+    #             delta_theta = 2*np.arctan(1/(2.*cycle))
+    #             theta = theta + delta_theta
+    #             if theta > 2*np.pi:  # cycle ended
+    #                 cycle = cycle + 1
+    #                 r = 2*pupil_radius*ns*cycle
+    #                 theta = 0
+    #             phi = np.arcsin(r/rmax_abs)  # See how to get phi
+    #             index = index + 1
+    #             power = laser_power(theta, phi, mode)
+    #             yield index, np.degrees(theta), np.degrees(phi), power
 
 
 def correct_angles(theta=0, phi=0):
@@ -186,14 +208,16 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     return image_gray[0]*1
 
 
-def filter_by_pupil(image, theta, phi, power, pup_rad, image_size):
-    pupil = generate_pupil(theta, phi, power, pup_rad, image_size)
-    im_array = misc.imread(StringIO(image), 'RGB')
-    print np.shape(im_array)
+def filter_by_pupil(im_array, theta, phi, power, cfg):
+    image_size = cfg.video_size
+    pupil_radius = cfg.pupil_size/2
+    phi = phi*random.uniform(0.95, 1.05)
+    pupil = generate_pupil(theta, phi, power, pupil_radius, image_size)
     f_ih = fft2(im_array)
+
     # Step 2: lr of the estimated image using the known pupil
     shifted_pupil = fftshift(pupil)
-    proc_array = np.multiply(shifted_pupil, f_ih)  # space pupil * fourier im
+    proc_array = shifted_pupil * f_ih  # space pupil * fourier im
     proc_array = ifft2(proc_array)
     proc_array = np.power(np.abs(proc_array), 2)
     return proc_array
@@ -243,12 +267,12 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
     input_file: the image dictionary
     """
-    image_dict = np.load(input_file)
+    image_dict = np.load(input_file)[()]
     image_size = cfg.video_size
     phi_min, phi_max, phi_step = cfg.phi
     theta_min, theta_max, theta_step = cfg.theta
     pupil_radius = cfg.pupil_size/2
-    mode = cfg.task
+    n_iter = cfg.n_iter
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -256,22 +280,18 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
     Ph = np.ones_like(Ih_sq)  # and null phase
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
-    # Steps 2-5
-    iterations_number = 4  # Total iterations on the reconstruction
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        im1 = ax1.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
-        im2 = ax2.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
-        im3 = ax3.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
-        im4 = ax4.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
+        im1 = im2 = im3 = im4 = ax1.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         fig.show()
-    for l in range(iterations_number):
+    # Steps 2-5
+    for iteration in range(n_iter):
         iterator = set_iterator(cfg)
-        print('iteration %d' % l)
+        print('Iteration n. %d' % iteration)
         # Patching for testing
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
-            im_array = image_dict[()][(theta, phi)]
+            im_array = image_dict[(theta, phi)]
             print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
@@ -290,35 +310,20 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
             f_il = fft2(Il)
             # Fourier update
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
+
             if debug:
-                # fig_size = plt.rcParams["figure.figsize"]
+                def plot_image(ax, image):
+                    ax.cla()
+                    ax.imshow(image, cmap=plt.get_cmap('gray'))
                 print("Debugging")
+                fft_rec = np.log10(np.abs(f_ih)+1)
+                fft_rec *= (1.0/fft_rec.max())
+                fft_rec = fftshift(fft_rec)
+                fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
-                # ax1.get_figure().canvas.draw()
-                # ax2.get_figure().canvas.draw()
-                # ax3.get_figure().canvas.draw()
-                # ax4.get_figure().canvas.draw()
-                ax1.cla()
-                ax2.cla()
-                ax3.cla()
-                ax1.imshow(pupil, cmap=plt.get_cmap('gray'))
-                ax2.imshow(im_rec, cmap=plt.get_cmap('gray'))
-                ax3.imshow(Im, cmap=plt.get_cmap('gray'))
-                # im1.set_data(pupil)
-                # im2.set_data(im_rec)
-                # im3.set_data(Im)
-                array = np.log10(np.abs(f_ih))
-                array *= (1.0/array.max())
-                array = fftshift(array)
-                im = Image.fromarray(np.uint8(array*255), 'L')
-                # ax4.imshow(im, cmap=plt.get_cmap('gray'))
-                # fig_size[0] = 20
-                # fig_size[1] = 20
+                plot_image(ax1, pupil)
+                plot_image(ax2, im_rec)
+                plot_image(ax3, Im)
+                plot_image(ax4, np.angle(fftshift(f_ih)))
                 fig.canvas.draw()
-                # plt.show(block=False)
-                # f.set_size_inches(20, 20)
-                # plt.rcParams["figure.figsize"] = fig_size
-                # time.sleep(5)
-
-
     return np.abs(np.power(ifft2(f_ih), 2))

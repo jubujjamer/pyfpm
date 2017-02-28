@@ -7,9 +7,11 @@ Usage:
 
 """
 import shutil
+from scipy import misc
+import numpy as np
+from StringIO import StringIO
 
 from fpmmath import filter_by_pupil, set_iterator
-import numpy as np
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -144,25 +146,31 @@ class Laser3dCalibrate(BaseClient):
         return self.cal_data
 
 class SimClient(BaseClient):
-    def __init__(self, image, image_size, pupil_rad):# Y Datos del microscopio
-        # self.init_image = image
-        # self.proc_image = image
-        self.image = image
-        self.pupil_rad = pupil_rad
-        self.image_size = image_size
-        # self.pir = PupilIterator(self.init_image, self.size, self.overlap, self.pup_rad)
+    def __init__(self, cfg):# Y Datos del microscopio
+        self.cfg = cfg
+        self.image_mag = self.load_image(cfg.input_mag)
+        self.image_phase = self.load_image(cfg.input_phase)
+        self.pupil_rad = cfg.pupil_size
+        self.image_size = cfg.video_size
+
+    def load_image(self, input_image):
+        with open(input_image, "r") as imageFile:
+            return imageFile.read()
 
     def acquire(self, theta=None, phi=None, power=None):
         theta = float(theta)
         phi = float(phi)
         # Return np.array processed using laser aiming data
-        return filter_by_pupil(self.image, theta, phi, power, self.pupil_rad, self.image_size)
+        mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
+        ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
+        im_array = mag_array*np.exp(1j*ph_array)
+        return filter_by_pupil(im_array, theta, phi, power, self.cfg)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)
         phi = float(phi)
         # Image processed using laser aiming data
-        return show_image('filtered', self.image, theta, phi, power, self.pupil_rad)
+        return show_image('filtered', self.image_mag, theta, phi, power, self.pupil_rad)
 
     def show_pupil(self, theta=None, phi=None, power=None):
         theta = float(theta)

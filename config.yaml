@@ -7,18 +7,20 @@ client: ledclient
 server_host: '0.0.0.0'
 server_ip: 10.99.39.174:5000/acquire
 objective_na: 0.6
-pupil_size: 10 # Function of NA, wavelength video size and magnification
+pupil_size: 20 # Function of NA, wavelength video size and magnification
 wavelength: 500E-9
 pixelsize: 500E-9
 color: red
-theta: [0, 180, 10] # [min, max, step]
-phi: [0, 30, 5] # [min, max, step]
+theta: [0, 360, 15] # [min, max, step]
+phi: [0, 40, 5] # [min, max, step]
 shift: [0, 400, 1]
 shift_step: 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
 theta_spr: 200
 shift_max: 1400 # max steps to border
 sample_height: 62 # mm above led
 servo_init: 60 # Zero angle for the servo motor
+# For the recosntruction
+n_iter: 10 # Max number of iterations
 # posible defects
 platform_tilt: [0, 0] #[spherical theta, shperical phi]
 source_center: [0, 0] #[xcoord, ycoord] of the calibrated center

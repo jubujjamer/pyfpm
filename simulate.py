@@ -43,11 +43,8 @@ itertype = cfg.sweep
 
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
-with open(input_image, "r") as imageFile:
-    image = imageFile.read()
-    image_size = np.shape(misc.imread(StringIO(image), 'RGB'))
-    client = local.SimClient(image, image_size, pupil_radius)
-    iterator = set_iterator(cfg)
+client = local.SimClient(cfg=cfg)
+iterator = set_iterator(cfg)
 
 task = 'reconstruct'
 if task is 'acquire':
