@@ -10,6 +10,7 @@ import shutil
 from scipy import misc
 import numpy as np
 from StringIO import StringIO
+import time
 
 from fpmmath import filter_by_pupil, set_iterator
 
@@ -101,8 +102,17 @@ class Laser3dCalibrate(BaseClient):
             self.laser3d.power = power
         return
 
-    def acquire(self, theta=None, phi=None, power=None, color=None):
+    def capture_image(self):
+        return self.camera.capture_png()
+
+    def acquire(self, theta=None, phi=None, shift=None, power=None, color=None):
         # self.set_parameters(theta, phi, shift, power)
+        print("In acquire", theta, phi, shift, power, color)
+        self.laser3d.theta = float(theta)
+        self.laser3d.phi = float(phi)
+        self.laser3d.shift = float(shift)
+        self.laser3d.power = float(power)
+        print("capturing")
         return self.camera.capture_png()
 
     def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
@@ -163,6 +173,8 @@ class SimClient(BaseClient):
         # Return np.array processed using laser aiming data
         mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
         ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
+        mag_array[mag_array < 10] = 100
+        ph_array[ph_array < 10] = 100
         im_array = mag_array*np.exp(1j*ph_array)
         return filter_by_pupil(im_array, theta, phi, power, self.cfg)
 

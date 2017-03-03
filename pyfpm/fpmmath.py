@@ -23,7 +23,6 @@ from scipy import misc
 import random
 
 #
-
 config_dict = yaml.load(open('config.yaml', 'r'))
 
 
@@ -83,7 +82,7 @@ def set_iterator(cfg=None):
                 phi_max         maximum phi for the acquisition
                 image_size      size of the created pupil image
             """
-            yield 0, 0, 0, 0
+            # yield 0, 0, 0, 0
             index = 0
             for phi in range(phi_min, phi_max, phi_step):
                 for theta in range(theta_min, theta_max, theta_step):
@@ -193,25 +192,32 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
     # CHECK
     # conversion from phi to r
     r = np.abs(rmax * np.sin(phi_rad))
+    # r = np.abs(rmax * phi_rad/(np.pi/2))
     # Pupil positioning
     kx = np.floor(np.cos(theta_rad)*r)
     ky = np.floor(np.sin(theta_rad)*r)
+    # Another way
     pup_pos = [image_center[0]+ky, image_center[1]+kx]
     xx, yy = np.meshgrid(range(ny), range(nx))
     c = (xx-pup_pos[1])**2+(yy-pup_pos[0])**2
-    image_gray = [c < pup_rad**2]
+    # image_gray1 = [c < (pup_rad*0.75)**2]
+    # image_gray2 = [c < pup_rad**2]
+    # image_gray = image_gray1[0]*0.75 + image_gray2[0]*0.25
+    image_gray = [c < pup_rad**2][0]
+
     # This could be slow, see in coords
     # def dist(a, m):
     #     return np.linalg.norm(np.asarray(a)-m)
     # c = list(ifilter(lambda a: dist(a, pup_pos) < pup_rad, coords))
     # pup_matrix[[np.asarray(c)[:, 0], np.asarray(c)[:, 1]]] = 1
-    return image_gray[0]*1
+    return image_gray
 
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     image_size = cfg.video_size
     pupil_radius = cfg.pupil_size/2
-    phi = phi*random.uniform(0.95, 1.05)
+    # phi = phi*random.uniform(0.95, 1.05)
+    # im_array = np.abs(im_array)
     pupil = generate_pupil(theta, phi, power, pupil_radius, image_size)
     f_ih = fft2(im_array)
 
@@ -262,6 +268,10 @@ def show_image(imtype='original', image=None, theta=0, phi=0,
 def resample_image(image_array, new_size):
     return np.resize(image_array, new_size)
 
+def crop_image(im_array, image_size, osx, osy):
+    return im_array[osx:(osx+image_size[0]), osy:(osy+image_size[1])]
+    # return im_array[offset:100, 0:]
+
 
 def recontruct(input_file, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
@@ -273,15 +283,18 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
     theta_min, theta_max, theta_step = cfg.theta
     pupil_radius = cfg.pupil_size/2
     n_iter = cfg.n_iter
+    print(cfg.objective_na, image_size[0], cfg.pixelsize, cfg.wavelength)
+    pupil_radius = cfg.objective_na*image_size[0]*float(cfg.pixelsize)/float(cfg.wavelength)
+
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
-    # Ih_sq = np.sqrt(image_dict[()][(10, 0)])
+    # Ih_sq = np.sqrt(image_dict[(0, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     if debug:
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         im1 = im2 = im3 = im4 = ax1.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         fig.show()
     # Steps 2-5
@@ -292,6 +305,15 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
+            im_array = crop_image(image_dict[(theta, phi)], image_size, 250, 0)
+            # phi = phi-cfg.servo_init
+            # if phi == 0 and index > 1:
+            #     continue
+            if phi == 1:
+                continue
+            if phi > 18:
+                 continue
+            phi = phi*1
             print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
@@ -324,6 +346,51 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
                 plot_image(ax1, pupil)
                 plot_image(ax2, im_rec)
                 plot_image(ax3, Im)
-                plot_image(ax4, np.angle(fftshift(f_ih)))
+                plot_image(ax4, np.angle(ifft2(f_ih)))
                 fig.canvas.draw()
     return np.abs(np.power(ifft2(f_ih), 2))
+
+def preprocess(input_file, iterator, cfg=None, debug=False):
+    """ FPM reconstructon from pupil images
+    input_file: the image dictionary
+    """
+    fixed_dict = dict()
+    image_dict = np.load(input_file)[()]
+    image_size = cfg.video_size
+    phi_min, phi_max, phi_step = cfg.phi
+    theta_min, theta_max, theta_step = cfg.theta
+    pupil_radius = cfg.objective_na*image_size[0]*float(cfg.pixelsize)/float(cfg.wavelength)
+
+    # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
+    if debug:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
+        im1 = im2 = ax1.imshow(image_dict[0, 0], cmap=plt.get_cmap('gray'))
+        fig.show()
+    phi_available = range(17)
+    mean_intensity = dict()
+    for phi in phi_available:
+        mean_intensity[phi] = 0
+    for index, theta, phi, power in iterator:
+        # Final step: squared inverse fft for visualization
+        im_array = image_dict[(theta, phi)]
+        im_array = crop_image(image_dict[(theta, phi)], image_size, 200)
+        mean_intensity[phi] += np.mean(im_array)
+        print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
+
+    iterator = set_iterator(cfg)
+    for phi in phi_available:
+        mean_intensity[phi] /= 36
+    for index, theta, phi, power in iterator:
+        im_array = image_dict[(theta, phi)]
+        print(mean_intensity[phi], np.mean(im_array))
+        # im_array = crop_image(image_dict[(theta, phi)], image_size, 200)
+        fixed_dict[(theta, phi)] = im_array*mean_intensity[phi]/np.mean(im_array)
+        if debug:
+            def plot_image(ax, image):
+                ax.cla()
+                ax.imshow(image, cmap=plt.get_cmap('gray'))
+            plot_image(ax1, im_array)
+            plot_image(ax2, fixed_dict[(theta, phi)])
+            fig.canvas.draw()
+
+    return fixed_dict

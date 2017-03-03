@@ -15,24 +15,29 @@ import yaml
 from pyfpm.web import create_server
 import pyfpm.local as local
 from pyfpm.devices import Laser3d, Camera
+import pyfpm.data as dt
 # Find serial controller of the light supply
+# Simulation parameters
+CONFIG_FILE = 'config.yaml'
+cfg = dt.load_config(CONFIG_FILE)
+
 config_dict = yaml.load(open('config.yaml', 'r'))
-serialport = config_dict['serialport']
-server_type = config_dict['servertype']
-debug_mode = (config_dict['debug'] == 'True')
+serialport = cfg.serialport
+servertype = cfg.servertype
+camtype = cfg.camtype
 
 output_file = open(config_dict['output_cal'], "w")
 
-if server_type == 'sampling':
+if servertype == 'sampling':
     try:
         laser3d = Laser3d(port=serialport+str(0))
     except:
         print(serialport+str(0) + " not available, testing with another.")
         laser3d = Laser3d(port=serialport+str(1))
     # Run the camera with open cv
-    cam = Camera(video_id=config_dict['video_id'], camtype='opencv')
+    cam = Camera(video_id=config_dict['video_id'], camtype=camtype)
     client = local.Laser3dCalibrate(cam, laser3d)
-elif server_type == 'simulation':
+elif servertype == 'simulation':
     client = local.DummyClient()
 
 app = create_server(client)

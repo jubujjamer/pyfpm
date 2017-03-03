@@ -31,7 +31,7 @@ def create_server(client):
     @app.route('/index')
     def index():
         image_title = {'calibration': 'Image for calibration'}  # fake user
-        image = client.acquire()
+        image = client.capture_image()
         return render_template('index.html',
                                title='Home',
                                image_title=image_title, image=image)
@@ -59,7 +59,7 @@ def create_server(client):
             client.move_shift(-40, mode='relative')
 
         def ls_up():
-            client.set_power(1)
+            client.set_power(200)
 
         def ls_down():
             client.set_power(0)
@@ -76,7 +76,7 @@ def create_server(client):
             phi =  float(request.form['input_phi'])
             theta =  float(request.form['input_theta'])
             shift =  float(request.form['input_shift'])
-            power = 1
+            power = 200
             client.set_parameters(theta, phi, shift, power,  mode='corrected')
 
         actions_dict = {'phi_up': move_servo_up, 'phi_down': move_servo_down,
@@ -105,13 +105,13 @@ def create_server(client):
 
     @app.route("/testcam")
     def testcam():
-        return Response(client.acquire(), mimetype='image/png')
+        return Response(client.capture_image(), mimetype='image/png')
 
-    @app.route("/acquire/<theta>/<phi>/<power>/<color>")
-    def acquire(theta, phi, power, color):
+    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>")
+    def acquire(theta, phi, shift, power, color):
         print ("app", float(theta), float(phi), color)
         try:
-            return Response(client.acquire(theta, phi, power, color),
+            return Response(client.acquire(theta, phi, shift, power, color),
                             mimetype='image/png')
         except socket.error:
             print("An error")

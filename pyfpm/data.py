@@ -3,7 +3,18 @@ import csv
 import json
 import yaml
 import collections
+import datetime
 
+def save_yaml_metadata(outname, cfg):
+    base = os.path.splitext(outname)[0]
+    print(base)
+    outname = base + '.yaml'
+    out_dict = cfg._asdict()
+    timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+    out_dict['timestamp'] = timestamp
+    with open(outname, 'w') as outfile:
+        yaml.dump(out_dict, outfile, default_flow_style=False)
+    return
 
 def load_config(config_file='config.yaml'):
     config_dict = yaml.load(open(config_file, 'r'))

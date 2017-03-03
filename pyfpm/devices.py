@@ -12,6 +12,9 @@ import serial
 import time
 import yaml
 import cv2
+from io import BytesIO
+
+import picamera
 
 from pyfpm.coordinates import PlatformCoordinates
 
@@ -287,6 +290,7 @@ class Camera(object):
     """
     def __init__(self, video_id=0, camtype='picamera'):
         # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
+        self.cap = None
         print("Trying to select a camera")
         if(camtype == 'opencv'):
             cap = cv2.VideoCapture(video_id)
@@ -294,11 +298,13 @@ class Camera(object):
             self.cap.open(video_id)
             print ("Initializing the camera")
             print("Is opened?", self.cap.isOpened())
-
             self.config_cap()
             print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
-            print("please do something")
+            try:
+                self.cap = picamera.PiCamera()
+            except:
+                print("Cant load camera")
 
 
     def config_cap(self):
@@ -328,20 +334,29 @@ class Camera(object):
         # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
-    def capture_png(self):
-        print("Adding a time delay to leave time the led to set.")
-        time.sleep(.5)
-        # Don't know why it doesn't updates up to the 5th reading
-        # a buffer flush thing
-        print("Is opened?", self.cap.isOpened())
-        for i in range(5):
-            ret, frame = self.cap.read()
-        print('ret value %i' % ret)
-        ret, buf = cv2.imencode('.png', frame)
-        print('ret value %i' % ret)
-        return bytearray(buf)
+    def capture_png(self, camtype='picamera'):
+        if(camtype == 'opencv'):
+            print("Adding a time delay to leave time the led to set.")
+            time.sleep(.5)
+            # Don't know why it doesn't updates up to the 5th reading
+            # a buffer flush thing
+            print("Is opened?", self.cap.isOpened())
+            for i in range(5):
+                ret, frame = self.cap.read()
+            print('ret value %i' % ret)
+            ret, buf = cv2.imencode('.png', frame)
+            print('ret value %i' % ret)
+            return bytearray(buf)
+        elif(camtype == 'picamera'):
+            stream = BytesIO()
+            self.cap.capture(stream, 'png')
+            return stream.getvalue()
+
 
     def __del__(self):
         # When everything done, release the capture
-        self.cap.release()
-        cv2.destroyAllWindows()
+        try:
+            self.cap.release()
+            cv2.destroyAllWindows()
+        except:
+            self.cap.close()

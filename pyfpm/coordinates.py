@@ -159,6 +159,23 @@ class PlatformCoordinates(object):
     def power(self, power):
         self._power = power
 
+    def adjust_power(self):
+        phi = np.degrees(self.phi)
+        if phi < 3:
+            self.power = 50
+        if phi >= 3 and phi < 10:
+            self.power = 100
+        if phi > 10:
+            self.power = 255
+        return
+
+    def set_in_degrees(self, theta, phi):
+        """ This allows the user to set angles in degrees. The default setter is
+        in platform coordinates
+        """
+        self._theta = np.radians(theta)
+        self._phi = np.radians(phi)
+
     def phi_to_center(self):
         """ Calculates the required phi angle for the spot to be centered given
         theta and shift.
@@ -213,6 +230,7 @@ class PlatformCoordinates(object):
             shift = int(shift_adjusted)
             theta = self.theta*theta_spr/(2*np.pi)
             phi = np.degrees(self.phi) + servo_init
+            self.adjust_power()
             power = self.power
         return theta, phi, shift, power
 

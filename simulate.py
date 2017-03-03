@@ -26,7 +26,7 @@ CONFIG_FILE = 'config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
 input_image = cfg.input_mag
-out_file = cfg.output_file
+out_file = cfg.output_sim
 json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
@@ -46,7 +46,7 @@ itertype = cfg.sweep
 client = local.SimClient(cfg=cfg)
 iterator = set_iterator(cfg)
 
-task = 'reconstruct'
+task = 'acquire'
 if task is 'acquire':
     json_savemeta(json_file, image_size, pupil_radius, theta_min, theta_max,
                   theta_step, phi_min, phi_max, wavelength, pixelsize,
@@ -55,6 +55,13 @@ if task is 'acquire':
         print(index, theta, phi, power)
         image_dict[(theta, phi)] = client.acquire(theta, phi, power)
     np.save(out_file, image_dict)
+
+    start_time = time.time()
+    data = json_loadmeta(json_file)
+    rec = recontruct(out_file, iterator, cfg=cfg, debug=True)
+    print('--- %s seconds ---' % (time.time() - start_time))
+    plt.imshow(rec), plt.gray()
+    plt.show()
 
 elif task is 'reconstruct':
     start_time = time.time()
