@@ -11,8 +11,13 @@ import yaml
 import numpy as np
 from itertools import ifilter, product
 
-config_dict = yaml.load(open('config.yaml', 'r'))
-servo_init = config_dict['servo_init']
+import pyfpm.data as dt
+
+CONFIG_FILE = 'config.yaml'
+config_dict = yaml.load(open(CONFIG_FILE, 'r'))
+cfg = dt.load_config(CONFIG_FILE)
+
+servo_init = cfg.servo_init
 sample_height = config_dict['sample_height']
 platform_tilt = config_dict['platform_tilt']
 source_center = config_dict['source_center']
@@ -213,11 +218,13 @@ class PlatformCoordinates(object):
             print "No model created, run 'generate_model' first"
             return
         model = model_dict['model_type']
+
         if model == 'nomodel':
             theta = self.theta
             phi = self.phi_to_center() + servo_init
             shift = int(self.shift/shift_step)
             power = self.power
+
         elif model == 'shift_fit':
             slope = model_dict['slope']
             origin = model_dict['origin']
@@ -232,22 +239,39 @@ class PlatformCoordinates(object):
             phi = np.degrees(self.phi) + servo_init
             self.adjust_power()
             power = self.power
+
+        elif model == 'normal':
+            shift_adjusted = np.arctan(self.phi)*cfg.sample_height/cfg.shift_step
+            if shift_adjusted < 0:
+                shift_adjusted = 0
+            if shift_adjusted > shift_max:
+                shift_adjusted = shift_max
+            shift = int(shift_adjusted)
+            theta = self.theta*theta_spr/(2*np.pi)
+            phi = np.degrees(self.phi) + servo_init
+            self.adjust_power()
+            power = self.power
         return theta, phi, shift, power
 
-    def generate_model(self):
-        try:
-            data = np.load(cal_file)
-        except:
-            print("generate calibration data first")
+    def generate_model(self, model='normal'):
+        if model == 'shift_fit':
+            try:
+                data = np.load(cal_file)
+            except:
+                print("generate calibration data first")
+                return
+            phi = np.array([d[1] for d in data])-servo_init
+            shift = np.array([d[2] for d in data])
+            print(data)
+            slope, origin = np.polyfit(phi, shift, 1)
+            model = {'model_type': 'shift_fit',
+                     'slope': float(slope),
+                     'origin': float(origin)}
+            with open(model_file, 'w') as outfile:
+                yaml.dump(model, outfile, default_flow_style=False)
             return
-        phi = np.array([d[1] for d in data])-servo_init
-        shift = np.array([d[2] for d in data])
-        print(data)
-        slope, origin = np.polyfit(phi, shift, 1)
-        model = {'model_type': 'shift_fit',
-                 'slope': float(slope),
-                 'origin': float(origin)}
-        with open(model_file, 'w') as outfile:
-
-            yaml.dump(model, outfile, default_flow_style=False)
-        return
+        if model == 'normal':
+            model = {'model_type': 'normal'}
+            with open(model_file, 'w') as outfile:
+                yaml.dump(model, outfile, default_flow_style=False)
+            return

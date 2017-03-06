@@ -12,6 +12,9 @@ Usage:
 """
 from StringIO import StringIO
 import time
+import os
+import datetime
+
 
 import matplotlib.pyplot as plt
 import h5py
@@ -31,8 +34,10 @@ from pyfpm.coordinates import PlatformCoordinates
 CONFIG_FILE = 'config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
-# input_image = cfg.input_mag
-out_file = cfg.output_sample
+out_file = os.path.join(cfg.output_sample,
+                        '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
+# in_file = os.path.join(cfg.output_sample,
+#                        '2017-03-06_10:48:02.npy')
 json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
@@ -43,7 +48,7 @@ pixelsize = cfg.pixelsize  # See jupyter notebook
 phi_min, phi_max, phi_step = cfg.phi
 theta_min, theta_max, theta_step = cfg.theta
 pupil_radius = cfg.pupil_size/2
-image_dict = {}
+
 mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
@@ -52,13 +57,13 @@ server_ip = cfg.server_ip
 client = web.Client(server_ip)
 pc = PlatformCoordinates()
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
-
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'test_and_measure'
+task = 'acquire'
 if task is 'acquire':
+    image_dict = dict()
     save_yaml_metadata(out_file, cfg)
     for index, theta, phi, power in iterator:
         pc.set_in_degrees(theta, phi)
@@ -73,7 +78,7 @@ if task is 'acquire':
         plt.show(block=False)
     print(out_file)
     np.save(out_file, image_dict)
-    client.acquire(0, 58, 0)
+    client.acquire(0, cfg.servo_init, 0)
 
 elif task is 'reconstruct':
     start_time = time.time()

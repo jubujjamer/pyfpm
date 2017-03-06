@@ -215,7 +215,10 @@ def generate_pupil(theta, phi, power, pup_rad, image_size):
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     image_size = cfg.video_size
-    pupil_radius = cfg.pupil_size/2
+    # pupil_radius = cfg.pupil_size/2
+    pupil_radius = cfg.objective_na*image_size[0] * \
+                   float(cfg.pixelsize)/float(cfg.wavelength)
+
     # phi = phi*random.uniform(0.95, 1.05)
     # im_array = np.abs(im_array)
     pupil = generate_pupil(theta, phi, power, pupil_radius, image_size)
@@ -272,6 +275,18 @@ def crop_image(im_array, image_size, osx, osy):
     return im_array[osx:(osx+image_size[0]), osy:(osy+image_size[1])]
     # return im_array[offset:100, 0:]
 
+def quality_metric(image_dict, image_lowq, cfg):
+    iterator = set_iterator(cfg)
+    accum = 0
+    for index, theta, phi, power in iterator:
+        im_i = image_dict[(theta, phi)]
+    #     print(np.sum(np.mean(image_dict[(theta, phi)])))
+        il_i = filter_by_pupil(image_lowq, theta, phi, power, cfg)
+        accum += np.sqrt(np.mean(im_i))/ \
+                 (np.sum(np.abs(np.sqrt(il_i)-np.sqrt(im_i))))
+
+
+    return accum
 
 def recontruct(input_file, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
@@ -283,9 +298,8 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
     theta_min, theta_max, theta_step = cfg.theta
     pupil_radius = cfg.pupil_size/2
     n_iter = cfg.n_iter
-    print(cfg.objective_na, image_size[0], cfg.pixelsize, cfg.wavelength)
-    pupil_radius = cfg.objective_na*image_size[0]*float(cfg.pixelsize)/float(cfg.wavelength)
-
+    pupil_radius = cfg.objective_na*image_size[0] * \
+                   float(cfg.pixelsize)/float(cfg.wavelength)
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -295,7 +309,6 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
-        im1 = im2 = im3 = im4 = ax1.imshow(Ih_sq, cmap=plt.get_cmap('gray'))
         fig.show()
     # Steps 2-5
     for iteration in range(n_iter):
@@ -305,16 +318,7 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
-            im_array = crop_image(image_dict[(theta, phi)], image_size, 250, 0)
-            # phi = phi-cfg.servo_init
-            # if phi == 0 and index > 1:
-            #     continue
-            if phi == 1:
-                continue
-            if phi > 18:
-                 continue
-            phi = phi*1
-            print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
+            # im_array = crop_image(image_dict[(theta, phi)], image_size, 250, 0)
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
             pupil_shift = fftshift(pupil)
@@ -332,12 +336,11 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
             f_il = fft2(Il)
             # Fourier update
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
-
             if debug:
                 def plot_image(ax, image):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('gray'))
-                print("Debugging")
+                print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
                 fft_rec = np.log10(np.abs(f_ih)+1)
                 fft_rec *= (1.0/fft_rec.max())
                 fft_rec = fftshift(fft_rec)
@@ -348,6 +351,8 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
                 plot_image(ax3, Im)
                 plot_image(ax4, np.angle(ifft2(f_ih)))
                 fig.canvas.draw()
+        print("Testing quality metric", quality_metric(image_dict, Il, cfg))
+
     return np.abs(np.power(ifft2(f_ih), 2))
 
 def preprocess(input_file, iterator, cfg=None, debug=False):

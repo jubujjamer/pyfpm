@@ -16,9 +16,9 @@ class Client(BaseClient):
         # self.metadata = requests.get(self.url + '/metadata').json()
 
     def acquire(self, theta, phi, shift=0, power=100, color='green'):
-        print(self.url + 'acquire/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color))
+        print(self.url + '/acquire/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color))
         response = requests.get(self.url +
-                                '/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color),
+                                '/acquire/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color),
                                 stream=True)
         if response.status_code == 200:
             return response.raw

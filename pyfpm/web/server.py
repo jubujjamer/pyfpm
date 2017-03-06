@@ -59,7 +59,7 @@ def create_server(client):
             client.move_shift(-40, mode='relative')
 
         def ls_up():
-            client.set_power(200)
+            client.set_power(50)
 
         def ls_down():
             client.set_power(0)
