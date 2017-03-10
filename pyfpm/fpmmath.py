@@ -218,7 +218,6 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
     # pupil_radius = cfg.pupil_size/2
     pupil_radius = cfg.objective_na*image_size[0] * \
                    float(cfg.pixelsize)/float(cfg.wavelength)
-
     # phi = phi*random.uniform(0.95, 1.05)
     # im_array = np.abs(im_array)
     pupil = generate_pupil(theta, phi, power, pupil_radius, image_size)
@@ -280,6 +279,7 @@ def quality_metric(image_dict, image_lowq, cfg):
     accum = 0
     for index, theta, phi, power in iterator:
         im_i = image_dict[(theta, phi)]
+        im_i = crop_image(im_i, cfg.video_size, 0, 0)
     #     print(np.sum(np.mean(image_dict[(theta, phi)])))
         il_i = filter_by_pupil(image_lowq, theta, phi, power, cfg)
         accum += np.sqrt(np.mean(im_i))/ \
@@ -288,18 +288,20 @@ def quality_metric(image_dict, image_lowq, cfg):
 
     return accum
 
-def recontruct(input_file, iterator, cfg=None, debug=False):
+def reconstruct(input_file, blank_images, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
     input_file: the image dictionary
     """
     image_dict = np.load(input_file)[()]
+    blank_dict = np.load(blank_images)[()]
     image_size = cfg.video_size
     phi_min, phi_max, phi_step = cfg.phi
     theta_min, theta_max, theta_step = cfg.theta
-    pupil_radius = cfg.pupil_size/2
+    # pupil_radius = cfg.pupil_size/2
     n_iter = cfg.n_iter
     pupil_radius = cfg.objective_na*image_size[0] * \
                    float(cfg.pixelsize)/float(cfg.wavelength)
+    # pupil_radius = 30
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -318,9 +320,16 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
-            # im_array = crop_image(image_dict[(theta, phi)], image_size, 250, 0)
+            blank_array = blank_dict[(theta, phi)]
+            # if phi <10:
+            #     phi += 1.
+            im_array = (im_array-.1*blank_array)
+            im_array -= np.min(im_array[:])
+            # print(im_array)
+            im_array = crop_image(im_array, image_size, 0, 0)
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size)
+
             pupil_shift = fftshift(pupil)
             # Step 2: lr of the estimated image using the known pupil
             f_il = ifft2(f_ih*pupil_shift)  # space pupil * fourier image
@@ -335,8 +344,9 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
             Il = Im_sq * Expl  # Spacial update
             f_il = fft2(Il)
             # Fourier update
+            # print(f_il)
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
-            if debug:
+            if debug and index % 1 == 0:
                 def plot_image(ax, image):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('gray'))
@@ -346,21 +356,23 @@ def recontruct(input_file, iterator, cfg=None, debug=False):
                 fft_rec = fftshift(fft_rec)
                 fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
+                im_rec *= (1.0/im_rec.max())
                 plot_image(ax1, pupil)
                 plot_image(ax2, im_rec)
                 plot_image(ax3, Im)
                 plot_image(ax4, np.angle(ifft2(f_ih)))
                 fig.canvas.draw()
         print("Testing quality metric", quality_metric(image_dict, Il, cfg))
-
     return np.abs(np.power(ifft2(f_ih), 2))
 
-def preprocess(input_file, iterator, cfg=None, debug=False):
+def preprocess(images, blank_images, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
     input_file: the image dictionary
     """
     fixed_dict = dict()
-    image_dict = np.load(input_file)[()]
+    image_dict = np.load(images)[()]
+    blank_dict = np.load(blank_images)[()]
+
     image_size = cfg.video_size
     phi_min, phi_max, phi_step = cfg.phi
     theta_min, theta_max, theta_step = cfg.theta
@@ -378,24 +390,112 @@ def preprocess(input_file, iterator, cfg=None, debug=False):
     for index, theta, phi, power in iterator:
         # Final step: squared inverse fft for visualization
         im_array = image_dict[(theta, phi)]
-        im_array = crop_image(image_dict[(theta, phi)], image_size, 200)
-        mean_intensity[phi] += np.mean(im_array)
-        print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
-
-    iterator = set_iterator(cfg)
-    for phi in phi_available:
-        mean_intensity[phi] /= 36
-    for index, theta, phi, power in iterator:
-        im_array = image_dict[(theta, phi)]
-        print(mean_intensity[phi], np.mean(im_array))
+        blank_array = blank_dict[(theta, phi)]
         # im_array = crop_image(image_dict[(theta, phi)], image_size, 200)
-        fixed_dict[(theta, phi)] = im_array*mean_intensity[phi]/np.mean(im_array)
+        # mean_intensity[phi] += np.mean(im_array)
+        print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
         if debug:
             def plot_image(ax, image):
                 ax.cla()
                 ax.imshow(image, cmap=plt.get_cmap('gray'))
             plot_image(ax1, im_array)
-            plot_image(ax2, fixed_dict[(theta, phi)])
+            plot_image(ax2, im_array-blank_array)
             fig.canvas.draw()
 
+    # iterator = set_iterator(cfg)
+    # for phi in phi_available:
+    #     mean_intensity[phi] /= 36
+    # for index, theta, phi, power in iterator:
+    #     im_array = image_dict[(theta, phi)]
+    #     print(mean_intensity[phi], np.mean(im_array))
+    #     # im_array = crop_image(image_dict[(theta, phi)], image_size, 200)
+    #     fixed_dict[(theta, phi)] = im_array*mean_intensity[phi]/np.mean(im_array)
+    #     if debug:
+    #         def plot_image(ax, image):
+    #             ax.cla()
+    #             ax.imshow(image, cmap=plt.get_cmap('gray'))
+    #         plot_image(ax1, im_array)
+    #         plot_image(ax2, fixed_dict[(theta, phi)])
+    #         fig.canvas.draw()
+
     return fixed_dict
+
+def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
+    """ FPM reconstructon from pupil images
+    input_file: the image dictionary
+    """
+    image_dict = np.load(input_file)[()]
+    blank_dict = np.load(blank_images)[()]
+    image_size = cfg.video_size
+    phi_min, phi_max, phi_step = cfg.phi
+    theta_min, theta_max, theta_step = cfg.theta
+    # pupil_radius = cfg.pupil_size/2
+    n_iter = cfg.n_iter
+    pupil_radius = cfg.objective_na*image_size[0] * \
+                   float(cfg.pixelsize)/float(cfg.wavelength)
+    # pupil_radius = 30
+    # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
+    # Step 1: initial estimation
+    Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
+    # Ih_sq = np.sqrt(image_dict[(0, 0)])
+    Ph = np.ones_like(Ih_sq)  # and null phase
+    Ih = Ih_sq * np.exp(1j*Ph)
+    f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
+    if debug:
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
+        fig.show()
+    # Steps 2-5
+    for iteration in range(n_iter):
+
+        print('Iteration n. %d' % iteration)
+        # Patching for testing
+        for phi_corr in np.arange(3, 5, 0.5):
+            phi_test = 4
+            iterator = set_iterator(cfg)
+            for index, theta, phi, power in iterator:
+                # Final step: squared inverse fft for visualization
+
+                im_array = image_dict[(theta, phi_test)]
+                blank_array = blank_dict[(theta, phi_test)]
+                # if phi <10:
+                #     phi += 1.
+                im_array = (im_array-.1*blank_array)
+                im_array -= np.min(im_array[:])
+                # print(im_array)
+                im_array = crop_image(im_array, image_size, 0, 0)
+                pupil = generate_pupil(theta, phi_corr, power, pupil_radius,
+                                       image_size)
+                pupil_shift = fftshift(pupil)
+                # Step 2: lr of the estimated image using the known pupil
+                f_il = ifft2(f_ih*pupil_shift)  # space pupil * fourier image
+                Phl = np.angle(f_il)
+                Expl = np.exp(1j*Phl)
+                # Step 3: spectral pupil area replacement
+                # OBS: OPTIMIZE
+                Im = np.resize(im_array, image_size)
+                Im_sq = np.sqrt(Im)
+                # Il_sq update in the pupil area using Im_sq
+                # Step 3 (cont.): Fourier space hr image update
+                Il = Im_sq * Expl  # Spacial update
+                f_il = fft2(Il)
+                # Fourier update
+                # print(f_il)
+                f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
+                if debug and index % 1 == 0:
+                    def plot_image(ax, image):
+                        ax.cla()
+                        ax.imshow(image, cmap=plt.get_cmap('gray'))
+                    # print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
+                    fft_rec = np.log10(np.abs(f_ih)+1)
+                    fft_rec *= (1.0/fft_rec.max())
+                    fft_rec = fftshift(fft_rec)
+                    fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
+                    im_rec = np.power(np.abs(ifft2(f_ih)), 2)
+                    im_rec *= (1.0/im_rec.max())
+                    plot_image(ax1, pupil)
+                    plot_image(ax2, im_rec)
+                    plot_image(ax3, Im)
+                    plot_image(ax4, np.angle(ifft2(f_ih)))
+                    fig.canvas.draw()
+            print("Testing quality metric", phi_corr, quality_metric(image_dict, Il, cfg))
+    return np.abs(np.power(ifft2(f_ih), 2))

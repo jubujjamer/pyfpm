@@ -24,7 +24,7 @@ import time
 import yaml
 
 from pyfpm import web
-from pyfpm.fpmmath import set_iterator, recontruct, preprocess
+from pyfpm.fpmmath import set_iterator, reconstruct, preprocess, rec_test
 from pyfpm.data import save_yaml_metadata
 # from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
@@ -36,8 +36,10 @@ cfg = dt.load_config(CONFIG_FILE)
 
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
-# in_file = os.path.join(cfg.output_sample,
-#                        '2017-03-06_10:48:02.npy')
+in_file = os.path.join(cfg.output_sample,
+                        './2017-03-06_18:00:43.npy')
+blank_images = os.path.join(cfg.output_sample,
+                        './2017-03-06_18:41:51.npy')
 json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
@@ -61,7 +63,7 @@ pc = PlatformCoordinates()
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'acquire'
+task = 'reconstruct'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -72,17 +74,17 @@ if task is 'acquire':
         img = client.acquire(theta_plat, phi_plat, shift, power)
         im_array = misc.imread(StringIO(img.read()), 'RGB')
         image_dict[(theta, phi)] = im_array
-        ax = plt.gca() or plt
-        ax.imshow(im_array)
-        ax.get_figure().canvas.draw()
-        plt.show(block=False)
+        # ax = plt.gca() or plt
+        # ax.imshow(im_array)
+        # ax.get_figure().canvas.draw()
+        # plt.show(block=False)
     print(out_file)
     np.save(out_file, image_dict)
     client.acquire(0, cfg.servo_init, 0)
 
 elif task is 'reconstruct':
     start_time = time.time()
-    rec = recontruct(out_file, iterator, cfg=cfg, debug=True)
+    rec = reconstruct(in_file, blank_images, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()
@@ -106,11 +108,12 @@ if task is 'test_and_measure':
 if task is 'calibration':
     print('calibration')
     for index, theta, phi, power in iterator:
-        pc.theta = theta
-        pc.phi = phi
-        [theta_p, phi_p, shift, power] = pc.parameters_to_platform()
-        print("parameters to platform", theta_p, phi_p, shift, power)
-        img = client.acquire(theta_p, phi_p, shift, power)
+        pc.set_in_degrees(theta, phi)
+        [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
+        print("parameters to platform", theta_plat, phi_plat, shift, power)
+        img = client.acquire(theta_plat, phi_plat, shift, power)
+        im_array = misc.imread(StringIO(img.read()), 'RGB')
+        image_dict[(theta, phi)] = im_array
         im_array = misc.imread(StringIO(img.read()), 'RGB')
         # intensity = np.mean(im_array)
         ax = plt.gca() or plt
@@ -132,5 +135,5 @@ if task is 'testing':
         print('theta_corr: %f, phi_corr: %f' % (theta_corr, phi_corr))
 
 if task is 'fix':
-    fixed_dict = preprocess(out_file, iterator, cfg=cfg, debug=True)
-    np.save('/output_sampling/fixed.npy', fixed_dict)
+    fixed_dict = preprocess(in_file, blank_images, iterator, cfg=cfg, debug=True)
+    # np.save('/output_sampling/fixed.npy', fixed_dict)

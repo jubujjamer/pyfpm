@@ -291,6 +291,7 @@ class Camera(object):
     def __init__(self, video_id=0, camtype='picamera'):
         # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
         self.cap = None
+        self.camtype = camtype
         print("Trying to select a camera")
         if(camtype == 'opencv'):
             cap = cv2.VideoCapture(video_id)
@@ -334,7 +335,8 @@ class Camera(object):
         # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
-    def capture_png(self, camtype='picamera'):
+    def capture_png(self):
+        camtype = self.camtype
         if(camtype == 'opencv'):
             print("Adding a time delay to leave time the led to set.")
             time.sleep(.5)
