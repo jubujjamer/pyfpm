@@ -84,10 +84,13 @@ class PlatformCoordinates(object):
     """ A class to manage the variables of the moving platform as
         coordinates.
     """
-    def __init__(self, theta=0, phi=0, shift=0, height=sample_height, power=1):
+    def __init__(self, theta=0, phi=0, tps=None, shift=0, height=sample_height, power=1):
         self._theta = np.radians(theta)
         self._phi = np.radians(phi)
         self._shift = shift
+        self._tps = [np.radians(theta), np.radians(phi), shift]
+        if tps is not None:
+            self._tps = tps
         self._height = height
         self._power = power
         # platform defects as taken from config file, check the docs
@@ -126,7 +129,7 @@ class PlatformCoordinates(object):
 
     @phi.setter
     def phi(self, phi):
-        self._phi = np.radians(phi-servo_init)
+        self._phi = np.radians(phi*360/phi_spr)
         self.update_spot_center()
 
     @property
@@ -174,12 +177,21 @@ class PlatformCoordinates(object):
             self.power = 255
         return
 
-    def set_in_degrees(self, theta, phi):
-        """ This allows the user to set angles in degrees. The default setter is
-        in platform coordinates
+    def set_coordinates(self, theta, phi, units='degrees'):
+        """ This allows the user to set angles in the preferred unit system.
+        The default setter is in platform coordinates (raw), but it is advisable to
+        use this explicit form.
         """
-        self._theta = np.radians(theta)
-        self._phi = np.radians(phi)
+        if units == 'degrees':
+            self._theta = np.radians(theta)
+            self._phi = np.radians(phi)
+            self._tps = [np.radians(theta), np.radians(phi), None]
+        if units == 'raw':
+            self._theta = np.radians(theta*360/cfg.theta_spr)
+            self._phi = np.radians(phi*360/cfg.phi_spr)
+            self._tps = [np.radians(theta*360/cfg.theta_spr),
+                         np.radians(phi*360/cfg.phi_spr),
+                         None]
 
     def phi_to_center(self):
         """ Calculates the required phi angle for the spot to be centered given
@@ -221,8 +233,8 @@ class PlatformCoordinates(object):
 
         if model == 'nomodel':
             theta = self.theta
-            phi = self.phi_to_center() + servo_init
-            shift = int(self.shift/shift_step)
+            phi = self.phi_to_center()
+            shift_adjusted = self.shift
             power = self.power
 
         elif model == 'shift_fit':
@@ -234,24 +246,28 @@ class PlatformCoordinates(object):
                 shift_adjusted = 0
             if shift_adjusted > shift_max:
                 shift_adjusted = shift_max
-            shift = int(shift_adjusted)
-            theta = self.theta*theta_spr/(2*np.pi)
-            phi = np.degrees(self.phi) + servo_init
+            shift = shift_adjusted*cfg.shift_step
+            theta = self.theta
+            phi = int(np.degrees(self.phi)*cfg.phi_spr/(2*np.pi))
             self.adjust_power()
             power = self.power
 
         elif model == 'normal':
-            shift_adjusted = np.arctan(self.phi)*cfg.sample_height/cfg.shift_step
+            shift_adjusted = np.arctan(self.phi)*cfg.sample_height
             if shift_adjusted < 0:
                 shift_adjusted = 0
             if shift_adjusted > shift_max:
                 shift_adjusted = shift_max
-            shift = int(shift_adjusted)
-            theta = self.theta*theta_spr/(2*np.pi)
-            phi = np.degrees(self.phi) + servo_init
-            self.adjust_power()
-            power = self.power
-        return theta, phi, shift, power
+
+        shift_plat = int(shift_adjusted/cfg.shift_step)
+        theta_plat = int(self.theta*cfg.theta_spr/(2*np.pi))
+        phi_plat = int(self.phi*cfg.phi_spr/(2*np.pi))
+        self.adjust_power()
+        power_plat = self.power
+        if shift_plat == 0: shift_plat = 0
+        shift_plat = min(cfg.shift_max, shift_plat)
+
+        return theta_plat, phi_plat, shift_plat, power_plat
 
     def generate_model(self, model='normal'):
         if model == 'shift_fit':

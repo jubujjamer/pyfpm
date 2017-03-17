@@ -159,10 +159,10 @@ class Laser3d(object):
         self._theta = None
         self._phi = None
         self._shift = None
+        self._tps = None  # [theta, phi, shift] coordinates
         self._power = None
-        self.pc = PlatformCoordinates()
+        # self.pc = PlatformCoordinates()
         self.set_parameters(port, theta, phi, shift, power)
-
 
     def set_parameters(self, port, theta, phi, shift, power):
         params = yaml.load(open(CONFIG_FILE, 'r'))
@@ -171,7 +171,7 @@ class Laser3d(object):
         if theta is None:
             theta = 0
         if phi is None:
-            phi = int(params['servo_init'])
+            phi = 0
         if shift is None:
             shift = 0
         if power is None:
@@ -180,15 +180,15 @@ class Laser3d(object):
         self._theta = theta
         self._phi = phi
         self._shift = shift
+        self._tps = [theta, phi, shift]
         self._power = power
-        self.pc.theta = theta
-        self.pc.shift = shift
-        self.pc.phi = phi
-        print("phi installed", self.pc.phi)
+        # self.pc.theta = theta
+        # self.pc.shift = shift
+        # self.pc.phi = phi
 
     @property
     def phi(self):
-        return self._phi
+        return self._tps[1]
 
     @phi.setter
     def phi(self, phi):
@@ -196,7 +196,7 @@ class Laser3d(object):
 
     @property
     def theta(self):
-        return self._theta
+        return self._tps[0]
 
     @theta.setter
     def theta(self, theta):
@@ -212,7 +212,7 @@ class Laser3d(object):
 
     @property
     def shift(self):
-        return self._shift
+        return self._tps[3]
 
     @shift.setter
     def shift(self, shift):
@@ -222,23 +222,16 @@ class Laser3d(object):
         # ser_dev.flushInput()
         tcom = 'STMOV 1 %i' % shift
         pcom = 'STMOV 2 %i' % theta
-        scom = 'SVMOV %i' % phi
-        self._send_command(tcom)
-        self._send_command(scom)
-        self._send_command(pcom)
+        scom = 'STMOV 3 %i' % phi
+        for command in [tcom, pcom, scom]:
+            self._send_command(command)
         self._theta = theta
         self._phi = phi
         self._shift = shift
-        self.pc.theta = theta
-        self.pc.shift = shift
-        self.pc.phi = phi
-
-    # def move_servo(self, phi=0, mode='relative'):
-    #     if mode == 'relative':
-    #         scom = 'SVMOV %i' % (phi+self._phi)
-    #     self.phi = phi+self._phi
-    #     self._send_command(scom)
-    #     return
+        self._tps = [theta, phi, shift]
+        # self.pc.theta = theta
+        # self.pc.shift = shift
+        # self.pc.phi = phi
 
     def set_power(self, power):
         lcom = 'LPOW %i' % power
@@ -246,11 +239,11 @@ class Laser3d(object):
         self._power = power
 
     def get_centered_parameters(self):
+        pc = PlatformCoordinates(self._tps)
         phi = self.pc.phi_to_center()
         return self.theta, phi, self.shift
 
     def _send_command(self, command):
-        # print("sending", command)
         # ser_dev.flushOutput()
         self._ser_dev.write(command + '\r'.encode())
         out = self._ser_dev.read()

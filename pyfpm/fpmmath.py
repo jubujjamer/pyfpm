@@ -8,7 +8,7 @@ Usage:
 
 """
 from io import BytesIO
-from itertools import ifilter, product
+from itertools import ifilter, product, cycle
 from StringIO import StringIO
 import time
 import yaml
@@ -91,6 +91,33 @@ def set_iterator(cfg=None):
                     power = laser_power(theta, phi, mode)
                     yield index, theta, phi, power
                     index += 1
+
+    elif itertype == 'radial_efficient':
+            """ Constructs an iterator of pupil center positions.
+
+                Keywords:
+                pupil_radius    radius of the pupil in the Fourier plane, given by NA
+                phi,theta       spherical angles in sexagesimal degrees
+                ns              1-radial_overlap (radius segment overlap)
+                phi_max         maximum phi for the acquisition
+                image_size      size of the created pupil image
+            """
+            # yield 0, 0, 0, 0
+            index = 0
+            direction_flag = 1
+            phi_list = range(phi_min, phi_max, phi_step)
+            theta_list = range(theta_min, theta_max, theta_step)
+            theta_list.extend(theta_list[-2:0:-1])
+            theta_list_max = max(theta_list)
+
+            theta_cycle = cycle(theta_list)
+            phi_iter = iter(phi_list)
+            for t in theta_cycle:
+                if t == min(theta_list) or t == max(theta_list):
+                    p = phi_iter.next()
+                power = laser_power(t, p, mode)
+                yield index, t, p, power
+                index += 1
 
 
     # elif itertype == 'radial':

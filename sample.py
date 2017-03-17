@@ -63,12 +63,12 @@ pc = PlatformCoordinates()
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'reconstruct'
+task = 'acquire'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
     for index, theta, phi, power in iterator:
-        pc.set_in_degrees(theta, phi)
+        pc.set_coordinates(theta, phi, units='degrees')
         [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
         print("parameters to platform", theta_plat, phi_plat, shift, power)
         img = client.acquire(theta_plat, phi_plat, shift, power)
@@ -126,13 +126,18 @@ if task is 'calibration':
     client.acquire(0, 0, 0)
 
 if task is 'testing':
-    iterator = iterleds(theta_max, phi_max, theta_step, 'sampling')
     for index, theta, phi, power in iterator:
-        # slice_ratio = np.cos(np.radians(phi))
-        # phi_tilted = get_tilted_phi(theta=theta, alpha=-3, slice_ratio=slice_ratio)
-        (theta_corr, phi_corr) = correct_angles(theta, phi)
-        print('theta: %d, phi: %d' % (theta, phi))
-        print('theta_corr: %f, phi_corr: %f' % (theta_corr, phi_corr))
+        pc.set_coordinates(theta, phi, units='degrees')
+        [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
+        print("parameters", theta, phi)
+        print("parameters to platform: theta %i, phi %i, shift %i" % (theta_plat, phi_plat, shift))
+        # img = client.acquire(theta_plat, phi_plat, shift, power)
+        # im_array = misc.imread(StringIO(img.read()), 'RGB')
+        # image_dict[(theta, phi)] = im_array
+        # ax = plt.gca() or plt
+        # ax.imshow(im_array)
+        # ax.get_figure().canvas.draw()
+        # plt.show(block=False)
 
 if task is 'fix':
     fixed_dict = preprocess(in_file, blank_images, iterator, cfg=cfg, debug=True)
