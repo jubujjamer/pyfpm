@@ -27,7 +27,7 @@ servertype = cfg.servertype
 camtype = cfg.camtype
 
 output_file = open(config_dict['output_cal'], "w")
-laser3d = Laser3d(port=serialport+str(0))
+# laser3d = Laser3d(port=serialport+str(0))
 
 if servertype == 'sampling':
     try:

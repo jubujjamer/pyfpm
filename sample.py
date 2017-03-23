@@ -15,13 +15,12 @@ import time
 import os
 import datetime
 
-
 import matplotlib.pyplot as plt
-import h5py
 from scipy import misc
 import numpy as np
 import time
 import yaml
+import pygame
 
 from pyfpm import web
 from pyfpm.fpmmath import set_iterator, reconstruct, preprocess, rec_test
@@ -63,7 +62,7 @@ pc = PlatformCoordinates()
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'acquire'
+task = 'manual_move'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -131,6 +130,7 @@ if task is 'testing':
         [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
         print("parameters", theta, phi)
         print("parameters to platform: theta %i, phi %i, shift %i" % (theta_plat, phi_plat, shift))
+        client.acquire(theta_plat, phi_plat, shift, power)
         # img = client.acquire(theta_plat, phi_plat, shift, power)
         # im_array = misc.imread(StringIO(img.read()), 'RGB')
         # image_dict[(theta, phi)] = im_array
@@ -142,3 +142,43 @@ if task is 'testing':
 if task is 'fix':
     fixed_dict = preprocess(in_file, blank_images, iterator, cfg=cfg, debug=True)
     # np.save('/output_sampling/fixed.npy', fixed_dict)
+
+if task is 'manual_move':
+    tp = np.array([0, 0]) # Variables theta and phi
+    [ts, ps] = [-20, 2]
+    power_set = 0
+    pygame.init()
+    #Loop until the user clicks the close button.
+    done = False
+    # Initialize the joysticks
+    pygame.joystick.init()
+        # -------- Main Program Loop -----------
+    while done==False:
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+        # EVENT PROCESSING STEP
+        for event in pygame.event.get(): # User did something
+            if event.type == pygame.QUIT: # If user clicked close
+                done = True # Flag that we are done so we exit this loop
+            # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+            if event.type == pygame.JOYBUTTONDOWN:
+                print("Joystick button pressed.")
+                buttons = joystick.get_numbuttons()
+                power_set += (joystick.get_button(2)) - (joystick.get_button(0))
+
+            if event.type == pygame.JOYAXISMOTION:
+                    print(np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)]))
+                    x = np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)])
+                    tp = tp + x
+
+            pc.set_coordinates(tp[0], tp[1], units='degrees')
+            [theta_plat, phi_plat, shift, power_plat] = pc.parameters_to_platform()
+            power_set = max(0, power_set)
+            power_set = min(cfg.max_power, power_set)
+            print("parameters to platform", theta_plat, phi_plat, shift, power_set)
+            img = client.acquire(theta_plat, phi_plat, shift, power_set)
+
+    # Close the window and quit.
+    # If you forget this line, the program will 'hang'
+    # on exit if running from IDLE.
+    pygame.quit ()

@@ -17,7 +17,7 @@ import os
 
 from pyfpm import web
 import pyfpm.local as local
-from pyfpm.fpmmath import set_iterator, recontruct, itertest
+from pyfpm.fpmmath import set_iterator, reconstruct, itertest
 # from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
 from pyfpm.data import save_yaml_metadata
@@ -39,7 +39,7 @@ in_file = os.path.join(cfg.output_sim,
 iterator = set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
 # pc = PlatformCoordinates()
-task = 'reconstruct'
+task = 'acquire'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
