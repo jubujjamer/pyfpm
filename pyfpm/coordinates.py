@@ -177,7 +177,7 @@ class PlatformCoordinates(object):
             self.power = 255
         return
 
-    def set_coordinates(self, theta, phi, units='degrees'):
+    def set_coordinates(self, theta, phi, shift=None, units='degrees'):
         """ This allows the user to set angles in the preferred unit system.
         The default setter is in platform coordinates (raw), but it is advisable to
         use this explicit form.
@@ -192,6 +192,13 @@ class PlatformCoordinates(object):
             self._tps = [np.radians(theta*360/cfg.theta_spr),
                          np.radians(phi*360/cfg.phi_spr),
                          None]
+        if units == 'deg_shift':
+            self._theta = np.radians(theta)
+            self._phi = np.radians(phi)
+            self._shift = shift
+            self._tps = [np.radians(theta),
+                         np.radians(phi),
+                         shift]
 
     def phi_to_center(self):
         """ Calculates the required phi angle for the spot to be centered given
@@ -226,10 +233,11 @@ class PlatformCoordinates(object):
         """
         try:
             model_dict = yaml.load(open(model_file, 'r'))
+            model = model_dict['model_type']
+
         except:
             print "No model created, run 'generate_model' first"
-            return
-        model = model_dict['model_type']
+            model = 'nomodel'
 
         if model == 'nomodel':
             theta = self.theta
@@ -286,6 +294,12 @@ class PlatformCoordinates(object):
             return
         if model == 'normal':
             model = {'model_type': 'normal'}
+            with open(model_file, 'w') as outfile:
+                yaml.dump(model, outfile, default_flow_style=False)
+            return
+
+        if model == 'nomodel':
+            model = {'model_type': 'nomodel'}
             with open(model_file, 'w') as outfile:
                 yaml.dump(model, outfile, default_flow_style=False)
             return

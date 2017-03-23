@@ -57,6 +57,7 @@ server_ip = cfg.server_ip
 # Connect to a web client running serve_microscope.py
 client = web.Client(server_ip)
 pc = PlatformCoordinates()
+pc.generate_model(cfg.plat_model)
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
 # resolution details
@@ -144,39 +145,41 @@ if task is 'fix':
     # np.save('/output_sampling/fixed.npy', fixed_dict)
 
 if task is 'manual_move':
-    tp = np.array([0, 0]) # Variables theta and phi
+    if cfg.plat_model == 'nomodel':
+        plat_units = 'deg_shift'
+    else:
+        plat_units = 'degrees'
+    tp = np.array([0, 0])  # Variables theta and phi
     [ts, ps] = [-20, 2]
     power_set = 0
+    shift_set = 0
     pygame.init()
-    #Loop until the user clicks the close button.
+    # Loop until the user clicks the close button.
     done = False
     # Initialize the joysticks
     pygame.joystick.init()
-        # -------- Main Program Loop -----------
-    while done==False:
+    # -------- Main Program Loop -----------
+    while done is False:
         joystick = pygame.joystick.Joystick(0)
         joystick.init()
         # EVENT PROCESSING STEP
-        for event in pygame.event.get(): # User did something
-            if event.type == pygame.QUIT: # If user clicked close
-                done = True # Flag that we are done so we exit this loop
-            # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+        for event in pygame.event.get():  # User did something
+            if event.type == pygame.QUIT:  # If user clicked close
+                done = True  # Flag that we are done so we exit this loop
             if event.type == pygame.JOYBUTTONDOWN:
-                print("Joystick button pressed.")
                 buttons = joystick.get_numbuttons()
                 power_set += (joystick.get_button(2)) - (joystick.get_button(0))
-
+                shift_set += (joystick.get_button(3)) - (joystick.get_button(1))
             if event.type == pygame.JOYAXISMOTION:
-                    print(np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)]))
-                    x = np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)])
-                    tp = tp + x
+                x = np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)])
+                tp = tp + x
 
-            pc.set_coordinates(tp[0], tp[1], units='degrees')
-            [theta_plat, phi_plat, shift, power_plat] = pc.parameters_to_platform()
+            pc.set_coordinates(tp[0], tp[1], shift_set, units=plat_units)
+            [theta_plat, phi_plat, shift_plat, power_plat] = pc.parameters_to_platform()
             power_set = max(0, power_set)
             power_set = min(cfg.max_power, power_set)
-            print("parameters to platform", theta_plat, phi_plat, shift, power_set)
-            img = client.acquire(theta_plat, phi_plat, shift, power_set)
+            print("parameters to platform", theta_plat, phi_plat, shift_plat, power_set)
+            img = client.acquire(theta_plat, phi_plat, shift_plat, power_set)
 
     # Close the window and quit.
     # If you forget this line, the program will 'hang'

@@ -25,7 +25,7 @@ pc = PlatformCoordinates(theta=0, phi=0, shift=100, height=60)
 # plt.show()
 
 
-pc.generate_model(model='normal')
+pc.generate_model(model='nomodel')
 for phi in range(75, 100):
     pc.phi = phi
     print(pc.parameters_to_platform())

@@ -41,4 +41,5 @@ output_sim: ./output_sim/
 input_mag: './imgs/mag1.png' # If task is simulation
 input_phase: './imgs/phase1.png' # If task is simulation
 model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
+plat_model: nomodel
 debug: False # Show me images and be verbose
