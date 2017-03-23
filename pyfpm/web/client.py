@@ -25,6 +25,16 @@ class Client(BaseClient):
         else:
             print("Failed to load webpage")
 
+    def just_move(self, theta, phi, shift=0, power=100, color='green'):
+        print(self.url + '/just_move/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color))
+        response = requests.get(self.url +
+                                '/just_move/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color),
+                                stream=True)
+        if response.status_code == 200:
+            return response.raw
+        else:
+            print("Failed to load webpage")
+
     def complete_scan(self, color):
         print(self.url + '/%s' % (color))
         response = requests.get(self.url + '/%s' % (color), stream=True)

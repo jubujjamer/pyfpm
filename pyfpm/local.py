@@ -115,6 +115,13 @@ class Laser3dCalibrate(BaseClient):
         print("capturing")
         return self.camera.capture_png()
 
+    def just_move(self, theta=None, phi=None, shift=None, power=None, color=None):
+        self.laser3d.theta = float(theta)
+        self.laser3d.phi = float(phi)
+        self.laser3d.shift = float(shift)
+        self.laser3d.power = float(power)
+        return 
+
     def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
         return self.camera.capture_png()
 

@@ -36,7 +36,7 @@ cfg = dt.load_config(CONFIG_FILE)
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
 in_file = os.path.join(cfg.output_sample,
-                        './2017-03-06_18:00:43.npy')
+                        './2017-03-23_19:04:01.npy')
 blank_images = os.path.join(cfg.output_sample,
                         './2017-03-06_18:41:51.npy')
 json_file = './output_sim/out.json'
@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'manual_move'
+task = 'testing'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -126,25 +126,23 @@ if task is 'calibration':
     client.acquire(0, 0, 0)
 
 if task is 'testing':
-    for index, theta, phi, power in iterator:
-        pc.set_coordinates(theta, phi, units='degrees')
-        [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
-        print("parameters", theta, phi)
-        print("parameters to platform: theta %i, phi %i, shift %i" % (theta_plat, phi_plat, shift))
-        client.acquire(theta_plat, phi_plat, shift, power)
-        # img = client.acquire(theta_plat, phi_plat, shift, power)
-        # im_array = misc.imread(StringIO(img.read()), 'RGB')
-        # image_dict[(theta, phi)] = im_array
-        # ax = plt.gca() or plt
-        # ax.imshow(im_array)
-        # ax.get_figure().canvas.draw()
-        # plt.show(block=False)
+    image_dict = np.load(in_file)[()]
+    fig, ax = plt.subplots(1, 1, figsize=(25, 15))
+    fig.show()
+    for k in image_dict.keys():
+        ax.cla()
+        img = image_dict[k]
+        ax.imshow(img, cmap=plt.get_cmap('hot'))
+        fig.canvas.draw()
+        misc.imsave('%s.png' % k[0], img)
+
 
 if task is 'fix':
     fixed_dict = preprocess(in_file, blank_images, iterator, cfg=cfg, debug=True)
     # np.save('/output_sampling/fixed.npy', fixed_dict)
 
 if task is 'manual_move':
+    image_dict = dict()
     if cfg.plat_model == 'nomodel':
         plat_units = 'deg_shift'
     else:
@@ -158,10 +156,16 @@ if task is 'manual_move':
     done = False
     # Initialize the joysticks
     pygame.joystick.init()
+    fig, ax = plt.subplots(1, 1, figsize=(25, 15))
+    # im1 = ax.imshow(np.ones((480,640)), cmap=plt.get_cmap('hot'))
+    fig.show()
     # -------- Main Program Loop -----------
     while done is False:
         joystick = pygame.joystick.Joystick(0)
         joystick.init()
+        save_this = False
+        show_this = False
+        # ax.cla()
         # EVENT PROCESSING STEP
         for event in pygame.event.get():  # User did something
             if event.type == pygame.QUIT:  # If user clicked close
@@ -170,17 +174,32 @@ if task is 'manual_move':
                 buttons = joystick.get_numbuttons()
                 power_set += (joystick.get_button(2)) - (joystick.get_button(0))
                 shift_set += (joystick.get_button(3)) - (joystick.get_button(1))
+                if joystick.get_button(4):
+                    save_this = True
+                    print("I'm going to save that")
+                if joystick.get_button(5):
+                    done = True
+                if joystick.get_button(6):
+                    show_this = True
             if event.type == pygame.JOYAXISMOTION:
                 x = np.array([ts*joystick.get_axis(0), ps*joystick.get_axis(1)])
                 tp = tp + x
-
             pc.set_coordinates(tp[0], tp[1], shift_set, units=plat_units)
             [theta_plat, phi_plat, shift_plat, power_plat] = pc.parameters_to_platform()
             power_set = max(0, power_set)
             power_set = min(cfg.max_power, power_set)
             print("parameters to platform", theta_plat, phi_plat, shift_plat, power_set)
-            img = client.acquire(theta_plat, phi_plat, shift_plat, power_set)
-
+            client.just_move(theta_plat, phi_plat, shift_plat, power_set)
+            if show_this:
+                print("Showing")
+                img = client.acquire(theta_plat, phi_plat, shift_plat, power_set)
+                im_array = misc.imread(StringIO(img.read()), 'RGB')
+                ax.imshow(im_array, cmap=plt.get_cmap('hot'))
+                fig.canvas.draw()
+            if save_this:
+                image_dict[(tp[0], tp[1])] = im_array
+    np.save(out_file, image_dict)
+    client.acquire(0, cfg.servo_init, 0)
     # Close the window and quit.
     # If you forget this line, the program will 'hang'
     # on exit if running from IDLE.

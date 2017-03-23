@@ -117,6 +117,16 @@ def create_server(client):
             print("An error")
             pass
 
+    @app.route("/just_move/<theta>/<phi>/<shift>/<power>/<color>")
+    def just_move(theta, phi, shift, power, color):
+        print ("app", float(theta), float(phi), color)
+        try:
+            return Response(client.just_move(theta, phi, shift, power, color),
+                            mimetype='image/png')
+        except socket.error:
+            print("An error")
+            pass
+
     @app.route("/complete_scan/<color>")
     def complete_scan(color):
         print ("app", color)
