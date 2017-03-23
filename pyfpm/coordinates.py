@@ -129,7 +129,7 @@ class PlatformCoordinates(object):
 
     @phi.setter
     def phi(self, phi):
-        self._phi = np.radians(phi*360/phi_spr)
+        self._phi = np.radians(phi*360/cfg.phi_spr)
         self.update_spot_center()
 
     @property
@@ -258,13 +258,11 @@ class PlatformCoordinates(object):
                 shift_adjusted = 0
             if shift_adjusted > shift_max:
                 shift_adjusted = shift_max
-
         shift_plat = int(shift_adjusted/cfg.shift_step)
         theta_plat = int(self.theta*cfg.theta_spr/(2*np.pi))
         phi_plat = int(self.phi*cfg.phi_spr/(2*np.pi))
         self.adjust_power()
         power_plat = self.power
-        if shift_plat == 0: shift_plat = 0
         shift_plat = min(cfg.shift_max, shift_plat)
 
         return theta_plat, phi_plat, shift_plat, power_plat
