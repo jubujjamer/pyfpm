@@ -14,7 +14,8 @@ import yaml
 import cv2
 from io import BytesIO
 
-import picamera
+# import picamera
+import camera
 
 from pyfpm.coordinates import PlatformCoordinates
 
@@ -295,10 +296,12 @@ class Camera(object):
             self.config_cap()
             print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
-            try:
-                self.cap = picamera.PiCamera()
-            except:
-                print("Cant load camera")
+            # try:
+            #     self.cap = picamera.PiCamera()
+            # except:
+            #     print("Cant load camera")
+            self.cap = camera.RaspiStill(tmpfile='tmp.png', bin='raspistill',
+                                        exposure='fixedfps', awb='off', format='png')
 
 
     def config_cap(self):
@@ -318,14 +321,14 @@ class Camera(object):
                      13: 'CAP_PROP_HUE',
                      14: 'CAP_PROP_GAIN',
                      15: 'CAP_PROP_EXPOSURE'}
-        # props = [a for a in dir(cv2) if "PROP" in a]
-        # for p in range(0, 16):
-        #     if self.cap.get(p) != -10.0:
-        #         print p, self.cap.get(p), prop_dict[p]
+        props = [a for a in dir(cv2) if "PROP" in a]
+        for p in range(0, 16):
+            if self.cap.get(p) != -10.0:
+                print p, self.cap.get(p), prop_dict[p]
         self.cap.set(10, 0.5)
         # self.cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
-        # cap.set(cv2.CAP_PROP_SATURATION, 0.5)
-        # cap.set(cv2.CAP_PROP_EXPOSURE, 100)
+        # self.cap.set(cv2.CAP_PROP_SATURATION, 0.5)
+        # self.cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
     def capture_png(self):
@@ -339,13 +342,14 @@ class Camera(object):
             for i in range(5):
                 ret, frame = self.cap.read()
             print('ret value %i' % ret)
-            ret, buf = cv2.imencode('.png', frame)
+            ret, buf = cv2.imencode('.png', frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
             print('ret value %i' % ret)
             return bytearray(buf)
         elif(camtype == 'picamera'):
-            stream = BytesIO()
-            self.cap.capture(stream, 'png')
-            return stream.getvalue()
+            # stream = BytesIO()
+            # self.cap.capture(stream, 'png')
+            # return stream.getvalue()
+            return self.cap.acquire()
 
 
     def __del__(self):

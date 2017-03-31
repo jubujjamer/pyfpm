@@ -1,7 +1,7 @@
 # Configuration file for both server and clients
 # Let's start with the server first
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
-camtype: opencv # picamera or opencv
+camtype: picamera # picamera or opencv
 video_id: 0
 video_size: [150, 150] #[480, 640] #[80, 80] #[480, 640] #[150, 150]
 client: ledclient
@@ -21,7 +21,7 @@ shift: [0, 400, 1]
 shift_step: 0.0188 # 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
 theta_spr: 7680
 shift_max: 1800 # max steps to border
-sample_height: 120 # mm above led
+sample_height: 110 # mm above led
 servo_init: 75 # Zero angle for the servo motor
 phi_spr: 2048
 # For the recosntruction
@@ -41,5 +41,5 @@ output_sim: ./output_sim/
 input_mag: './imgs/mag1.png' # If task is simulation
 input_phase: './imgs/phase1.png' # If task is simulation
 model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
-plat_model: normal #nomodel #normal
+plat_model: nomodel #nomodel #normal
 debug: False # Show me images and be verbose
