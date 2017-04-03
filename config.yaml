@@ -38,7 +38,7 @@ servertype: sampling # simulation or sampling
 output_cal: ./out/calibration_20170302.npy
 output_sample: ./out_sampling/
 output_sim: ./output_sim/
-input_mag: './imgs/mag1.png' # If task is simulation
+input_mag: './imgs/Image_4a.jpg' # If task is simulation
 input_phase: './imgs/phase1.png' # If task is simulation
 model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
 plat_model: normal #nomodel #normal
