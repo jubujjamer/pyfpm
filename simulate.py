@@ -39,7 +39,7 @@ in_file = os.path.join(cfg.output_sim,
 iterator = set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
 # pc = PlatformCoordinates()
-task = 'acquire'
+task = 'visualize'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -65,3 +65,10 @@ if task is 'test_and_measure':
             ax.imshow(im_array, cmap=plt.get_cmap('gray'))
             ax.get_figure().canvas.draw()
             plt.show(block=False)
+
+if task is 'visualize':
+    from pyfpm.plotsgui import plot_crossections
+
+    img = client.load_image(cfg.input_mag)
+    image = misc.imread(StringIO(img), 'gray')
+    plot_crossections(image)
