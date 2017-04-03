@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'manual_move'
+task = 'acquire'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -74,10 +74,10 @@ if task is 'acquire':
         img = client.acquire(theta_plat, phi_plat, shift, power)
         im_array = misc.imread(StringIO(img.read()), 'RGB')
         image_dict[(theta, phi)] = im_array
-        # ax = plt.gca() or plt
-        # ax.imshow(im_array)
-        # ax.get_figure().canvas.draw()
-        # plt.show(block=False)
+        ax = plt.gca() or plt
+        ax.imshow(im_array)
+        ax.get_figure().canvas.draw()
+        plt.show(block=False)
     print(out_file)
     np.save(out_file, image_dict)
     client.acquire(0, cfg.servo_init, 0)

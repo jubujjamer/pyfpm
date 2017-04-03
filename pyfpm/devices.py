@@ -301,7 +301,8 @@ class Camera(object):
             # except:
             #     print("Cant load camera")
             self.cap = camera.RaspiStill(tmpfile='tmp.png', bin='raspistill',
-                                        exposure='fixedfps', awb='off', format='png')
+                                        awb='off', format='png',
+                                        width=640, height=480, timeacq=100, nopreview='-n')
 
 
     def config_cap(self):
