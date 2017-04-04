@@ -16,10 +16,12 @@ from io import BytesIO
 
 # import picamera
 import camera
+import pyfpm.data as dt
 
 from pyfpm.coordinates import PlatformCoordinates
 
 CONFIG_FILE = 'config.yaml'
+cfg = dt.load_config(CONFIG_FILE)
 
 class LaserAim(object):
     """Hello
@@ -283,8 +285,6 @@ class Camera(object):
              -c exposure_absolute=10
     """
     def __init__(self, video_id=0, camtype='picamera'):
-        # os.system('v4l2-ctl -d /dev/video1 -c exposure_auto=1 -c exposure_absolute=100')
-        self.cap = None
         self.camtype = camtype
         print("Trying to select a camera")
         if(camtype == 'opencv'):
@@ -296,13 +296,12 @@ class Camera(object):
             self.config_cap()
             print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
-            # try:
-            #     self.cap = picamera.PiCamera()
-            # except:
-            #     print("Cant load camera")
             self.cap = camera.RaspiStill(tmpfile='tmp.png', bin='raspistill',
-                                        awb='off', format='png',
-                                        width=640, height=480, timeacq=100, nopreview='-n')
+                            awb='off', format='png', width=cfg.video_size[1],
+                            height=cfg.video_size[0], timeacq=100, nopreview='-n',
+                            iso=400, shutter_speed=1000)
+        else:
+            self.cap = None
 
 
     def config_cap(self):
@@ -332,7 +331,7 @@ class Camera(object):
         # self.cap.set(cv2.CAP_PROP_EXPOSURE, 100)
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
-    def capture_png(self):
+    def capture_png(self, shutter_speed, iso):
         camtype = self.camtype
         if(camtype == 'opencv'):
             print("Adding a time delay to leave time the led to set.")
@@ -347,9 +346,13 @@ class Camera(object):
             print('ret value %i' % ret)
             return bytearray(buf)
         elif(camtype == 'picamera'):
-            # stream = BytesIO()
-            # self.cap.capture(stream, 'png')
-            # return stream.getvalue()
+            if shutter_speed is not None:
+                self.cap.shutter_speed = shutter_speed
+            if iso is not None:
+                print("changing iso to", iso)
+                self.cap.iso = iso
+                print(self.cap.iso)
+            print("My new command is", self.cap.cmd)
             return self.cap.acquire()
 
 

@@ -100,12 +100,13 @@ class Laser3dCalibrate(BaseClient):
             self.laser3d.phi = phi
             self.laser3d.shift = shift
             self.laser3d.power = power
-        return
+        return 
 
     def capture_image(self):
         return self.camera.capture_png()
 
-    def acquire(self, theta=None, phi=None, shift=None, power=None, color=None):
+    def acquire(self, theta=None, phi=None, shift=None, power=None, color=None,
+                shutter_speed=100, iso=100):
         # self.set_parameters(theta, phi, shift, power)
         print("In acquire", theta, phi, shift, power, color)
         self.laser3d.theta = float(theta)
@@ -113,14 +114,14 @@ class Laser3dCalibrate(BaseClient):
         self.laser3d.shift = float(shift)
         self.laser3d.power = float(power)
         print("capturing")
-        return self.camera.capture_png()
+        return self.camera.capture_png(shutter_speed, iso)
 
     def just_move(self, theta=None, phi=None, shift=None, power=None, color=None):
         self.laser3d.theta = float(theta)
         self.laser3d.phi = float(phi)
         self.laser3d.shift = float(shift)
         self.laser3d.power = float(power)
-        return 
+        return
 
     def calibrate_servo(self, theta=None, phi=None, power=None, color=None):
         return self.camera.capture_png()
@@ -180,9 +181,10 @@ class SimClient(BaseClient):
         # Return np.array processed using laser aiming data
         mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
         ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
-        mag_array[mag_array < 10] = 100
-        ph_array[ph_array < 10] = 100
+        # mag_array[mag_array < 10] = 100
+        # ph_array[ph_array < 10] = 100
         im_array = mag_array*np.exp(1j*ph_array)
+        # im_array = mag_array
         return filter_by_pupil(im_array, theta, phi, power, self.cfg)
 
     def show_filtered(self, theta=None, phi=None, power=None):

@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'acquire'
+task = 'manual_move'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -204,3 +204,16 @@ if task is 'manual_move':
     # If you forget this line, the program will 'hang'
     # on exit if running from IDLE.
     pygame.quit ()
+
+if task is 'test':
+    fig, ax = plt.subplots(1, 1, figsize=(25, 15))
+    fig.show()
+
+    pc.set_coordinates(0, 0, units='degrees')
+    [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
+    img = client.acquire(theta_plat, phi_plat, shift, power,
+                         shutter_speed=6000, iso=100)
+    im_array = misc.imread(StringIO(img.read()), 'RGB')
+    ax.imshow(im_array, cmap=plt.get_cmap('hot'))
+    fig.canvas.draw()
+    plt.show()

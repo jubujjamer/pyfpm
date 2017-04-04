@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-""" File simulate.py
+""" File acquire_complete_set.py
 
 Last update: 28/10/2016
 Use to locally simulate FPM.
@@ -8,49 +8,47 @@ Use to locally simulate FPM.
 Usage:
 
 """
-import time
 from StringIO import StringIO
 import os
+import datetime
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
-import numpy as np
-import datetime
 from scipy import misc
+import numpy as np
 
 from pyfpm import web
-import pyfpm.local as local
-from pyfpm.fpmmath import set_iterator, reconstruct, generate_pupil
-# from pyfpm.data import json_savemeta, json_loadmeta
-import pyfpm.data as dt
+from pyfpm.fpmmath import set_iterator
 from pyfpm.data import save_yaml_metadata
-
-
-class Formatter(object):
-    def __init__(self, im):
-        self.im = im
-    def __call__(self, x, y):
-        z = self.im.get_array()[int(y), int(x)]
-        return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
+import pyfpm.data as dt
+from pyfpm.coordinates import PlatformCoordinates
 
 # Simulation parameters
 CONFIG_FILE = 'config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
-mode = cfg.task
-itertype = cfg.sweep
-server_ip = cfg.server_ip
-out_file = os.path.join(cfg.output_sim,
+out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
-in_file = os.path.join(cfg.output_sim, '2017-03-06_10:48:02.npy')
-iterator = set_iterator(cfg)
-client = local.SimClient(cfg=cfg)
-# pc = PlatformCoordinates()
+in_file = os.path.join(cfg.output_sample,
+                        './2017-03-23_19:04:01.npy')
 
-task = 'test'
-if task is 'acquire':
-    image_dict = dict()
-    save_yaml_metadata(out_file, cfg)
-    for index, theta, phi, power in iterator:
-        image_dict[(theta, phi)] = client.acquire(theta, phi, power)
-    np.save(out_file, image_dict)
+# Connect to a web client running serve_microscope.py
+client = web.Client(server_ip)
+pc = PlatformCoordinates()
+pc.generate_model(cfg.plat_model)
+iterator = set_iterator(cfg)
+
+# Start image acquisition
+image_dict = dict()
+for index, theta, phi, power in iterator:
+    pc.set_coordinates(theta, phi, units='degrees')
+    [theta_plat, phi_plat, shift, power] = pc.parameters_to_platform()
+    img = client.acquire(theta_plat, phi_plat, shift, power)
+    im_array = misc.imread(StringIO(img.read()), 'RGB')
+    image_dict[(theta, phi)] = im_array
+    ax = plt.gca() or plt
+    ax.imshow(im_array)
+    ax.get_figure().canvas.draw()
+    plt.show(block=False)
+save_yaml_metadata(out_file, cfg)
+np.save(out_file, image_dict)
+client.acquire(0, cfg.servo_init, 0)

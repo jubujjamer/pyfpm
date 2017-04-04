@@ -15,10 +15,12 @@ class Client(BaseClient):
         self.url = url
         # self.metadata = requests.get(self.url + '/metadata').json()
 
-    def acquire(self, theta, phi, shift=0, power=100, color='green'):
-        print(self.url + '/acquire/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color))
+    def acquire(self, theta, phi, shift=0, power=100, color='green', shutter_speed=100, iso=100):
+        print(self.url + '/acquire/%d/%d/%d/%d/%s/%d/%d' % (theta, phi, shift, power, color,
+        shutter_speed, iso))
         response = requests.get(self.url +
-                                '/acquire/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color),
+                                '/acquire/%d/%d/%d/%d/%s/%d/%d' % (theta, phi, shift, power, color,
+                                shutter_speed, iso),
                                 stream=True)
         if response.status_code == 200:
             return response.raw

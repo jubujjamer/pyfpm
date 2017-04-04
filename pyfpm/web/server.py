@@ -107,11 +107,12 @@ def create_server(client):
     def testcam():
         return Response(client.capture_image(), mimetype='image/png')
 
-    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>")
-    def acquire(theta, phi, shift, power, color):
+    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
+    def acquire(theta, phi, shift, power, color, shutter_speed, iso):
         print ("app", float(theta), float(phi), color)
         try:
-            return Response(client.acquire(theta, phi, shift, power, color),
+            return Response(client.acquire(theta, phi, shift, power, color,
+                            shutter_speed, iso),
                             mimetype='image/png')
         except socket.error:
             print("An error")
