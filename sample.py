@@ -36,9 +36,9 @@ cfg = dt.load_config(CONFIG_FILE)
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
 in_file = os.path.join(cfg.output_sample,
-                        './2017-03-23_19:04:01.npy')
+                        './2017-04-05_18:39:32.npy')
 blank_images = os.path.join(cfg.output_sample,
-                        './2017-03-06_18:41:51.npy')
+                        './2017-04-05_16:17:27.npy')
 json_file = './output_sim/out.json'
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # ns = 0.3  # Complement of the overlap between sampling pupils
@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'manual_move'
+task = 'reconstruct'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
@@ -84,7 +84,7 @@ if task is 'acquire':
 
 elif task is 'reconstruct':
     start_time = time.time()
-    rec = reconstruct(in_file, blank_images, iterator, cfg=cfg, debug=True)
+    rec = rec_test(in_file, blank_images, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

@@ -12,6 +12,7 @@ import numpy as np
 from itertools import ifilter, product
 
 import pyfpm.data as dt
+from pyfpm.fpmmath import set_iterator, translate
 
 CONFIG_FILE = 'config.yaml'
 config_dict = yaml.load(open(CONFIG_FILE, 'r'))
@@ -169,12 +170,14 @@ class PlatformCoordinates(object):
 
     def adjust_power(self):
         phi = np.degrees(self.phi)
-        if phi < 3:
-            self.power = 50
-        if phi >= 3 and phi < 10:
-            self.power = 100
-        if phi > 10:
-            self.power = 255
+        power = translate(phi, 0, 90, 10, 200)
+        self.power = power
+        # if phi < 3:
+        #     self.power = 50
+        # if phi >= 3 and phi < 10:
+        #     self.power = 100
+        # if phi > 8:
+        #     self.power = 255
         return
 
     def set_coordinates(self, theta, phi, shift=None, units='degrees'):
