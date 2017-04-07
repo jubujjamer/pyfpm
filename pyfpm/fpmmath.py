@@ -7,6 +7,10 @@ Last update: 28/10/2016
 Usage:
 
 """
+__version__= "1.1.1"
+__author__='Juan M. Bujjamer'
+__all__=['translate', 'image_center', 'generate_pupil']
+
 from io import BytesIO
 from itertools import ifilter, product, cycle
 from StringIO import StringIO
@@ -20,37 +24,43 @@ from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
 import random
-import optics_tools as ot
+# import fpmmath.optics_tools as ot
 
 #
-config_dict = yaml.load(open('config.yaml', 'r'))
+# config_dict = yaml.load(open('config.yaml', 'r'))
 
 
-def translate(value, leftMin, leftMax, rightMin, rightMax):
+def translate(value, input_min, input_max, output_min, output_max):
+    """ Measuremente value rescaled by the selected span.
+
+    Args:
+        value (float): the value to Convert
+
+    Returns:
+        (float): the value converted
+    """
     # Figure out how 'wide' each range is
-    leftSpan = leftMax - leftMin
-    rightSpan = rightMax - rightMin
+    input_span = input_max - input_min
+    output_span = output_Max - output_min
 
     # Convert the left range into a 0-1 range (float)
-    valueScaled = float(value - leftMin) / float(leftSpan)
+    value_scaled = float(value - input_min) / float(input_span)
 
     # Convert the 0-1 range into a value in the right range.
-    return rightMin + (valueScaled * rightSpan)
+    return output_min + (valueScaled * output_span)
 
-def laser_power(theta, phi, mode='simulation'):
-    """ Returns power 0-255 given the theta, phi coordinates
+def image_center(image_size=None):
+    """ Center coordinates given the image size.
+
+    Args:
+        image_size (list): list with the image sizes
+
+    Returns:
+        (int): integers with each dimension's mean size
     """
-    power = 255
-    if mode is 'simulation':
-        pass
-    elif mode is 'sampling':
-        if phi == 0:
-            power = 50
-        else:
-            power = 255
-    elif mode is 'calibration':
-            power = 1
-    return power
+    if image_size is not None:
+        xc, yc = np.array(image_size)/2
+    return int(xc), int(yc)
 
 def set_iterator(cfg=None):
     wavelength = cfg.wavelength
@@ -62,6 +72,21 @@ def set_iterator(cfg=None):
     image_dict = {}
     mode = cfg.task
     itertype = cfg.sweep
+
+    def laser_power(theta, phi, mode='simulation'):
+        """ Returns power 0-255 given the theta, phi coordinates
+        """
+        power = 255
+        if mode is 'simulation':
+            pass
+        elif mode is 'sampling':
+            if phi == 0:
+                power = 50
+            else:
+                power = 255
+        elif mode is 'calibration':
+                power = 1
+        return power
 
     if itertype == 'neopixels':
             """ Constructs an iterator of pupil center positions in the correct order
@@ -114,52 +139,39 @@ def set_iterator(cfg=None):
             yield index, t, p, power
             index += 1
 
-
-def itertest(theta_max=180, phi_max=80, theta_step=10, mode='simulation'):
-    """ Iterator with a particular behavior used for testing purposes.
-
-    e.g. Tilted plane acquisition for calibration correction
+def angles_to_pupil_center(theta=None, phi=None, image_size=None):
+    """ Pupil center in cartesian coordinates.
+    
     """
-    theta_range = range(0, theta_max, theta_step)
-    phi_0 = np.radians([0, 20, 40])
-    slice_ratios = [np.cos(phi_0)][0]
-    index = 0
-    tilt = 5
-    # yield 0, -80, 0, 0
-    for theta in theta_range:
-        for c in slice_ratios:
-            phi = get_tilted_phi(theta, tilt, c)
-            power = laser_power(theta, phi, mode)
-            index += 1
-            yield index, theta, phi, power
+    if image_size is not None:
+        max_displacement = max(image_size)/2  # Half image size  each side
+    if theta is not None:
+        theta_rad = np.radians(theta)
+    if phi is not None:
+        phi_rad = np.radians(phi)
+    xc, yc = image_center(image_size)
+    r = np.abs(max_displacement*np.sin(phi_rad))
+    # r = np.abs(rmax * phi_rad/(np.pi/2))
+    # Pupil positioning
+    kx = np.floor(np.cos(theta_rad)*r)
+    ky = np.floor(np.sin(theta_rad)*r)
+    return yc+ky, xc+kx
 
 
 def generate_pupil(theta=None, phi=None, power=None, pup_rad=None, image_size=None):
-    """ Returns a pupil image of size defined by '''image_size''' and radius
-    ''pup_rad''.
+    """ An array with a circular pupil with a defined center.
 
         Parameters:
             theta   angle in degrees on the plane parallel to the sample plane
             phi:    angle in degrees perpendicular t othe sample plane
             power:  power of the leds used by imaging
     """
-    rmax = image_size[1]/2  # Half image size  each side
-    phi_rad = np.radians(phi)
-    theta_rad = np.radians(theta)
     pup_matrix = np.zeros(image_size, dtype=np.uint8)
     nx, ny = image_size
-    image_center = (nx/2, ny/2)
-    # CHECK
-    # conversion from phi to r
-    r = np.abs(rmax * np.sin(phi_rad))
-    # r = np.abs(rmax * phi_rad/(np.pi/2))
-    # Pupil positioning
-    kx = np.floor(np.cos(theta_rad)*r)
-    ky = np.floor(np.sin(theta_rad)*r)
-    # Another way
-    pup_pos = [image_center[0]+ky, image_center[1]+kx]
+    pupil_center = angles_to_pupil_center(theta, phi, image_size)
+    # Coherent pupil generation
     xx, yy = np.meshgrid(range(ny), range(nx))
-    c = (xx-pup_pos[1])**2+(yy-pup_pos[0])**2
+    c = (xx-pupil_center[1])**2+(yy-pupil_center[0])**2
     image_gray = [c < pup_rad**2][0]
     # defocus = np.exp(-1j*ot.annular_zernike(4, 2, 0, np.sqrt(c)/pup_rad ))
     # # print(np.max(image_gray*np.sqrt((c-xx)**2+(c-yy)**2) ))
