@@ -24,6 +24,9 @@ from scipy.optimize import fsolve
 from PIL import Image
 from scipy import misc
 import random
+
+from . import implot
+
 # import fpmmath.optics_tools as ot
 
 #
@@ -41,13 +44,13 @@ def translate(value, input_min, input_max, output_min, output_max):
     """
     # Figure out how 'wide' each range is
     input_span = input_max - input_min
-    output_span = output_Max - output_min
+    output_span = output_max - output_min
 
     # Convert the left range into a 0-1 range (float)
     value_scaled = float(value - input_min) / float(input_span)
 
     # Convert the 0-1 range into a value in the right range.
-    return output_min + (valueScaled * output_span)
+    return output_min + (value_scaled * output_span)
 
 def image_center(image_size=None):
     """ Center coordinates given the image size.
@@ -139,7 +142,29 @@ def set_iterator(cfg=None):
             yield index, t, p, power
             index += 1
 
-def angles_to_pupil_center(theta=None, phi=None, image_size=None):
+
+def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
+    """ An array with a circular pupil with a defined center.
+
+        Parameters:
+            theta:   angle in degrees on the plane parallel to the sample plane
+            phi:    angle in degrees perpendicular t othe sample plane
+            power:  power of the leds used by imaging
+    """
+    pup_matrix = np.zeros(image_size, dtype=np.uint8)
+    nx, ny = image_size
+    # Coherent pupil generation
+    xx, yy = np.meshgrid(range(ny), range(nx))
+    c = (xx-cx)**2+(yy-cy)**2
+    image_gray = [c < pup_rad**2][0]
+    # defocus = np.exp(-1j*ot.annular_zernike(4, 2, 0, np.sqrt(c)/pup_rad ))
+    # # print(np.max(image_gray*np.sqrt((c-xx)**2+(c-yy)**2) ))
+    # image_gray = 1.*image_gray + image_gray*defocus
+    return image_gray
+
+
+def generate_pupil(theta=None, phi=None, power=None, pup_rad=None,
+                   image_size=None, max_phi=None):
     """ Pupil center in cartesian coordinates.
 
     Args:
@@ -153,32 +178,17 @@ def angles_to_pupil_center(theta=None, phi=None, image_size=None):
         theta_rad = np.radians(theta)
     if phi is not None:
         phi_rad = np.radians(phi)
+    if max_phi is not None:
+        max_phi_rad = np.radians(max_phi)
+    max_sin_phi = np.sin(max_phi_rad)
     xc, yc = image_center(image_size)
-    r = np.abs(max_displacement*np.sin(phi_rad))
+    r = max_displacement*np.sin(phi_rad)/max_sin_phi
+    print(phi, r)
+    # r = np.abs(max_displacement*np.sin(phi_rad))
     # Pupil positioning
     kx = np.floor(np.cos(theta_rad)*r)
     ky = np.floor(np.sin(theta_rad)*r)
-    return yc+ky, xc+kx
-
-
-def generate_pupil(theta=None, phi=None, power=None, pup_rad=None, image_size=None):
-    """ An array with a circular pupil with a defined center.
-
-        Parameters:
-            theta:   angle in degrees on the plane parallel to the sample plane
-            phi:    angle in degrees perpendicular t othe sample plane
-            power:  power of the leds used by imaging
-    """
-    pup_matrix = np.zeros(image_size, dtype=np.uint8)
-    nx, ny = image_size
-    pupil_center = angles_to_pupil_center(theta, phi, image_size)
-    # Coherent pupil generation
-    xx, yy = np.meshgrid(range(ny), range(nx))
-    c = (xx-pupil_center[1])**2+(yy-pupil_center[0])**2
-    image_gray = [c < pup_rad**2][0]
-    # defocus = np.exp(-1j*ot.annular_zernike(4, 2, 0, np.sqrt(c)/pup_rad ))
-    # # print(np.max(image_gray*np.sqrt((c-xx)**2+(c-yy)**2) ))
-    # image_gray = 1.*image_gray + image_gray*defocus
+    image_gray = pupil_image(xc+kx, yc+ky, pup_rad, image_size)
     return image_gray
 
 
@@ -274,6 +284,10 @@ def reconstruct(input_file, blank_images, iterator, cfg=None, debug=False):
     n_iter = cfg.n_iter
     pupil_radius = cfg.objective_na*image_size[0] * \
                    float(cfg.pixelsize)/float(cfg.wavelength)
+    # Gettinng the maximum angle by the given configuration
+    NA_max = cfg.objective_na*image_size[0]/pup_rad
+    max_phi = np.degrees(np.arcsin(NA_max))
+
     # pupil_radius = 30
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
@@ -294,14 +308,14 @@ def reconstruct(input_file, blank_images, iterator, cfg=None, debug=False):
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
             # blank_array = blank_dict[(theta, phi)]
-            # if phi <10:
-            #     phi += 1.
+            if phi > max_phi:
+                 continue
             # im_array = (im_array-.1*blank_array)
             # im_array -= np.min(im_array[:])
             # print(im_array)
             im_array = crop_image(im_array, image_size, 180, 280)
             pupil = generate_pupil(theta, phi, power, pupil_radius,
-                                   image_size)
+                                   image_size, max_phi)
 
             pupil_shift = fftshift(pupil)
             # Step 2: lr of the estimated image using the known pupil
@@ -376,14 +390,13 @@ def preprocess(images, blank_images, iterator, cfg=None, debug=False):
             plot_image(ax1, im_array)
             plot_image(ax2, im_array-blank_array)
             fig.canvas.draw()
-
-
     return fixed_dict
 
 
-def generate_il(im_array, f_ih, theta, phi, power, pupil_radius, image_size):
+def generate_il(im_array, f_ih, theta, phi, power, pupil_radius, image_size,
+                max_phi):
     pupil = generate_pupil(theta, phi, power, pupil_radius,
-                           image_size)
+                           image_size, max_phi=max_phi)
     pupil_shift = fftshift(pupil)
     # Step 2: lr of the estimated image using the known pupil
     f_il = ifft2(f_ih*pupil_shift)  # space pupil * fourier image
@@ -413,8 +426,12 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
     # pupil_radius = cfg.pupil_size/2
     n_iter = cfg.n_iter
     pupil_radius = cfg.objective_na*image_size[0] * \
-                   float(cfg.pixelsize)/float(cfg.wavelength)
-    pupil_radius = 70
+                   float(cfg.pixelsize)/(float(cfg.wavelength)*float(cfg.magnification))
+    # Gettinng the maximum angle by the given configuration
+    NA_max = cfg.objective_na*(image_size[0]/2)/pupil_radius
+    max_phi = np.degrees(np.arcsin(NA_max))
+    print(NA_max)
+    # pupil_radius = 70
     # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -423,8 +440,7 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     if debug:
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
-        fig.show()
+        fig, axes = implot.init_plot(4)
     # Steps 2-5
     for iteration in range(n_iter):
         iterator = set_iterator(cfg)
@@ -434,23 +450,25 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
             blank_array = blank_dict[(theta, phi)]
-            if phi >22:
-                 continue
+            if phi > 5:
+                 power = power*10
+            if phi > 4 and np.mean(im_array) > 1:
+                continue
+            print("Mean intensity", np.mean(im_array), phi)
             # im_array = (im_array-.1*blank_array)
             # im_array -= np.min(im_array[:])
-            # print(im_array)
-            im_array = crop_image(im_array, image_size, 50, 220)*255./(power)+10
+            im_array = crop_image(im_array, image_size, 50, 240)*255./(power)+2
             # im_array[im_array < np.min(im_array)+1] = 1
             Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
-                       image_size)
-            phi = phi * 4
+                       image_size, max_phi=max_phi)
+            phi = phi*2
             # for phi in np.arange(phi-5,phi+5,1):
             #     Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
             #                        image_size)
             #     print("Testing quality metric", quality_metric(image_dict, Il, cfg), phi)
 
             pupil = generate_pupil(theta, phi, power, pupil_radius,
-                                   image_size)
+                                   image_size, max_phi=max_phi)
             pupil_shift = fftshift(pupil)
             f_il = fft2(Il)
 
@@ -458,20 +476,12 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
             # print(f_il)
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
             if debug and index % 1 == 0:
-                def plot_image(ax, image):
-                    ax.cla()
-                    ax.imshow(image, cmap=plt.get_cmap('gray'))
-                print('theta: %d, phi: %d, power: %d' % (theta, phi, power))
                 fft_rec = np.log10(np.abs(f_ih)+1)
                 fft_rec *= (1.0/fft_rec.max())
                 fft_rec = fftshift(fft_rec)
                 fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
                 im_rec *= (1.0/im_rec.max())
-                plot_image(ax1, pupil)
-                plot_image(ax2, im_rec)
-                plot_image(ax3, Im)
-                plot_image(ax4, np.angle(ifft2(f_ih)))
-                fig.canvas.draw()
-        print("Testing quality metric", quality_metric(image_dict, Il, cfg))
+                implot.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))], fig, axes)
+        # print("Testing quality metric", quality_metric(image_dict, Il, cfg))
     return np.abs(np.power(ifft2(f_ih), 2))

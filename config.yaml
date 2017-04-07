@@ -3,14 +3,15 @@
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
 camtype: picamera # picamera or opencv
 video_id: 0
-video_size: [300, 300] #[120, 120] #[346, 540] #[150, 150] #[480, 640] #[80, 80] #[480, 640] #[150, 150]
+video_size: [150, 150] #[120, 120] #[346, 540] #[150, 150] #[480, 640] #[80, 80] #[480, 640] #[150, 150]
 client: ledclient
 server_host: '0.0.0.0'
 server_ip: http://10.99.39.174:5000
 objective_na: 0.12
 pupil_size: 500 # Function of NA, wavelength video size and magnification
 wavelength: 450E-9
-pixelsize: 650E-9 #650E-9
+magnification: 2.6
+pixelsize: 3.0E-6 #650E-9
 color: red
 theta: [0, 360, 20] # [min, max, step]
 phi: [0, 25, 2] # [min, max, step]
