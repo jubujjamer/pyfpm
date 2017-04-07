@@ -141,7 +141,11 @@ def set_iterator(cfg=None):
 
 def angles_to_pupil_center(theta=None, phi=None, image_size=None):
     """ Pupil center in cartesian coordinates.
-    
+
+    Args:
+        theta (int):      azimuthal angle
+        phi (int):        zenithal angle
+        image_size(list): size of the image of the pupil
     """
     if image_size is not None:
         max_displacement = max(image_size)/2  # Half image size  each side
@@ -151,7 +155,6 @@ def angles_to_pupil_center(theta=None, phi=None, image_size=None):
         phi_rad = np.radians(phi)
     xc, yc = image_center(image_size)
     r = np.abs(max_displacement*np.sin(phi_rad))
-    # r = np.abs(rmax * phi_rad/(np.pi/2))
     # Pupil positioning
     kx = np.floor(np.cos(theta_rad)*r)
     ky = np.floor(np.sin(theta_rad)*r)
@@ -162,7 +165,7 @@ def generate_pupil(theta=None, phi=None, power=None, pup_rad=None, image_size=No
     """ An array with a circular pupil with a defined center.
 
         Parameters:
-            theta   angle in degrees on the plane parallel to the sample plane
+            theta:   angle in degrees on the plane parallel to the sample plane
             phi:    angle in degrees perpendicular t othe sample plane
             power:  power of the leds used by imaging
     """
