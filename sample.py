@@ -36,7 +36,7 @@ cfg = dt.load_config(CONFIG_FILE)
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
 in_file = os.path.join(cfg.output_sample,
-                        './2017-04-05_18:39:32.npy')
+                        './2017-04-05_11:36:01.npy')
 blank_images = os.path.join(cfg.output_sample,
                         './2017-04-05_16:17:27.npy')
 json_file = './output_sim/out.json'
@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'manual_move'
+task = 'reconstruct'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)

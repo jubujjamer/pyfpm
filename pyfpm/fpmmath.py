@@ -183,7 +183,7 @@ def generate_pupil(theta=None, phi=None, power=None, pup_rad=None,
     max_sin_phi = np.sin(max_phi_rad)
     xc, yc = image_center(image_size)
     r = max_displacement*np.sin(phi_rad)/max_sin_phi
-    print(phi, r)
+    # print(phi, r)
     # r = np.abs(max_displacement*np.sin(phi_rad))
     # Pupil positioning
     kx = np.floor(np.cos(theta_rad)*r)
@@ -192,7 +192,7 @@ def generate_pupil(theta=None, phi=None, power=None, pup_rad=None,
     return image_gray
 
 
-def filter_by_pupil(im_array, theta, phi, power, cfg):
+def filter_by_pupil(im_array, theta, phi, power, cfg, max_phi=None):
     """ Returns an image filtered by a pupil calculated using generate_pupil
     """
     image_size = cfg.video_size
@@ -201,7 +201,7 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
                    float(cfg.pixelsize)/float(cfg.wavelength)
     # phi = phi*random.uniform(0.95, 1.05)
     # im_array = np.abs(im_array)
-    pupil = generate_pupil(theta, phi, power, pupil_radius, image_size)
+    pupil = generate_pupil(theta, phi, power, pupil_radius, image_size, max_phi)
     f_ih = fft2(im_array)
     # Step 2: lr of the estimated image using the known pupil
     shifted_pupil = fftshift(pupil)
@@ -250,23 +250,23 @@ def show_image(imtype='original', image=None, theta=0, phi=0,
 def resample_image(image_array, new_size):
     return np.resize(image_array, new_size)
 
+
 def crop_image(im_array, image_size, osx, osy):
     return im_array[osx:(osx+image_size[0]), osy:(osy+image_size[1])]
-    # return im_array[offset:100, 0:]
 
-def quality_metric(image_dict, image_lowq, cfg):
+
+def quality_metric(image_dict, image_lowq, cfg, max_phi):
     iterator = set_iterator(cfg)
     accum = 0
     for index, theta, phi, power in iterator:
         im_i = image_dict[(theta, phi)]
         im_i = crop_image(im_i, cfg.video_size, 0, 0)
     #     print(np.sum(np.mean(image_dict[(theta, phi)])))
-        il_i = filter_by_pupil(image_lowq, theta, phi, power, cfg)
+        il_i = filter_by_pupil(image_lowq, theta, phi, power, cfg,max_phi)
         accum += np.sqrt(np.mean(im_i))/ \
                  (np.sum(np.abs(np.sqrt(il_i)-np.sqrt(im_i))))
-
-
     return accum
+
 
 def reconstruct(input_file, blank_images, iterator, cfg=None, debug=False):
     """ FPM reconstructon from pupil images
@@ -427,12 +427,11 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
     n_iter = cfg.n_iter
     pupil_radius = cfg.objective_na*image_size[0] * \
                    float(cfg.pixelsize)/(float(cfg.wavelength)*float(cfg.magnification))
-    # Gettinng the maximum angle by the given configuration
+    # image_plotter = implot.imagePlotter()
+    # Getting the maximum angle by the given configuration
     NA_max = cfg.objective_na*(image_size[0]/2)/pupil_radius
     max_phi = np.degrees(np.arcsin(NA_max))
-    print(NA_max)
     # pupil_radius = 70
-    # image_size, iterator_list, pupil_radius, ns, phi_max = get_metadata(hf)
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
     # Ih_sq = np.sqrt(image_dict[(0, 0)])
@@ -450,30 +449,29 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
             blank_array = blank_dict[(theta, phi)]
-            if phi > 5:
-                 power = power*10
-            if phi > 4 and np.mean(im_array) > 1:
-                continue
-            print("Mean intensity", np.mean(im_array), phi)
+            # if phi > 10:
+            #     continue
+            # if phi > 5:
+            #      power = power*2
+            # if phi > 4 and np.mean(im_array) > 1:
+            #     continue
+            # print("Mean intensity", np.mean(im_array), phi)
             # im_array = (im_array-.1*blank_array)
             # im_array -= np.min(im_array[:])
-            im_array = crop_image(im_array, image_size, 50, 240)*255./(power)+2
-            # im_array[im_array < np.min(im_array)+1] = 1
+            im_array[im_array < np.min(im_array)+2] = 1
+            im_array = crop_image(im_array, image_size, 180, 265)*255./(power)
+            #
             Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
                        image_size, max_phi=max_phi)
-            phi = phi*2
+            phi = phi*1.5
             # for phi in np.arange(phi-5,phi+5,1):
             #     Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
             #                        image_size)
             #     print("Testing quality metric", quality_metric(image_dict, Il, cfg), phi)
-
             pupil = generate_pupil(theta, phi, power, pupil_radius,
                                    image_size, max_phi=max_phi)
             pupil_shift = fftshift(pupil)
             f_il = fft2(Il)
-
-            # Fourier update
-            # print(f_il)
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
             if debug and index % 1 == 0:
                 fft_rec = np.log10(np.abs(f_ih)+1)
@@ -482,6 +480,7 @@ def rec_test(input_file, blank_images, iterator, cfg=None, debug=False):
                 fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
                 im_rec *= (1.0/im_rec.max())
+                # image_plotter.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))])
                 implot.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))], fig, axes)
-        # print("Testing quality metric", quality_metric(image_dict, Il, cfg))
+        # print("Testing quality metric", quality_metric(image_dict, Il, cfg, max_phi))
     return np.abs(np.power(ifft2(f_ih), 2))
