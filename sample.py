@@ -15,6 +15,8 @@ import time
 import os
 import datetime
 
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from scipy import misc
 import numpy as np

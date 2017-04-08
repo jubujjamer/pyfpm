@@ -22,6 +22,15 @@ def load_config(config_file='config.yaml'):
     cfg = config(*config_dict.values())
     return cfg
 
+def generate_out_file(folder=cfg.output_sim):
+    """ File name with the date and hour to have one different file name
+    to each measurment
+    """
+    out_file = os.path.join('.'+folder,
+                '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now()))
+    return out_file
+
+
 # def save_to_folder(folder, image_dict):
 #     with open('meta.csv', 'wb') as csvfile:
 #         cw = csv.writer(csvfile, delimiter=',')
