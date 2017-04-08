@@ -15,8 +15,6 @@ import time
 import os
 import datetime
 
-import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from scipy import misc
 import numpy as np
@@ -25,7 +23,7 @@ import yaml
 import pygame
 
 from pyfpm import web
-from pyfpm.fpmmath import set_iterator, reconstruct, preprocess, rec_test
+from pyfpm.fpmmath import set_iterator, reconstruct, rec_test
 from pyfpm.data import save_yaml_metadata
 # from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
@@ -38,7 +36,8 @@ cfg = dt.load_config(CONFIG_FILE)
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
 in_file = os.path.join(cfg.output_sample,
-                        './2017-04-05_11:36:01.npy')
+                        '2017-04-05_113601.npy')
+print(in_file, cfg.output_sample)
 blank_images = os.path.join(cfg.output_sample,
                         './2017-04-05_16:17:27.npy')
 json_file = './output_sim/out.json'
@@ -47,7 +46,7 @@ json_file = './output_sim/out.json'
 # Simulation parameters
 image_size = cfg.video_size
 wavelength = cfg.wavelength
-pixelsize = cfg.pixelsize  # See jupyter notebook
+pixelsize = cfg.pixel_size  # See jupyter notebook
 phi_min, phi_max, phi_step = cfg.phi
 theta_min, theta_max, theta_step = cfg.theta
 pupil_radius = cfg.pupil_size/2
@@ -86,7 +85,7 @@ if task is 'acquire':
 
 elif task is 'reconstruct':
     start_time = time.time()
-    rec = rec_test(in_file, blank_images, iterator, cfg=cfg, debug=True)
+    rec = rec_test(in_file, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

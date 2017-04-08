@@ -22,11 +22,11 @@ def load_config(config_file='config.yaml'):
     cfg = config(*config_dict.values())
     return cfg
 
-def generate_out_file(folder=cfg.output_sim):
+def generate_out_file(out_folder):
     """ File name with the date and hour to have one different file name
     to each measurment
     """
-    out_file = os.path.join('.'+folder,
+    out_file = os.path.join('.'+out_folder,
                 '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now()))
     return out_file
 

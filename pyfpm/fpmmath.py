@@ -17,6 +17,8 @@ from StringIO import StringIO
 import time
 import yaml
 
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
@@ -67,7 +69,7 @@ def image_center(image_size=None):
 
 def set_iterator(cfg=None):
     wavelength = cfg.wavelength
-    pixelsize = cfg.pixelsize  # See jupyter notebook
+    pixelsize = cfg.pixel_size  # See jupyter notebook
     image_size = cfg.video_size
     phi_min, phi_max, phi_step = cfg.phi
     theta_min, theta_max, theta_step = cfg.theta
@@ -142,7 +144,7 @@ def set_iterator(cfg=None):
             yield index, t, p, power
             index += 1
 
-def calculate_pupil_radius(cfg=None):
+def calculate_pupil_radius(na, npx, pixel_size, wavelength):
     """ pupil radius from wavelength, numerical aperture, pixel size and
         magnification.
 
@@ -152,17 +154,7 @@ def calculate_pupil_radius(cfg=None):
     Returns:
         (int): pupil radius in pixels, relative to the image size.
     """
-
-    if cfg is None:
-        print("Nothing to do")
-        return
-    else:
-        NA = cfg.objective_na
-        pixel_number = cfg.video_size[0]
-        pixel_size = float(cfg.pixelsize)
-        wavelength = float(cfg.wavelength)
-
-    pixel_radius = NA*pixel_number*pixel_size/wavelength
+    pixel_radius = na*npx*pixel_size/wavelength
     return pixel_radius
 
 
@@ -186,8 +178,8 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
     return image_gray
 
 
-def generate_pupil(theta=None, phi=None, power=None, pup_rad=None,
-                   image_size=None, wavelength=None, pixel_size=None, na=None):
+def generate_pupil(theta=None, phi=None, power=None, image_size=None,
+                   wavelength=None, pixel_size=None, na=None):
     """ Pupil center in cartesian coordinates.
 
     Args:
@@ -196,32 +188,34 @@ def generate_pupil(theta=None, phi=None, power=None, pup_rad=None,
         image_size(list): size of the image of the pupil
     """
     if image_size is not None:
-        NPX = image_size[0]  # Half image size  each side
+        npx = image_size[0]  # Half image size  each side
     if theta is not None:
         theta_rad = np.radians(theta)
     if phi is not None:
         phi_rad = np.radians(phi)
-    if wavelength is None:
-        wavelength = 100E-9
+    if wavelength is not None:
+        wavelength = float(wavelength)
     if pixel_size is None:
         pixel_size = 1E-6
     if na is None:
         na = 1
     phi_max = np.arcsin(wavelength/(2*pixel_size)-na)
+    print()
     if phi_rad > phi_max:
         print("Zenithal angle has come to a limit, consider to extend the image size.")
-        return np.zeros(image_size, dtype=np.uint8)
-
+        # return np.zeros(image_size, dtype=np.uint8)
+    pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
-    [fx, fy] = (1/wavelength)*coords*(pixel_size*NPX)
+    [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
     xc, yc = image_center(image_size)
+    print("hao", phi==None, pupil_radius, phi_max)
     # r = max_displacement*np.sin(phi_rad)/max_sin_phi
     # # print(phi, r)
     # # r = np.abs(max_displacement*np.sin(phi_rad))
     # # Pupil positioning
     # kx = np.floor(np.cos(theta_rad)*r)
     # ky = np.floor(np.sin(theta_rad)*r)
-    image_gray = pupil_image(xc+fx, yc+fy, pup_rad, image_size)
+    image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
 
@@ -388,10 +382,11 @@ def reconstruct(input_file, blank_images, iterator, cfg=None, debug=False):
         print("Testing quality metric", quality_metric(image_dict, Il, cfg))
     return np.abs(np.power(ifft2(f_ih), 2))
 
-def generate_il(im_array, f_ih, theta, phi, power, pupil_radius, image_size,
-                max_phi):
-    pupil = generate_pupil(theta, phi, power, pupil_radius,
-                           image_size, max_phi=max_phi)
+def generate_il(im_array, f_ih, theta, phi, power, image_size,
+                wavelength, pixel_size, na):
+    print(phi)
+    pupil = generate_pupil(theta, phi, power, image_size, wavelength,
+                           pixel_size, na)
     pupil_shift = fftshift(pupil)
     # Step 2: lr of the estimated image using the known pupil
     f_il = ifft2(f_ih*pupil_shift)  # space pupil * fourier image
@@ -416,12 +411,8 @@ def rec_test(input_file,  iterator, cfg=None, debug=False):
     image_dict = np.load(input_file)[()]
     image_size = cfg.video_size
     n_iter = cfg.n_iter
-    pupil_radius = cfg.objective_na*image_size[0] * \
-                   float(cfg.pixelsize)/(float(cfg.wavelength)*float(cfg.magnification))
     # image_plotter = implot.imagePlotter()
     # Getting the maximum angle by the given configuration
-    NA_max = cfg.objective_na*(image_size[0]/2)/pupil_radius
-    max_phi = np.degrees(np.arcsin(NA_max))
     # pupil_radius = 70
     # Step 1: initial estimation
     Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
@@ -430,7 +421,9 @@ def rec_test(input_file,  iterator, cfg=None, debug=False):
     Ih = Ih_sq * np.exp(1j*Ph)
     f_ih = fft2(Ih)  # unshifted transform, shift is applied to the pupil
     if debug:
-        fig, axes = implot.init_plot(4)
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
+        fig.show()
+        # fig, axes = implot.init_plot(4)
     # Steps 2-5
     for iteration in range(n_iter):
         iterator = set_iterator(cfg)
@@ -439,28 +432,20 @@ def rec_test(input_file,  iterator, cfg=None, debug=False):
         for index, theta, phi, power in iterator:
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
-            blank_array = blank_dict[(theta, phi)]
-            # if phi > 10:
-            #     continue
-            # if phi > 5:
-            #      power = power*2
-            # if phi > 4 and np.mean(im_array) > 1:
-            #     continue
             # print("Mean intensity", np.mean(im_array), phi)
             # im_array = (im_array-.1*blank_array)
             # im_array -= np.min(im_array[:])
             im_array[im_array < np.min(im_array)+2] = 1
             im_array = crop_image(im_array, image_size, 180, 265)*255./(power)
             #
-            Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
-                       image_size, max_phi=max_phi)
-            phi = phi*1.5
+            Il, Im = generate_il(im_array, f_ih, theta, phi, power, image_size,
+                                cfg.wavelength, cfg.pixel_size, cfg.objective_na)
             # for phi in np.arange(phi-5,phi+5,1):
             #     Il, Im = generate_il(im_array, f_ih, theta, phi, power, pupil_radius,
             #                        image_size)
             #     print("Testing quality metric", quality_metric(image_dict, Il, cfg), phi)
-            pupil = generate_pupil(theta, phi, power, pupil_radius,
-                                   image_size, max_phi=max_phi)
+            pupil = generate_pupil(theta, phi, power, image_size, cfg.wavelength,
+                                   cfg.pixel_size, cfg.objective_na)
             pupil_shift = fftshift(pupil)
             f_il = fft2(Il)
             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
@@ -471,8 +456,17 @@ def rec_test(input_file,  iterator, cfg=None, debug=False):
                 fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
                 im_rec *= (1.0/im_rec.max())
+                def plot_image(ax, image):
+                    ax.cla()
+                    ax.imshow(image, cmap=plt.get_cmap('gray'))
+                ax = iter([ax1, ax2, ax3, ax4])
+                for image in [pupil, im_rec, Im]:
+                    plot_image(ax.next(), image)
+                fig.canvas.draw()
+
+
                 # image_plotter.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))])
-                implot.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))], fig, axes)
+                # implot.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))], fig, axes)
         # print("Testing quality metric", quality_metric(image_dict, Il, cfg, max_phi))
     return np.abs(np.power(ifft2(f_ih), 2))
 
