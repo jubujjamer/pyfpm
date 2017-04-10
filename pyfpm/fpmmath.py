@@ -24,15 +24,11 @@ import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
 from scipy.optimize import fsolve
 from PIL import Image
-from scipy import misc
+from scipy import ndimage
 import random
 
 # from . import implot
-
 # import fpmmath.optics_tools as ot
-
-#
-# config_dict = yaml.load(open('config.yaml', 'r'))
 
 
 def translate(value, input_min, input_max, output_min, output_max):
@@ -54,6 +50,7 @@ def translate(value, input_min, input_max, output_min, output_max):
     # Convert the 0-1 range into a value in the right range.
     return output_min + (value_scaled * output_span)
 
+
 def image_center(image_size=None):
     """ Center coordinates given the image size.
 
@@ -67,12 +64,46 @@ def image_center(image_size=None):
         yc, xc = np.array(image_size)/2
     return int(xc), int(yc)
 
+def resize_complex_image(im_array, final_shape):
+    """ Complex image array resized to a final shape
+
+    Args:
+
+    Returns:
+        (complex array)
+    """
+    scale_factor = float(final_shape[0])/np.shape(im_array)[0]
+    real_part = ndimage.zoom(np.real(im_array), scale_factor, order=0)
+    im_part = ndimage.zoom(np.imag(im_array), scale_factor, order=0)
+    rescaled_image = real_part+1j*im_part
+    return rescaled_image
+
 def calculate_max_phi(wavelength, pixel_size, na):
-    """ Calculates the maximum phi allowed by the given configuration
+    """ The maximum phi allowed by the given configuration.
     """
     phi_max = np.arcsin(wavelength/(2*pixel_size)-na)
     phi_max = np.degrees(phi_max)
     return phi_max
+
+
+def pixel_size_required(phi_max=None, wavelength=None, na=None):
+    """ The pixel size that would be required for a given maximum zenithal angle.
+
+    Args:
+        phi_max (float): The maximum zenithal sampled angle.
+        wavelength (float): The wavelength of illumination.
+        na (float): The numerical aperture of the optical system.
+
+    Returns:
+        (float): pixel size required (in the same units as input wavelength)
+    """
+    if phi_max is not None:
+        phi_max_rad = np.radians(phi_max)
+    if wavelength is not None:
+        wavelength = float(wavelength)
+    if na is not None:
+        na = float(na)
+    return wavelength/(np.sin(phi_max_rad)+na)/2
 
 
 def set_iterator(cfg=None):
@@ -89,7 +120,7 @@ def set_iterator(cfg=None):
         """
         # yield 0, 0, 0, 0
         index = 0
-        for phi in range(phi_min, phi_max, phi_step):
+        for phi in np.arange(phi_min, phi_max, phi_step):
             for theta in range(theta_min, theta_max, theta_step):
                 if phi == 0 and index > 0:
                     continue
@@ -101,7 +132,7 @@ def set_iterator(cfg=None):
         # yield 0, 0, 0, 0
         index = 0
         direction_flag = 1
-        phi_list = range(phi_min, phi_max, phi_step)
+        phi_list = np.arange(phi_min, phi_max, phi_step)
         theta_list = range(theta_min, theta_max, theta_step)
         theta_list.extend(theta_list[-2:0:-1])
         theta_list_max = max(theta_list)
@@ -189,17 +220,28 @@ def generate_pupil(theta=None, phi=None, power=None, image_size=None,
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     """ Filtered image by a pupil calculated using generate_pupil
     """
-    calculate_max_phi(wavelength, pixel_size, na)
-
-    pupil = generate_pupil(theta, phi, power, cfg.video_size,
-                            cfg.wavelength, cfg.pixel_size, cfg.objective_na)
+    phi_max = cfg.phi[1]
+    wavelength = cfg.wavelength
+    na = cfg.objective_na
+    ps_required = pixel_size_required(phi_max, wavelength, na)
+    original_shape = np.shape(im_array)
+    scale_factor = cfg.pixel_size/ps_required
+    processing_shape = np.array(original_shape)*scale_factor
+    processing_shape = processing_shape.astype(int)
+    im_array = resize_complex_image(im_array, processing_shape)
+    pupil = generate_pupil(theta, phi, power, processing_shape,
+                            cfg.wavelength, ps_required, cfg.objective_na)
     if pupil is None:
+        print("Invalid pupil.")
         return None
-    f_ih = fft2(im_array)
+    objectAmplitude = np.sqrt(im_array)
+
+    f_ih = fft2(objectAmplitude)
     # Step 2: lr of the estimated image using the known pupil
     shifted_pupil = fftshift(pupil)
     proc_array = shifted_pupil * f_ih  # space pupil * fourier im
     proc_array = ifft2(proc_array)
+    proc_array = resize_complex_image(proc_array, original_shape)
     proc_array = np.power(np.abs(proc_array), 2)
     return proc_array
 

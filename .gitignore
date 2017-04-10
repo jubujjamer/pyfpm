@@ -96,5 +96,11 @@ ENV/
 # mkdocs documentation
 /site
 
-#pyc files
+# pyc files
 *.pyc
+
+# Some forders used for data
+out_sampling/
+out/
+output_sim/
+

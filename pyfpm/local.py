@@ -12,7 +12,7 @@ import numpy as np
 from StringIO import StringIO
 import time
 
-from fpmmath import filter_by_pupil, set_iterator
+from fpmmath import filter_by_pupil, set_iterator, pixel_size_required
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -100,7 +100,7 @@ class Laser3dCalibrate(BaseClient):
             self.laser3d.phi = phi
             self.laser3d.shift = shift
             self.laser3d.power = power
-        return 
+        return
 
     def capture_image(self):
         return self.camera.capture_png()
