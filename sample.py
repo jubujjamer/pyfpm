@@ -85,7 +85,7 @@ if task is 'acquire':
 
 elif task is 'reconstruct':
     start_time = time.time()
-    rec = rec_test(in_file, iterator, cfg=cfg, debug=True)
+    rec = fpm_reconstruct(in_file, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

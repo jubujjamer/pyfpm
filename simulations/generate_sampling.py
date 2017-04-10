@@ -32,14 +32,15 @@ image_dict = dict()
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
 fig.show()
 for index, theta, phi, power in iterator:
-    pupil_radius = calculate_pupil_radius(cfg)
-    # print(pupil_radius)
-    pupil = generate_pupil(theta, phi, power, pupil_radius, cfg.video_size)
+    pupil = generate_pupil(theta, phi, power, cfg.video_size,
+                           cfg.wavelength, cfg.pixel_size, cfg.objective_na)
     im_array = client.acquire(theta, phi, power)
+    if im_array is None:
+        break
     image_dict[(theta, phi)] = im_array
     ax1.cla(), ax2.cla()
     ax1.imshow(im_array, cmap=plt.get_cmap('hot'))
     ax2.imshow(pupil, cmap=plt.get_cmap('hot'))
     fig.canvas.draw()
-save_yaml_metadata(dt.generate_out_file(cfg.folder), cfg)
-np.save(dt.generate_out_file(cfg.folder), image_dict)
+# save_yaml_metadata(dt.generate_out_file(cfg.output_sim), cfg)
+# np.save(dt.generate_out_file(cfg.output_sim), image_dict)
