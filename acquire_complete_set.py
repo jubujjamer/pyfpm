@@ -43,17 +43,15 @@ iterator = set_iterator(cfg)
 # Start image acquisition
 image_dict = dict()
 fig, ax = plt.subplots(1, 1, figsize=(25, 15))
-# im1 = ax.imshow(np.ones((480,640)), cmap=plt.get_cmap('hot'))
 fig.show()
-for index, theta, phi, power in iterator:
+for index, theta, phi in iterator:
     pc.set_coordinates(theta, phi, units='degrees')
-    [theta_plat, phi_plat, shift_plat, power] = pc.parameters_to_platform()
-    iso = 400
-    ss = translate(phi, 0, 60, 50000, 900000)
-    print(theta, phi, ss)
+    [theta_plat, phi_plat, shift_plat, power, ss] = pc.parameters_to_platform()
+    ss = adjust_shutter_speed(theta, phi)
     client.just_move(theta_plat, phi_plat, shift_plat, power)
     # time.sleep(1)
-    img = client.acquire(theta_plat, phi_plat, shift_plat, power, shutter_speed=ss, iso=iso)
+    img = client.acquire(theta_plat, phi_plat, shift_plat, power,
+                        shutter_speed=ss, iso=400)
     im_array = misc.imread(StringIO(img.read()), 'RGB')
     image_dict[(theta, phi)] = im_array
     ax.cla()

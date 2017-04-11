@@ -14,7 +14,7 @@ wavelength: 450E-9
 pixel_size: 2.15E-6 #5.67E-6
 color: red
 theta: [0, 360, 20] # [min, max, step]
-phi: [4, 50, 1] # [min, max, step]
+phi: [0, 25, 1] # [min, max, step]
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
 # phi: [59, 76, 1] # [min, max, step]

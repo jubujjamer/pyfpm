@@ -9,7 +9,7 @@ Usage:
 """
 __version__= "1.1.1"
 __author__='Juan M. Bujjamer'
-__all__=['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius']
+__all__=['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed']
 
 from io import BytesIO
 from itertools import ifilter, product, cycle
@@ -49,6 +49,13 @@ def translate(value, input_min, input_max, output_min, output_max):
 
     # Convert the 0-1 range into a value in the right range.
     return output_min + (value_scaled * output_span)
+
+
+def adjust_shutter_speed(theta, phi):
+    """ Apropriate shuter speed for a given phi and theta
+    """
+    ss = translate(phi, 0, 60, 50000, 900000)
+    return ss
 
 
 def image_center(image_size=None):
@@ -142,9 +149,19 @@ def set_iterator(cfg=None):
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
                 p = phi_iter.next()
-            power = 100
-            yield index, t, p, power
+            yield index, t, p
             index += 1
+
+def test_similarity(image_ref, image_cmp):
+    """ A measurement of the similarity between two images.
+    """
+    ref_mean = np.mean(image_ref)
+    cmp_mean = np.mean(image_cmp)
+
+    correction_factor = image_cmp/image_ref
+
+
+
 
 def calculate_pupil_radius(na, npx, pixel_size, wavelength):
     """ pupil radius from wavelength, numerical aperture, pixel size and

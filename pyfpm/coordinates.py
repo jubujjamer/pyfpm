@@ -170,7 +170,7 @@ class PlatformCoordinates(object):
 
     def adjust_power(self):
         phi = np.degrees(self.phi)
-        power = translate(phi, 0, 90, 10, 200)
+        power = translate(phi, 0, 90, 10, 255)
         self.power = power
         # if phi < 3:
         #     self.power = 50
