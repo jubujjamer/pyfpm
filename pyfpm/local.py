@@ -103,7 +103,7 @@ class Laser3dCalibrate(BaseClient):
         return
 
     def capture_image(self):
-        return self.camera.capture_png()
+        return self.camera.capture_png(100000, 400)
 
     def acquire(self, theta=None, phi=None, shift=None, power=None, color=None,
                 shutter_speed=100, iso=100):

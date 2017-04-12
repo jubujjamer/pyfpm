@@ -22,10 +22,9 @@ from pyfpm.data import save_yaml_metadata
 import pyfpm.local as local
 
 # Simulation parameters
-CONFIG_FILE = '../config.yaml'
+CONFIG_FILE = '/home/lec/pyfpm/config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 client = local.SimClient(cfg=cfg)
-
 iterator = set_iterator(cfg)
 
 image_dict = dict()
@@ -35,9 +34,10 @@ fig.show()
 mean_list = list()
 phi_list = list()
 theta_list = list()
-for index, theta, phi, power in iterator:
+for index, theta, phi in iterator:
     # pupil = generate_pupil(theta, phi, power, cfg.video_size,
     #                        cfg.wavelength, cfg.pixel_size, cfg.objective_na)
+    power = 100
     im_array = client.acquire(theta, phi, power)
     image_dict[(theta, phi)] = im_array
     mean_list.append(np.mean(im_array))
