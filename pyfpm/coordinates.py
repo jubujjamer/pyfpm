@@ -19,10 +19,6 @@ config_dict = yaml.load(open(CONFIG_FILE, 'r'))
 cfg = dt.load_config(CONFIG_FILE)
 
 servo_init = cfg.servo_init
-sample_height = config_dict['sample_height']
-platform_tilt = config_dict['platform_tilt']
-source_center = config_dict['source_center']
-source_tilt = config_dict['source_tilt']
 video_size = config_dict['video_size']
 servo_init = config_dict['servo_init']
 shift_step = config_dict['shift_step']
@@ -55,11 +51,16 @@ def apply_corrections(origin, light_dir, source_center,
     """ Apply coordinate corrections as a 3d tranformation of the source
     """
     # First correction: origin translation
+    origin[0] = origin[0]+source_center[0]
+    origin[1] = origin[1]+source_center[1]
+
     origin_prime = np.array(origin)
+
     st_phi = np.radians(source_tilt[1])
     st_theta = np.radians(source_tilt[0])
     pt_phi = np.radians(platform_tilt[1])
     pt_theta = np.radians(platform_tilt[0])
+
     # direction rotation whith source_tilt and platform_tilt
     light_dir = phi_rot(light_dir, st_phi + pt_phi)
     light_dir = theta_rot(light_dir, st_theta + pt_theta)
@@ -85,44 +86,22 @@ class PlatformCoordinates(object):
     """ A class to manage the variables of the moving platform as
         coordinates.
     """
-    def __init__(self, theta=0, phi=0, tps=None, shift=0, height=sample_height, power=1):
+    def __init__(self, theta=0, phi=0, shift=0, height=None, power=1, cfg=None):
         self._theta = np.radians(theta)
         self._phi = np.radians(phi)
         self._shift = shift
-        self._tps = [np.radians(theta), np.radians(phi), shift]
-        if tps is not None:
-            self._tps = tps
-        self._height = height
-        self._power = power
-        # platform defects as taken from config file, check the docs
-        # for definitions
-        self._platform_tilt = platform_tilt
-        self._source_center = source_center
-        self._source_tilt = source_tilt
+        if height is None:
+            self.height = cfg.sample_height
+        else:
+            self.height = height
+        self.power = power
+        if cfg is not None:
+            # platform defects as taken from config file, check the docs
+            # for definitions
+            self.platform_tilt = cfg.platform_tilt
+            self.source_center = cfg.source_center
+            self.source_tilt = cfg.source_tilt
         self.model = None # no model without data
-
-    def get_cartesian(self):
-        prime_pos = [self._shift, 0, -self._height]
-        origin, direction = rotate(prime_pos, self._theta, self._phi)
-        geo_center, point_direction = apply_corrections(origin, direction,
-                                                        source_center,
-                                                        source_tilt,
-                                                        platform_tilt)
-        return geo_center, point_direction
-
-    def update_spot_center(self):
-        """In 2D cartesian coordinates on the sample plane.
-        """
-        # Initial position on the prima coordinate system
-        geo_center, point_direction = self.get_cartesian()
-        self._height = np.abs(geo_center[2])
-
-        # line - plane intersection
-        x_spot = geo_center[0] - point_direction[0]*geo_center[2]/point_direction[2]
-        y_spot = geo_center[1] - point_direction[1]*geo_center[2]/point_direction[2]
-        image_center = np.asarray(video_size)/2
-        spot_center = np.array([x_spot, y_spot]) + image_center
-        return spot_center.astype(int)
 
     @property
     def phi(self):
@@ -151,22 +130,60 @@ class PlatformCoordinates(object):
         self._shift = shift*shift_step
         self.update_spot_center()
 
-    @property
-    def height(self):
-        return self._height
+    # @property
+    # def height(self):
+    #     return self.height
+    #
+    # @height.setter
+    # def height(self, height):
+    #     self.height = height
+        # self.update_spot_center()
 
-    @height.setter
-    def height(self, height):
-        self._height = height
-        self.update_spot_center()
+    def source_coordinates(self, mode='cartesian'):
+        """ Coordinates of the source. If mode is 'cartesian' are the cartesian
+        coordinates with origin on the sample and axes parallel to the sample
+        plane. If mode is 'angular' are the corrected theta and phi angles.
 
-    @property
-    def power(self):
-        return self._power
+        Returns:
+            (array): [x0, y0, z0] the source.
+            (array): Direction [kx, ky, kz] of the illuminator.
+        """
 
-    @power.setter
-    def power(self, power):
-        self._power = power
+        uncorrected_center = [self._shift, 0, -self.height]
+        origin, direction = rotate(uncorrected_center, self._theta, self._phi)
+        corr_center, corr_direction = apply_corrections(origin, direction,
+                                                        self.source_center,
+                                                        self.source_tilt,
+                                                        self.platform_tilt)
+        if mode == 'cartesian':
+            return corr_center, corr_direction
+        if mode == 'angular':
+            rho = np.sqrt(corr_center[0]**2+corr_center[1]**2)
+            if rho == 0:
+                corr_theta = 0
+            else:
+                corr_theta = np.arccos(corr_center[0]/rho)
+                if corr_center[1] < 0:
+                    corr_theta = 2*np.pi - corr_theta
+            corr_phi = np.arctan(rho/self.height)
+            return np.degrees(corr_theta), np.degrees(corr_phi)
+
+    def update_spot_center(self):
+        """ Center of the light spot on the sample plane.
+
+        Returns
+            (int array): [xcenter, ycenter] of the spot on the sample plane.
+        """
+        # Initial position on the prima coordinate system
+        geo_center, point_direction = self.source_coordinates()
+        self.height = np.abs(geo_center[2])
+
+        # line - plane intersection
+        x_spot = geo_center[0] - point_direction[0]*geo_center[2]/point_direction[2]
+        y_spot = geo_center[1] - point_direction[1]*geo_center[2]/point_direction[2]
+        image_center = np.asarray(video_size)/2
+        spot_center = np.array([x_spot, y_spot]) + image_center
+        return spot_center.astype(int)
 
     def adjust_power(self):
         phi = np.degrees(self.phi)
@@ -182,38 +199,28 @@ class PlatformCoordinates(object):
 
     def set_coordinates(self, theta, phi, shift=None, units='degrees'):
         """ This allows the user to set angles in the preferred unit system.
-        The default setter is in platform coordinates (raw), but it is advisable to
-        use this explicit form.
+        The default setter is in platform coordinates (raw), but it is
+        advisable to use this explicit form.
         """
         if units == 'degrees':
             self._theta = np.radians(theta)
             self._phi = np.radians(phi)
-            self._tps = [np.radians(theta), np.radians(phi), None]
+            self._shift = np.tan(self._phi)*self.height
         if units == 'raw':
             self._theta = np.radians(theta*360/cfg.theta_spr)
             self._phi = np.radians(phi*360/cfg.phi_spr)
-            self._tps = [np.radians(theta*360/cfg.theta_spr),
-                         np.radians(phi*360/cfg.phi_spr),
-                         None]
         if units == 'deg_shift':
             self._theta = np.radians(theta)
             self._phi = np.radians(phi)
             self._shift = shift
-            self._tps = [np.radians(theta),
-                         np.radians(phi),
-                         shift]
 
     def phi_to_center(self):
         """ Calculates the required phi angle for the spot to be centered given
         theta and shift.
         """
         image_center = np.asarray(video_size)/2
-        geo_center, point_direction = self.get_cartesian()
-        print geo_center
-        # print("centered_coords", center)
-        # print("angles", self.theta, self.phi, self.shift, self.height)
+        geo_center, point_direction = self.source_coordinates()
         phi_result = np.arccos(geo_center.dot([0, 0, -1])/np.linalg.norm(geo_center))
-        print(phi_result, type(geo_center))
         phi_result = np.degrees(phi_result)
         return phi_result
 
