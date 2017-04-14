@@ -237,7 +237,7 @@ def generate_pupil(theta=None, phi=None, power=None, image_size=None,
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     """ Filtered image by a pupil calculated using generate_pupil
     """
-    phi_max = cfg.phi[1]
+    phi_max = cfg.phi[1]+cfg.phi_max_err
     wavelength = cfg.wavelength
     na = cfg.objective_na
     ps_required = pixel_size_required(phi_max, wavelength, na)
