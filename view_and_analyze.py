@@ -44,43 +44,45 @@ image_dict = np.load(in_file)[()]
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(25, 15))
 plt.grid(False)
 fig.show()
-cum_corr = 0
+cum_diff = 0
 
 for index, theta, phi in iterator:
     # Coordinates math
     # time.sleep(0.5)
-    pc.platform_tilt = [0, 2]
-    pc.source_center = [0, 3] #[xcoord, ycoord] of the calibrated center
+    pc.heigth = 88
+    pc.platform_tilt = [0, 2.1]
+    pc.source_center = [0, 1.9] #[xcoord, ycoord] of the calibrated center
     pc.set_coordinates(theta=theta, phi=phi, units='degrees')
     t_corr, p_corr = pc.source_coordinates(mode='angular')
-    theta_sim_offset = 20
+    theta_sim_offset = 24
     #####################################################################
     power = 100
     sim_im_array = simclient.acquire(t_corr+theta_sim_offset, p_corr, power)
+    # im_array = simclient.acquire(theta, phi, power)
     im_array = image_dict[(theta, phi)]
     im_array = fpm.crop_image(im_array, cfg.video_size, 170, 245)
     # im_array = sim_im_array
-    # sim_im_array /= np.mean(sim_im_array)
-    # im_array /= np.mean(im_array)
+    sim_im_array /= np.max(sim_im_array)
+    im_array /= np.max(im_array)
 
-    corr = signal.correlate2d(im_array[40:110, 40:110], sim_im_array[40:110, 40:110], mode='same', boundary='fill', fillvalue=0)
+    # corr = signal.correlate2d(im_array[40:110, 40:110], sim_im_array[40:110, 40:110], mode='same', boundary='fill', fillvalue=0)
     # corr /= (np.sum(im_array+sim_im_array))
-    cum_corr += np.sum(corr)
-    print(cum_corr, np.log10(cum_corr))
-    if theta == 20 or theta == 340:
-        print("Cummulative in circle", cum_corr, np.log10(cum_corr))
+    corr = np.abs(sim_im_array - im_array)
+    diff = np.sum(corr)/150/150
+    cum_diff += diff
+    print("Diff: %.4f" % (diff), "Are different: %i" % (diff>0.02))
     # Showing the images
     ax1.cla(), ax2.cla(), ax3.cla()
     ax1.imshow(im_array, cmap=cm.hot)
-    ax1.annotate('Mean value: %.4f \nPHI: %.1f THETA: %.1f'% (np.max(im_array), phi, theta),
+    ax1.annotate('Mean value: %.4f \nPHI: %.1f THETA: %.1f'% (np.mean(im_array), phi, theta),
                   xy=(0,0), xytext=(80,20), fontsize=12, color='white')
-    ax2.imshow(sim_im_array, cmap=cm.hot)
-    ax2.annotate('Mean value: %.4f \nPHI: %.1f THETA: %.1f'% (np.max(sim_im_array), phi, theta),
+    ax2.imshow(sim_im_array, cmap=cm.hot, alpha=1.)
+    ax2.annotate('Mean value: %.4f \nPHI: %.1f THETA: %.1f'% (np.mean(sim_im_array), phi, theta),
                  xy=(0,0), xytext=(80,20), fontsize=12, color='white')
     ax3.imshow(corr, cmap=cm.hot, vmin = 0)
     ax3.annotate('Mean value: %.2f \nMax value: %.2f'% (np.mean(corr), np.max(corr)),
                  xy=(0,0), xytext=(40,20), fontsize=12, color='white')
-
     fig.canvas.draw()
+print("Cumulative difference up to this round:", cum_diff)
 
 plt.show()

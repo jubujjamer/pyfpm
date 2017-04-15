@@ -14,7 +14,7 @@ wavelength: 450E-9
 pixel_size: 2.15E-6 #5.67E-6
 color: red
 theta: [0, 360, 20] # [min, max, step]
-phi: [4, 14, 1] # [min, max, step]
+phi: [0, 11, 1] # [min, max, step]
 phi_max_err: 5 # When corrected, phi max could be larger than specified
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
@@ -40,8 +40,8 @@ servertype: sampling # simulation or sampling
 output_cal: ./out/calibration_20170302.npy
 output_sample: ./out_sampling/
 output_sim: ./output_sim/
-input_mag: '/home/juan/pyfpm/imgs/pinhole_hna_mag.png' # If task is simulation
-input_phase: '/home/juan/pyfpm/imgs/pinhole_hna_phase.png' # If task is simulation
+input_mag: '/home/familia/pyfpm/imgs/pinhole_hna_mag.png' # If task is simulation
+input_phase: '/home/familia/pyfpm/imgs/pinhole_hna_phase.png' # If task is simulation
 model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
 plat_model: normal #nomodel #normal
 debug: False # Show me images and be verbose
