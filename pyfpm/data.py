@@ -10,7 +10,7 @@ def save_yaml_metadata(outname, cfg):
     print(base)
     outname = base + '.yaml'
     out_dict = cfg._asdict()
-    timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+    timestamp = '{:%Y-%m-%d %H%M%S}'.format(datetime.datetime.now())
     out_dict['timestamp'] = timestamp
     with open(outname, 'w') as outfile:
         yaml.dump(out_dict, outfile, default_flow_style=False)
@@ -26,7 +26,7 @@ def generate_out_file(out_folder):
     """ File name with the date and hour to have one different file name
     to each measurment
     """
-    out_file = os.path.join('.'+out_folder,
+    out_file = os.path.join(out_folder,
                 '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now()))
     return out_file
 

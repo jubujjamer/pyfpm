@@ -9,7 +9,8 @@ Usage:
 """
 __version__= "1.1.1"
 __author__='Juan M. Bujjamer'
-__all__=['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed']
+__all__=['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
+         'pixel_size_required', 'crop_image']
 
 from io import BytesIO
 from itertools import ifilter, product, cycle
@@ -358,9 +359,23 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
     image_dict = np.load(input_file)[()]
     image_size = cfg.video_size
     n_iter = cfg.n_iter
+    pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
+
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
-    Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
+
+    phi_max = cfg.phi[1]+cfg.phi_max_err
+    wavelength = cfg.wavelength
+    na = cfg.objective_na
+    ps_required = pixel_size_required(phi_max, wavelength, na)
+    scale_factor = cfg.pixel_size/ps_required
+    Ih = ndimage.zoom(np.ones(image_size), scale_factor, order=0) # HR image
+    hr_shape = np.shape(Ih)
+    print(hr_shape)
+
+    # Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
+    Ih_sq = 0.5 * Ih
+
     # Ih_sq = np.sqrt(image_dict[(0, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase
     Ih = Ih_sq * np.exp(1j*Ph)
@@ -374,9 +389,11 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
         iterator = set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
-        for index, theta, phi, power in iterator:
+        for index, theta, phi in iterator:
             # Final step: squared inverse fft for visualization
             im_array = image_dict[(theta, phi)]
+            pc.set_coordinates(theta, phi, units='degrees')
+            [theta_plat, phi_plat, shift_plat, power] = pc.parameters_to_platform()
             # print("Mean intensity", np.mean(im_array), phi)
             # im_array = (im_array-.1*blank_array)
             # im_array -= np.min(im_array[:])

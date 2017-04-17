@@ -23,7 +23,8 @@ import yaml
 import pygame
 
 from pyfpm import web
-from pyfpm.fpmmath import set_iterator, reconstruct, rec_test
+from pyfpm.reconstruct import fpm_reconstruct
+from pyfpm.fpmmath import set_iterator
 from pyfpm.data import save_yaml_metadata
 # from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
@@ -34,10 +35,9 @@ CONFIG_FILE = 'config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
 out_file = os.path.join(cfg.output_sample,
-                        '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
+                        '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now()))
 in_file = os.path.join(cfg.output_sample,
-                        '2017-04-05_113601.npy')
-print(in_file, cfg.output_sample)
+                        '2017-04-05_113601.npy')
 blank_images = os.path.join(cfg.output_sample,
                         './2017-04-05_16:17:27.npy')
 json_file = './output_sim/out.json'
@@ -57,7 +57,7 @@ server_ip = cfg.server_ip
 
 # Connect to a web client running serve_microscope.py
 client = web.Client(server_ip)
-pc = PlatformCoordinates()
+pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
 pc.generate_model(cfg.plat_model)
 # Obs: pup_rad = nx*NA/n where n is the refraction index of the medium
 # Opens input image as if it was sampled at pupil_pos = (0,0) with high
@@ -84,6 +84,8 @@ if task is 'acquire':
     client.acquire(0, cfg.servo_init, 0)
 
 elif task is 'reconstruct':
+    print("here", cfg.video_size)
+
     start_time = time.time()
     rec = fpm_reconstruct(in_file, iterator, cfg=cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))

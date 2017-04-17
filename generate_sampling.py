@@ -8,9 +8,6 @@ Use to locally simulate FPM.
 Usage:
 
 """
-import sys
-sys.path.append('..')
-
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt

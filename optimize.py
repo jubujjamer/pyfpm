@@ -40,6 +40,7 @@ pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
 in_file = os.path.join(cfg.output_sample, '2017-04-05_113601.npy')
 
 image_dict = np.load(in_file)[()]
+
 def change_pc_parameters(pc, height, ptilt, sc, toff):
     pc.height = height
     pc.platform_tilt = ptilt

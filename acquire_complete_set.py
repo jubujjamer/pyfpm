@@ -55,6 +55,7 @@ ss_dict = dict.fromkeys(list(it.product(theta_range, phi_range)))
 power_dict = dict.fromkeys(list(it.product(theta_range, phi_range)))
 ss_list = [110000, 500000, 800000]
 
+
 for index, theta, phi in iterator:
     print(theta, phi)
     pc.set_coordinates(theta, phi, units='degrees')

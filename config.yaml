@@ -3,7 +3,7 @@
 serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
 camtype: picamera # picamera or opencv
 video_id: 0
-video_size: [150, 150] #[480, 648] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
+video_size: [150, 150] #[346, 540] #[150, 150] #[480, 648] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
 client: ledclient
 server_host: '0.0.0.0'
 server_ip: http://10.99.39.174:5000
@@ -14,7 +14,7 @@ wavelength: 450E-9
 pixel_size: 2.15E-6 #5.67E-6
 color: red
 theta: [0, 360, 20] # [min, max, step]
-phi: [0, 11, 1] # [min, max, step]
+phi: [0, 10, 1] # [min, max, step]
 phi_max_err: 5 # When corrected, phi max could be larger than specified
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
@@ -23,14 +23,14 @@ shift: [0, 400, 1]
 shift_step: 0.0188 # 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
 theta_spr: 7680
 shift_max: 1800 # max steps to border
-sample_height: 97 # mm above led
+sample_height: 88 # mm above led
 servo_init: 75 # Zero angle for the servo motor
 phi_spr: 2048
 # For the recosntruction
-n_iter: 10 # Max number of iterations
+n_iter: 3 # Max number of iterations
 # possible defects
-platform_tilt: [0, 0] #[spherical theta, spherical phi]
-source_center: [0, 0] #[xcoord, ycoord] of the calibrated center
+platform_tilt: [0, 2.1] #[spherical theta, spherical phi] [0, 2.1]
+source_center: [0, 1.9] #[xcoord, ycoord] of the calibrated center [0, 1.9]
 source_tilt: [0, 0] #[spherical theta, sperical phi]
 # The client side of the equation
 sweep: radial_efficient # The other is neopixels, have to change that name
@@ -40,8 +40,8 @@ servertype: sampling # simulation or sampling
 output_cal: ./out/calibration_20170302.npy
 output_sample: ./out_sampling/
 output_sim: ./output_sim/
-input_mag: '/home/familia/pyfpm/imgs/pinhole_hna_mag.png' # If task is simulation
-input_phase: '/home/familia/pyfpm/imgs/pinhole_hna_phase.png' # If task is simulation
+input_mag: '/home/lec/pyfpm/imgs/pinhole_hna_mag.png' # If task is simulation
+input_phase: '/home/lec/pyfpm/imgs/pinhole_hna_phase.png' # If task is simulation
 model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
 plat_model: normal #nomodel #normal
 debug: False # Show me images and be verbose
