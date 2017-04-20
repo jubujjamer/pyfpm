@@ -6,10 +6,8 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
-from scipy.optimize import fsolve
 from PIL import Image
 from scipy import ndimage
-import random
 
 from pyfpm.coordinates import PlatformCoordinates
 from pyfpm.fpmmath import *
