@@ -34,7 +34,7 @@ class Formatter(object):
         return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
 
 # Simulation parameters
-CONFIG_FILE = 'config.yaml'
+CONFIG_FILE = './etc/config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 
 mode = cfg.task

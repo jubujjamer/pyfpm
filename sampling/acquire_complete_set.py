@@ -27,8 +27,7 @@ import pyfpm.data as dt
 from pyfpm.coordinates import PlatformCoordinates
 
 # Simulation parameters
-CONFIG_FILE = 'config.yaml'
-cfg = dt.load_config(CONFIG_FILE)
+cfg = dt.load_config()
 
 out_file = os.path.join(cfg.output_sample,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))

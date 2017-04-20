@@ -10,32 +10,22 @@ hosted in some url.
 Usage:
 
 """
-from StringIO import StringIO
-import time
-import os
-import datetime
-
 from numpy.fft import fft2, ifft2, fftshift
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
-import time
-import yaml
-from scipy import misc, signal
-
+from scipy import signal
 
 import pyfpm.fpmmath as fpm
-from pyfpm.data import save_yaml_metadata
-# from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
 from pyfpm.coordinates import PlatformCoordinates
-from pyfpm import implot
 import pyfpm.local as local
+
+
 # Simulation parameters
-CONFIG_FILE = 'config.yaml'
-cfg = dt.load_config(CONFIG_FILE)
+cfg = dt.load_config()
 simclient = local.SimClient(cfg=cfg)
 pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
 
@@ -45,13 +35,11 @@ fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
 plt.grid(False)
 fig.show()
 
-theta = 45
-phi = 5
+theta, phi = [0, 5]
 sim_im_array = simclient.acquire(theta, phi, power=100)
-ps_required = fpm.pixel_size_required(cfg.phi[1], cfg.wavelength,
-                                      cfg.objective_na)
+ps_req = fpm.pixel_size_required(cfg.phi[1], cfg.wavelength, cfg.objective_na)
 original_shape = np.shape(sim_im_array)
-scale_factor = cfg.pixel_size/ps_required
+scale_factor = cfg.pixel_size/ps_req
 processing_shape = np.array(original_shape)*scale_factor
 
 pupil_radius = fpm.calculate_pupil_radius(cfg.objective_na, processing_shape[0],
@@ -59,7 +47,7 @@ pupil_radius = fpm.calculate_pupil_radius(cfg.objective_na, processing_shape[0],
 pupil = fpm.generate_pupil(theta=0, phi=0,
                            image_size=processing_shape.astype(int),
                            wavelength=cfg.wavelength,
-                           pixel_size=ps_required, na=0.01)
+                           pixel_size=ps_req, na=cfg.objective_na)
 sim_im_array = fpm.resize_complex_image(sim_im_array, processing_shape)
 
 pupil_shift = fftshift(pupil)

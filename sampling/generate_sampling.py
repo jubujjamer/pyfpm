@@ -20,7 +20,7 @@ import pyfpm.local as local
 from pyfpm.coordinates import PlatformCoordinates
 
 # Simulation parameters
-CONFIG_FILE = '/home/lec/pyfpm/config.yaml'
+CONFIG_FILE = '/home/lec/pyfpm/etc/config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 client = local.SimClient(cfg=cfg)
 iterator = set_iterator(cfg)

@@ -13,19 +13,9 @@ from itertools import ifilter, product
 
 import pyfpm.data as dt
 from pyfpm.fpmmath import set_iterator, translate
+import pyfpm.data as dt
 
-CONFIG_FILE = 'config.yaml'
-config_dict = yaml.load(open(CONFIG_FILE, 'r'))
-cfg = dt.load_config(CONFIG_FILE)
-
-servo_init = cfg.servo_init
-video_size = config_dict['video_size']
-servo_init = config_dict['servo_init']
-shift_step = config_dict['shift_step']
-shift_max = config_dict['shift_max']
-model_file = config_dict['model_file']
-cal_file = config_dict['output_cal']
-theta_spr = config_dict['theta_spr']
+cfg = dt.load_config()
 
 
 def phi_rot(od, phi):

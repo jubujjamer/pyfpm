@@ -32,7 +32,7 @@ from pyfpm.coordinates import PlatformCoordinates
 from pyfpm import implot
 import pyfpm.local as local
 # Simulation parameters
-CONFIG_FILE = 'config.yaml'
+CONFIG_FILE = './etc/config.yaml'
 cfg = dt.load_config(CONFIG_FILE)
 simclient = local.SimClient(cfg=cfg)
 pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
