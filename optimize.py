@@ -37,7 +37,7 @@ cfg = dt.load_config(CONFIG_FILE)
 simclient = local.SimClient(cfg=cfg)
 pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
 
-in_file = os.path.join(cfg.output_sample, '2017-04-05_113601.npy')
+in_file = os.path.join(cfg.output_sample, '2017-04-05_161727.npy')
 
 image_dict = np.load(in_file)[()]
 

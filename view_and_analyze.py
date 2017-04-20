@@ -37,7 +37,10 @@ cfg = dt.load_config(CONFIG_FILE)
 simclient = local.SimClient(cfg=cfg)
 pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
 
-in_file = os.path.join(cfg.output_sample, '2017-04-05_113601.npy')
+in_file = os.path.join(cfg.output_sample, '2017-04-12_182910.npy')
+ss_dict = np.load(cfg.output_sample+'2017-04-12_182910ss_dict.npy')[()]
+power_dict = np.load(cfg.output_sample+'2017-04-12_182910power_dict.npy')[()]
+
 iterator = fpm.set_iterator(cfg)
 
 image_dict = np.load(in_file)[()]
@@ -50,27 +53,26 @@ for index, theta, phi in iterator:
     # Coordinates math
     # time.sleep(0.5)
     pc.heigth = 88
-    pc.platform_tilt = [0, 2.1]
-    pc.source_center = [0, 1.9] #[xcoord, ycoord] of the calibrated center
+    pc.platform_tilt = [0, 2]
+    pc.source_center = [0, 2] #[xcoord, ycoord] of the calibrated center
     pc.set_coordinates(theta=theta, phi=phi, units='degrees')
     t_corr, p_corr = pc.source_coordinates(mode='angular')
-    theta_sim_offset = 24
+    theta_sim_offset = 220
     #####################################################################
     power = 100
     sim_im_array = simclient.acquire(t_corr+theta_sim_offset, p_corr, power)
-    # im_array = simclient.acquire(theta, phi, power)
-    im_array = image_dict[(theta, phi)]
-    im_array = fpm.crop_image(im_array, cfg.video_size, 170, 245)
+    im_array = simclient.acquire(theta, phi, power)
+    im_array = image_dict[(theta, phi)]/(ss_dict[theta, phi]*power_dict[theta, phi])
+    im_array = fpm.crop_image(im_array, cfg.video_size, 145, 285)
     # im_array = sim_im_array
     sim_im_array /= np.max(sim_im_array)
     im_array /= np.max(im_array)
-
     # corr = signal.correlate2d(im_array[40:110, 40:110], sim_im_array[40:110, 40:110], mode='same', boundary='fill', fillvalue=0)
     # corr /= (np.sum(im_array+sim_im_array))
     corr = np.abs(sim_im_array - im_array)
     diff = np.sum(corr)/150/150
     cum_diff += diff
-    print("Diff: %.4f" % (diff), "Are different: %i" % (diff>0.02))
+    print("Diff: %.4f" % (diff), "Are different: %i" % (diff > 0.02))
     # Showing the images
     ax1.cla(), ax2.cla(), ax3.cla()
     ax1.imshow(im_array, cmap=cm.hot)

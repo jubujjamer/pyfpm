@@ -59,6 +59,16 @@ def adjust_shutter_speed(theta, phi):
     return ss
 
 
+def adjust_power(theta, phi):
+    return power
+
+
+def acquisition_parameters(theta, phi):
+    ss = adjust_shutter_speed(theta, phi)
+    power = adjust_power(theta, phi)
+    return shutter_speed, power
+
+
 def image_center(image_size=None):
     """ Center coordinates given the image size.
 
@@ -163,7 +173,6 @@ def test_similarity(image_ref, image_cmp):
 
 
 
-
 def calculate_pupil_radius(na, npx, pixel_size, wavelength):
     """ pupil radius from wavelength, numerical aperture, pixel size and
         magnification.
@@ -174,8 +183,8 @@ def calculate_pupil_radius(na, npx, pixel_size, wavelength):
     Returns:
         (int): pupil radius in pixels, relative to the image size.
     """
-    pixel_radius = na*npx*pixel_size/wavelength
-    return pixel_radius
+    pixel_radius = na*npx*pixel_size/float(wavelength)
+    return int(pixel_radius)
 
 
 def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
