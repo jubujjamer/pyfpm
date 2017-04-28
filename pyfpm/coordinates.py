@@ -16,7 +16,7 @@ from pyfpm.fpmmath import set_iterator, translate
 import pyfpm.data as dt
 
 cfg = dt.load_config()
-
+print(cfg.max_power)
 
 def phi_rot(od, phi):
     """ od rotation -phi angle- or along y axis
@@ -80,6 +80,7 @@ class PlatformCoordinates(object):
         self._theta = np.radians(theta)
         self._phi = np.radians(phi)
         self._shift = shift
+        self.cfg = cfg
         if height is None:
             self.height = cfg.sample_height
         else:
@@ -208,7 +209,7 @@ class PlatformCoordinates(object):
         """ Calculates the required phi angle for the spot to be centered given
         theta and shift.
         """
-        image_center = np.asarray(video_size)/2
+        image_center = np.asarray(self.cfg.video_size)/2
         geo_center, point_direction = self.source_coordinates()
         phi_result = np.arccos(geo_center.dot([0, 0, -1])/np.linalg.norm(geo_center))
         phi_result = np.degrees(phi_result)
@@ -284,22 +285,21 @@ class PlatformCoordinates(object):
                 return
             phi = np.array([d[1] for d in data])-servo_init
             shift = np.array([d[2] for d in data])
-            print(data)
             slope, origin = np.polyfit(phi, shift, 1)
             model = {'model_type': 'shift_fit',
                      'slope': float(slope),
                      'origin': float(origin)}
-            with open(model_file, 'w') as outfile:
+            with open(cfg.model_file, 'w') as outfile:
                 yaml.dump(model, outfile, default_flow_style=False)
             return
         if model == 'normal':
             model = {'model_type': 'normal'}
-            with open(model_file, 'w') as outfile:
+            with open(cfg.model_file, 'w') as outfile:
                 yaml.dump(model, outfile, default_flow_style=False)
             return
 
         if model == 'nomodel':
             model = {'model_type': 'nomodel'}
-            with open(model_file, 'w') as outfile:
+            with open(cfg.model_file, 'w') as outfile:
                 yaml.dump(model, outfile, default_flow_style=False)
             return

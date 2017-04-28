@@ -20,8 +20,7 @@ import pyfpm.data as dt
 
 from pyfpm.coordinates import PlatformCoordinates
 
-CONFIG_FILE = 'config.yaml'
-cfg = dt.load_config(CONFIG_FILE)
+cfg = dt.load_config()
 
 class LaserAim(object):
     """Hello
@@ -168,7 +167,6 @@ class Laser3d(object):
         self.set_parameters(port, theta, phi, shift, power)
 
     def set_parameters(self, port, theta, phi, shift, power):
-        params = yaml.load(open(CONFIG_FILE, 'r'))
         if port is None:
             port = '/dev/ttyACM0'
         if theta is None:
@@ -286,20 +284,16 @@ class Camera(object):
     """
     def __init__(self, video_id=0, camtype='picamera'):
         self.camtype = camtype
-        print("Trying to select a camera")
         if(camtype == 'opencv'):
             cap = cv2.VideoCapture(video_id)
             self.cap = cap
             self.cap.open(video_id)
-            print ("Initializing the camera")
-            print("Is opened?", self.cap.isOpened())
             self.config_cap()
-            print('video id is %i' % video_id)
         elif(camtype == 'picamera'):
             self.cap = camera.RaspiStill(tmpfile='tmp.png', bin='raspistill',
-                            awb='off', format='png', width=cfg.video_size[1],
-                            height=cfg.video_size[0], timeacq=100, nopreview='-n',
-                            iso=400, shutter_speed=1000)
+                awb='off', format='png', width=cfg.video_size[1],
+                height=cfg.video_size[0], timeacq=100, nopreview='-n',
+                iso=400, shutter_speed=1000)
         else:
             self.cap = None
 
@@ -321,10 +315,10 @@ class Camera(object):
                      13: 'CAP_PROP_HUE',
                      14: 'CAP_PROP_GAIN',
                      15: 'CAP_PROP_EXPOSURE'}
-        props = [a for a in dir(cv2) if "PROP" in a]
-        for p in range(0, 16):
-            if self.cap.get(p) != -10.0:
-                print p, self.cap.get(p), prop_dict[p]
+        # props = [a for a in dir(cv2) if "PROP" in a]
+        # for p in range(0, 16):
+        #     if self.cap.get(p) != -10.0:
+        #         print p, self.cap.get(p), prop_dict[p]
         self.cap.set(10, 0.5)
         # self.cap.set(cv2.CAP_PROP_CONTRAST, 0.7)
         # self.cap.set(cv2.CAP_PROP_SATURATION, 0.5)
@@ -334,26 +328,22 @@ class Camera(object):
     def capture_png(self, shutter_speed, iso):
         camtype = self.camtype
         if(camtype == 'opencv'):
-            print("Adding a time delay to leave time the led to set.")
             time.sleep(.5)
             # Don't know why it doesn't updates up to the 5th reading
             # a buffer flush thing
-            print("Is opened?", self.cap.isOpened())
             for i in range(5):
                 ret, frame = self.cap.read()
-            print('ret value %i' % ret)
             ret, buf = cv2.imencode('.png', frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-            print('ret value %i' % ret)
             return bytearray(buf)
         elif(camtype == 'picamera'):
             if shutter_speed is not None:
                 self.cap.shutter_speed = shutter_speed
             if iso is not None:
-                print("changing iso to", iso)
                 self.cap.iso = iso
                 print(self.cap.iso)
-            print("My new command is", self.cap.cmd)
             return self.cap.acquire()
+        else:
+            return None
 
 
     def __del__(self):

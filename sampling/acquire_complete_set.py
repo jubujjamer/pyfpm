@@ -29,10 +29,8 @@ from pyfpm.coordinates import PlatformCoordinates
 # Simulation parameters
 cfg = dt.load_config()
 
-out_file = os.path.join(cfg.output_sample,
-                        '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
-in_file = os.path.join(cfg.output_sample,
-                        './2017-03-23_19:04:01.npy')
+out_file = dt.generate_out_file(cfg.output_sample)
+in_file = os.path.join(cfg.output_sample, './2017-03-23_19:04:01.npy')
 
 # Connect to a web client running serve_microscope.py
 client = web.Client(cfg.server_ip)

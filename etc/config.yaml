@@ -1,20 +1,20 @@
 # Configuration file for both server and clients
 # Let's start with the server first
-serialport: '/dev/ttyACM' # It will also test ACM1/ACM0 if this doesn't work
-camtype: picamera # picamera or opencv
+serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
+camtype: test # picamera or opencv
 video_id: 0
 video_size: [150, 150] #[346, 540] #[150, 150] #[480, 648] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
 client: ledclient
 server_host: '0.0.0.0'
-server_ip: http://10.99.39.174:5000
+server_ip: http://0.0.0.0:5000 #http://10.99.39.174:5000
 objective_na: 0.08 #0.12
 pupil_size: 500 # Function of NA, wavelength video size and magnification
 wavelength: 450E-9
 #magnification: 8
 pixel_size: 2.15E-6 #2.15E-6 #5.67E-6
 color: red
-theta: [0, 360, 20] # [min, max, step]
-phi: [2, 7, 1] # [min, max, step]
+theta: [0, 90, 10] # [min, max, step]
+phi: [0, 10, 1] # [min, max, step]
 phi_max_err: 2 # When corrected, phi max could be larger than specified
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
@@ -37,11 +37,11 @@ sweep: radial_efficient # The other is neopixels, have to change that name
 task: simulation
 action: reconstruct
 servertype: sampling # simulation or sampling
-output_cal: ./out/calibration_20170302.npy
+output_cal: ./etc/calibration_20170302.npy
 output_sample: ./out_sampling/
-output_sim: ./output_sim/
+output_sim: ./out_simulation/
 input_mag: '/home/lec/pyfpm/imgs/pinhole_30um_mag.png' # If task is simulation
 input_phase: '/home/lec/pyfpm/imgs/pinhole_30um_phase.png' # If task is simulation
-model_file: ./out/model_2017-03-06_01.yaml #./out/model_20170302.yaml
+model_file: /home/lec/pyfpm/etc/model_2017-03-06_01.yaml #./out/model_20170302.yaml
 plat_model: normal #nomodel #normal
 debug: False # Show me images and be verbose
