@@ -4,6 +4,7 @@ import json
 import yaml
 import collections
 import datetime
+import numpy as np
 
 HOME_FOLDER = os.path.expanduser("~/pyfpm")
 CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
@@ -42,3 +43,13 @@ def generate_out_file(out_folder):
 def iter_dict(image_dict):
     for ((theta, phi), (img, power)) in image_dict.items():
         yield theta, phi, power, img
+
+
+def open_sampled(filename):
+    datafile = os.path.join(OUT_SAMLPING, filename)
+    configfile = os.path.splitext(datafile)[0]+'.yaml'
+    print(configfile)
+    config_dict = yaml.load(open(configfile, 'r'))
+    config = collections.namedtuple('config', config_dict.keys())
+    file_cfg = config(*config_dict.values())
+    return np.load(datafile)[()], file_cfg
