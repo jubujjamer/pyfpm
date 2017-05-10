@@ -16,8 +16,6 @@ class Client(BaseClient):
         # self.metadata = requests.get(self.url + '/metadata').json()
 
     def acquire(self, theta, phi, shift=0, power=100, color='green', shutter_speed=100, iso=100):
-        print(self.url + '/acquire/%d/%d/%d/%d/%s/%d/%d' % (theta, phi, shift, power, color,
-        shutter_speed, iso))
         response = requests.get(self.url +
                                 '/acquire/%d/%d/%d/%d/%s/%d/%d' % (theta, phi, shift, power, color,
                                 shutter_speed, iso),
@@ -27,8 +25,7 @@ class Client(BaseClient):
         else:
             print("Failed to load webpage")
 
-    def just_move(self, theta, phi, shift=0, power=100, color='green'):
-        print(self.url + '/just_move/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color))
+    def just_move(self, theta, phi, shift, power, color='green'):
         response = requests.get(self.url +
                                 '/just_move/%d/%d/%d/%d/%s' % (theta, phi, shift, power, color),
                                 stream=True)

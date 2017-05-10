@@ -13,8 +13,8 @@ wavelength: 450E-9
 #magnification: 8
 pixel_size: 2.15E-6 #2.15E-6 #5.67E-6
 color: red
-theta: [0, 90, 10] # [min, max, step]
-phi: [0, 10, 1] # [min, max, step]
+theta: [0, 90, 5] # [min, max, step]
+phi: [0, 50, 1] # [min, max, step]
 phi_max_err: 2 # When corrected, phi max could be larger than specified
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
@@ -43,5 +43,5 @@ output_sim: ./out_simulation/
 input_mag: '/home/lec/pyfpm/imgs/pinhole_30um_mag.png' # If task is simulation
 input_phase: '/home/lec/pyfpm/imgs/pinhole_30um_phase.png' # If task is simulation
 model_file: /home/lec/pyfpm/etc/model_2017-03-06_01.yaml #./out/model_20170302.yaml
-plat_model: normal #nomodel #normal
+plat_model: nomodel #nomodel #normal
 debug: False # Show me images and be verbose

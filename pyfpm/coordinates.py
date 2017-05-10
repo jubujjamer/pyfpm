@@ -201,6 +201,7 @@ class PlatformCoordinates(object):
             self._theta = np.radians(theta*360/cfg.theta_spr)
             self._phi = np.radians(phi*360/cfg.phi_spr)
         if units == 'deg_shift':
+            print(shift)
             self._theta = np.radians(theta)
             self._phi = np.radians(phi)
             self._shift = shift

@@ -119,8 +119,7 @@ def create_server(client):
             pass
 
     @app.route("/just_move/<theta>/<phi>/<shift>/<power>/<color>")
-    def just_move(theta, phi, shift, power, color):
-        print ("app", float(theta), float(phi), color)
+    def just_move(theta=None, phi=None, shift=None, power=None, color=None):
         try:
             return Response(client.just_move(theta, phi, shift, power, color),
                             mimetype='image/png')
