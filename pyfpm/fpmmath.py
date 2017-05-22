@@ -128,6 +128,7 @@ def set_iterator(cfg=None):
     wavelength = cfg.wavelength
     pixelsize = cfg.pixel_size  # See jupyter notebook
     image_size = cfg.video_size
+    shift_min, shift_max, shift_step = cfg.shift
     phi_min, phi_max, phi_step = cfg.phi
     theta_min, theta_max, theta_step = cfg.theta
     mode = cfg.task
@@ -161,6 +162,23 @@ def set_iterator(cfg=None):
             if t == min(theta_list) or t == max(theta_list):
                 p = phi_iter.next()
             yield index, t, p
+            index += 1
+
+    elif itertype == 'radial_efficient_shift':
+        # yield 0, 0, 0, 0
+        index = 0
+        direction_flag = 1
+        shift_list = np.arange(shift_min, shift_max, shift_step)
+        theta_list = range(theta_min, theta_max, theta_step)
+        theta_list.extend(theta_list[-2:0:-1])
+        theta_list_max = max(theta_list)
+
+        theta_cycle = cycle(theta_list)
+        shift_iter = iter(shift_list)
+        for t in theta_cycle:
+            if t == min(theta_list) or t == max(theta_list):
+                s = shift_iter.next()
+            yield index, t, s
             index += 1
 
 def test_similarity(image_ref, image_cmp):

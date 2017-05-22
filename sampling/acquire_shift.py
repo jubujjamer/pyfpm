@@ -27,9 +27,7 @@ import pyfpm.data as dt
 from pyfpm.coordinates import PlatformCoordinates
 
 # Simulation parameters
-images, comp_cfg = dt.open_sampled('2017-05-22_172249.npy')
-blank_images, comp_cfg = dt.open_sampled('2017-05-22_172249_blank.npy')
-
+comp_images, comp_cfg = dt.open_sampled('2017-05-22_172249.npy')
 cfg = dt.load_config()
 out_file = dt.generate_out_file(cfg.output_sample)
 # Connect to a web client running serve_microscope.py
@@ -38,6 +36,15 @@ pc = PlatformCoordinates(cfg=cfg)
 pc.generate_model(cfg.plat_model)
 iterator = set_iterator(cfg)
 
+def acquire_image(pc, client, theta, phi, shift, power):
+    pc.set_coordinates(theta=theta, phi=phi, shift=shift,
+                       units='deg_shift')
+    [theta_plat, phi_plat, shift_plat, power_plat] = pc.parameters_to_platform()
+    # ss = fpm.adjust_shutter_speed(tpsp[0], tpsp[1])
+    img = client.acquire(theta_plat, phi_plat, shift_plat, power,
+                         shutter_speed=50000, iso=400)
+    return misc.imread(StringIO(img.read()), 'RGB')
+
 # Start analysis
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
 plt.grid(False)
@@ -45,18 +52,18 @@ fig.show()
 
 image_dict = dict()
 iterator = fpm.set_iterator(cfg)
-corr_ims = list()
 
 for index, theta, shift in iterator:
     print(theta, shift)
-    im_array = images[(theta, shift)]
-    bkim_array = blank_images[(theta, shift)]
-    corr_ims.append(im_array - bkim_array)
-    # ax1.cla(), ax2.cla()
-    # # im_array = acquire_image(pc, client, 0, 0, 0, 0)
-    # ax1.imshow(im_array, cmap=cm.hot)
-    # ax2.imshow(im_array - bkim_array, cmap=cm.hot)
-    # fig.canvas.draw()
-ax1.imshow(np.mean(corr_ims,  axis=0))
-fig.canvas.draw()
+    ax1.cla(), ax2.cla()
+    # im_array = acquire_image(pc, client, 0, 0, 0, 0)
+    im_array = acquire_image(pc, client, theta, 0, shift, 255)
+    image_dict[(theta, shift)] = im_array
+    ax1.imshow(im_array, cmap=cm.hot)
+    im_cmp = comp_images[(theta, shift)]
+    ax2.imshow(im_cmp, cmap=cm.hot)
+    fig.canvas.draw()
+
+dt.save_yaml_metadata(out_file, cfg)
+np.save(out_file, image_dict)
 plt.show()

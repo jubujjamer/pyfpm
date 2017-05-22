@@ -201,7 +201,6 @@ class PlatformCoordinates(object):
             self._theta = np.radians(theta*360/cfg.theta_spr)
             self._phi = np.radians(phi*360/cfg.phi_spr)
         if units == 'deg_shift':
-            print(shift)
             self._theta = np.radians(theta)
             self._phi = np.radians(phi)
             self._shift = shift
@@ -234,16 +233,16 @@ class PlatformCoordinates(object):
         """ Corrected values for the parameters_to_platform
         """
         try:
-            model_dict = yaml.load(open(model_file, 'r'))
-            model = model_dict['model_type']
-
+            model_cfg = dt.load_model_file(cfg.model_name)
+            model = model_cfg.model_type
         except:
             print "No model created, run 'generate_model' first"
             model = 'nomodel'
 
         if model == 'nomodel':
             theta = self.theta
-            phi = self.phi_to_center()
+            # phi = self.phi_to_center()
+            self.phi
             shift_adjusted = self.shift
             power = self.power
 
@@ -280,7 +279,7 @@ class PlatformCoordinates(object):
     def generate_model(self, model='normal'):
         if model == 'shift_fit':
             try:
-                data = np.load(cal_file)
+                data = np.load(cfg.output_cal)
             except:
                 print("generate calibration data first")
                 return
@@ -290,17 +289,14 @@ class PlatformCoordinates(object):
             model = {'model_type': 'shift_fit',
                      'slope': float(slope),
                      'origin': float(origin)}
-            with open(cfg.model_file, 'w') as outfile:
-                yaml.dump(model, outfile, default_flow_style=False)
+            dt.save_model(cfg.model_name, model)
             return
         if model == 'normal':
             model = {'model_type': 'normal'}
-            with open(cfg.model_file, 'w') as outfile:
-                yaml.dump(model, outfile, default_flow_style=False)
+            dt.save_model(cfg.model_name, model)
             return
 
         if model == 'nomodel':
             model = {'model_type': 'nomodel'}
-            with open(cfg.model_file, 'w') as outfile:
-                yaml.dump(model, outfile, default_flow_style=False)
+            dt.save_model(cfg.model_name, model)
             return

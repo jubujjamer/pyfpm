@@ -7,6 +7,7 @@ import datetime
 import numpy as np
 
 HOME_FOLDER = os.path.expanduser("~/pyfpm")
+ETC_FOLDER = os.path.join(HOME_FOLDER, "etc")
 CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
 OUT_SAMLPING = os.path.join(HOME_FOLDER, "out_simulation")
 OUT_SAMLPING = os.path.join(HOME_FOLDER, "out_sampling")
@@ -30,6 +31,19 @@ def load_config():
     cfg = config(*config_dict.values())
     return cfg
 
+
+def load_model_file(model_name):
+    model_file = os.path.join(ETC_FOLDER, model_name)
+    model_dict = yaml.load(open(model_file, 'r'))
+    model = collections.namedtuple('config', model_dict.keys())
+    model_cfg = model(*model_dict.values())
+    return model_cfg
+
+def save_model(model_name, model):
+    model_file = os.path.join(ETC_FOLDER, model_name)
+    with open(model_file, 'w') as outfile:
+        yaml.dump(model, outfile, default_flow_style=False)
+    return
 
 def generate_out_file(out_folder):
     """ File name with the date and hour to have one different file name

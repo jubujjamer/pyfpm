@@ -8,7 +8,6 @@ Use to locally simulate FPM.
 Usage:
 
 """
-import os
 import time
 
 import numpy as np
@@ -35,7 +34,6 @@ iterator = set_iterator(cfg)
 #     [theta_plat, phi_plat, shift_plat, power] = pc.parameters_to_platform()
 #     client.just_move(theta_plat, phi_plat, shift_plat, power=0)
 
-
 # Joystick move
 
 def move_client(pc, client, tpsp):
@@ -43,17 +41,6 @@ def move_client(pc, client, tpsp):
                        units='deg_shift')
     [theta_plat, phi_plat, shift_plat, power] = pc.parameters_to_platform()
     client.just_move(theta_plat, phi_plat, shift_plat, power=tpsp[3])
-    # if kwargs is not None:
-    #     for key, value in kwargs.iteritems():
-    #         if key is 'theta':
-    #             client.just_move(theta=value)
-    #         if key is 'phi':
-    #             client.just_move(phi=value)
-    #         if key is 'shift':
-    #             client.just_move(shift=value)
-    #         if key is 'power':
-    #             client.just_move(power=value)
-    # return
 
 def test_limits(tpsp, cfg):
     min_theta = cfg.theta[0]
@@ -127,8 +114,6 @@ while done is False:
             axis_pressed = not axis_pressed
             count_pressed = 0
             tpsp_steps_now = tpsp_steps_init
-
-
 
     if axis_pressed or button_pressed:
         count_pressed += 1
