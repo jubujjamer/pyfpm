@@ -14,6 +14,7 @@ from scipy import misc
 import numpy as np
 import time
 import yaml
+import itertools as it
 
 from pyfpm import web
 from pyfpm.reconstruct import fpm_reconstruct
@@ -33,4 +34,14 @@ pc.generate_model(cfg.plat_model)
 iterator = set_iterator(cfg)
 
 # reconstruction
-rec = fpm_reconstruct(samples, background, iterator, cfg=cfg, debug=True)
+dx = cfg.patch_size[0]
+x_range = range(0, cfg.video_size[1], dx)[:-1]
+y_range = range(0, cfg.video_size[0], dx)[:-1]
+for i, point in enumerate(it.product(x_range, y_range)):
+    init_point = [point[0], point[1]]
+    rec, phase = fpm_reconstruct(samples, background, iterator, init_point,
+                          cfg=cfg, debug=False)
+    misc.imsave('./misc/ph'+str(i)+'.png', phase)
+    misc.imsave('./misc/im'+str(i)+'.png', rec)
+# rec, phase = fpm_reconstruct(samples, background, iterator, [100, 100],
+#                             cfg=cfg, debug=True)

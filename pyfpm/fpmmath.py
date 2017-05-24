@@ -104,7 +104,7 @@ def calculate_max_phi(wavelength, pixel_size, na):
     return phi_max
 
 
-def pixel_size_required(phi_max=None, wavelength=None, na=None):
+def ps_required(phi_max=None, wavelength=None, na=None):
     """ The pixel size that would be required for a given maximum zenithal angle.
 
     Args:
@@ -358,7 +358,6 @@ def quality_metric(image_dict, image_lowq, cfg, max_phi):
 
 def generate_il(im_array, f_ih, theta, phi, power, image_size,
                 wavelength, pixel_size, na):
-    print(phi)
     pupil = generate_pupil(theta, phi, power, image_size, wavelength,
                            pixel_size, na)
     pupil_shift = fftshift(pupil)
@@ -398,8 +397,6 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
     scale_factor = cfg.pixel_size/ps_required
     Ih = ndimage.zoom(np.ones(image_size), scale_factor, order=0) # HR image
     hr_shape = np.shape(Ih)
-    print(hr_shape)
-
     # Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
     Ih_sq = 0.5 * Ih
 

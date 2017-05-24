@@ -12,7 +12,7 @@ import numpy as np
 from StringIO import StringIO
 import time
 
-from fpmmath import filter_by_pupil, set_iterator, pixel_size_required
+from fpmmath import filter_by_pupil
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
