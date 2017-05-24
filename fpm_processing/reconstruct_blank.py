@@ -40,7 +40,7 @@ y_range = range(0, cfg.video_size[0], dx)[:-1]
 for i, point in enumerate(it.product(x_range, y_range)):
     init_point = [point[0], point[1]]
     rec, phase = fpm_reconstruct(samples, background, iterator, init_point,
-                          cfg=cfg, debug=False)
+                          cfg=cfg, debug=True)
     misc.imsave('./misc/ph'+str(i)+'.png', phase)
     misc.imsave('./misc/im'+str(i)+'.png', rec)
 # rec, phase = fpm_reconstruct(samples, background, iterator, [100, 100],

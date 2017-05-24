@@ -13,7 +13,7 @@ na: 0.6
 pupil_size: 500 # Function of NA, wavelength video size and magnification
 wavelength: 450E-9
 #magnification: 8
-pixel_size: .5E-6 #2.15E-6 #5.67E-6
+pixel_size: 1.E-6 #2.15E-6 #5.67E-6
 color: red
 theta: [0, 360, 20] # [min, max, step]
 phi: [0, 15, 1] # [min, max, step]

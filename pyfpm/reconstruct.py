@@ -16,12 +16,41 @@ import coordtrans as ct
 # from . import implot
 # import fpmmath.optics_tools as ot
 
-def image_correction(image, background, mode='threshold'):
+def get_mask(samples, backgrounds=None, xoff=None, yoff=None, cfg=None):
+    """ Initialization of the algotithm
+        zero: constant phase and zero amplitude.
+        first: zero order image
+    """
+    corr_ims = list()
+    iterator = fpmm.set_iterator(cfg)
+    for index, theta, shift in iterator:
+        image = samples[(theta, shift)]
+        image = fpmm.crop_image(image, cfg.patch_size, xoff, yoff)
+        # image, image_size = image_rescaling(image, cfg)
+        background = backgrounds[(theta, shift)]
+        background = fpmm.crop_image(background, cfg.patch_size, xoff, yoff)
+        # background, image_size = image_rescaling(background, cfg)
+        corr_ims.append(image_correction(image, background, mode='background'))
+    mask = np.mean(corr_ims, axis=0)
+    #
+    thres = 140
+    mask[mask < thres] = 1
+    mask[mask > thres] = 0
+    # print(Et[np.abs(Et) > .1])
+    return mask
+
+
+
+def image_correction(image, background, mask=None, mode='threshold'):
     if mode == 'threshold':
         image_corrected = image
     elif mode == 'background':
         image_corrected = image - 1.*background
         image_corrected -= np.min(image_corrected[:])-5
+    elif mode == 'mask':
+        image_corrected = image - 1.*background
+        image_corrected -= np.min(image_corrected[:])-5
+        image_corrected = image*mask+10
     # im_array = (im_array-.1*blank_array)
     # im_array -= np.min(im_array[:])
     # im_array[im_array < np.min(im_array)+2] = 0
@@ -39,6 +68,7 @@ def image_rescaling(image, cfg):
     Ih = ndimage.zoom(image, scale_factor, order=0) # HR image
     hr_shape = np.shape(Ih)
     return Ih, hr_shape
+
 
 
 def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
@@ -72,12 +102,9 @@ def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
             image, image_size = image_rescaling(image, cfg)
             background, image_size = image_rescaling(background, cfg)
             corr_ims.append(image_correction(image, background, mode='background'))
-        Et = np.mean(corr_ims, axis=0)
+        Ih = np.mean(corr_ims, axis=0)
         # Ph = 0.5+np.pi*np.abs(Et)/np.max(Et)
-        Et = np.sqrt(Et) * np.exp(1j*0)
-    #
-    # plt.imshow(np.abs(Et))
-    # plt.show()
+        Et = np.sqrt(Ih) * np.exp(1j*0)
     return Et
 
 
@@ -108,6 +135,7 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point = None, 
     pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
     xoff, yoff = init_point  # Selection of the image patch
     ps_required = fpmm.ps_required(cfg.phi[1], cfg.wavelength, cfg.na)
+    # mask = get_mask(samples, backgrounds, xoff, yoff, cfg)
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
     Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'mean')
