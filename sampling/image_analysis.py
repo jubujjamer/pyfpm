@@ -27,9 +27,9 @@ import pyfpm.data as dt
 from pyfpm.coordinates import PlatformCoordinates
 
 # Simulation parameters
-images, comp_cfg = dt.open_sampled('2017-05-22_172249.npy')
-blank_images, comp_cfg = dt.open_sampled('2017-05-22_172249_blank.npy')
-
+samples, comp_cfg = dt.open_sampled('2017-05-26_145449.npy')
+background, comp_cfg = dt.open_sampled('2017-05-26_145449_blank.npy')
+# 150543
 cfg = dt.load_config()
 out_file = dt.generate_out_file(cfg.output_sample)
 # Connect to a web client running serve_microscope.py
@@ -49,14 +49,20 @@ corr_ims = list()
 
 for index, theta, shift in iterator:
     print(theta, shift)
-    im_array = images[(theta, shift)]
-    bkim_array = blank_images[(theta, shift)]
-    corr_ims.append(im_array - bkim_array)
-    # ax1.cla(), ax2.cla()
+    time.sleep(.5)
+    im_array = samples[(theta, shift)]
+    im_array *= (255.0/im_array.max())
+    bkim_array = background[(theta, shift)]
+    bkim_array *= (255.0/bkim_array.max())
+    im_corrected = im_array / bkim_array
+    im_corrected *= (255.0/im_corrected.max())
+    print(im_corrected.min(), im_corrected.max())
+    corr_ims.append(im_corrected)
+    ax1.cla(), ax2.cla()
     # # im_array = acquire_image(pc, client, 0, 0, 0, 0)
-    # ax1.imshow(im_array, cmap=cm.hot)
-    # ax2.imshow(im_array - bkim_array, cmap=cm.hot)
-    # fig.canvas.draw()
+    ax1.imshow(im_array, cmap=cm.hot)
+    ax2.imshow(im_corrected, cmap=cm.hot, vmin=0, vmax=255)
+    fig.canvas.draw()
 ax1.imshow(np.mean(corr_ims,  axis=0))
 fig.canvas.draw()
 plt.show()

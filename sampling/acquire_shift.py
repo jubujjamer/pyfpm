@@ -46,7 +46,7 @@ def acquire_image(pc, client, theta, phi, shift, power):
     return misc.imread(StringIO(img.read()), 'RGB')
 
 # Start analysis
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
+fig, (ax1) = plt.subplots(1, 1, figsize=(25, 15))
 plt.grid(False)
 fig.show()
 
@@ -55,15 +55,16 @@ iterator = fpm.set_iterator(cfg)
 
 for index, theta, shift in iterator:
     print(theta, shift)
-    ax1.cla(), ax2.cla()
+    ax1.cla()
     # im_array = acquire_image(pc, client, 0, 0, 0, 0)
     im_array = acquire_image(pc, client, theta, 0, shift, 255)
     image_dict[(theta, shift)] = im_array
     ax1.imshow(im_array, cmap=cm.hot)
-    im_cmp = comp_images[(theta, shift)]
-    ax2.imshow(im_cmp, cmap=cm.hot)
+    # im_cmp = comp_images[(theta, shift)]
+    # ax2.imshow(im_cmp, cmap=cm.hot)
     fig.canvas.draw()
-
+# im_array = acquire_image(pc, client, 0, 0, 0, 255)
+# misc.imsave('./strips.png', im_array)
 dt.save_yaml_metadata(out_file, cfg)
 np.save(out_file, image_dict)
-plt.show()
+# plt.show()

@@ -389,8 +389,7 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
 
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
-
-    phi_max = cfg.phi[1]+cfg.phi_max_err
+    phi_max = cfg.phi[1]
     wavelength = cfg.wavelength
     na = cfg.objective_na
     ps_required = pixel_size_required(phi_max, wavelength, na)
@@ -398,7 +397,7 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
     Ih = ndimage.zoom(np.ones(image_size), scale_factor, order=0) # HR image
     hr_shape = np.shape(Ih)
     # Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
-    Ih_sq = 0.5 * Ih
+    Ih_sq = np.sqrt(Ih)
 
     # Ih_sq = np.sqrt(image_dict[(0, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase
