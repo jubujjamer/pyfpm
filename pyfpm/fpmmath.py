@@ -265,17 +265,17 @@ def generate_pupil(theta=None, phi=None, power=None, image_size=None,
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     """ Filtered image by a pupil calculated using generate_pupil
     """
-    phi_max = cfg.phi[1]+cfg.phi_max_err
+    phi_max = cfg.phi[1]
     wavelength = cfg.wavelength
     na = cfg.objective_na
-    ps_required = pixel_size_required(phi_max, wavelength, na)
+    ps_req = ps_required(phi_max, wavelength, na)
     original_shape = np.shape(im_array)
-    scale_factor = cfg.pixel_size/ps_required
+    scale_factor = cfg.pixel_size/ps_req
     processing_shape = np.array(original_shape)*scale_factor
     processing_shape = processing_shape.astype(int)
     im_array = resize_complex_image(im_array, processing_shape)
     pupil = generate_pupil(theta, phi, power, processing_shape,
-                            cfg.wavelength, ps_required, cfg.objective_na)
+                            cfg.wavelength, ps_req, cfg.objective_na)
     if pupil is None:
         print("Invalid pupil.")
         return None
@@ -343,13 +343,16 @@ def crop_image(im_array, image_size, osx, osy):
     return im_array[osx:(osx+image_size[0]), osy:(osy+image_size[1])]
 
 
-def quality_metric(image_dict, image_lowq, cfg, max_phi):
+def quality_metric(image_dict, image_lowq, cfg):
+    import coordtrans as ct
+
     iterator = set_iterator(cfg)
     accum = 0
-    for index, theta, phi, power in iterator:
-        im_i = image_dict[(theta, phi)]
-        im_i = crop_image(im_i, cfg.video_size, 0, 0)
-        il_i = filter_by_pupil(image_lowq, theta, phi, power, cfg,max_phi)
+    for index, theta, shift in iterator:
+        theta, phi = ct.corrected_coordinates(theta=theta, shift=shift,
+                                              cfg=cfg)
+        im_i = image_dict[(theta, shift)]
+        il_i = filter_by_pupil(image_lowq, theta, phi, 255, cfg)
         accum += np.sqrt(np.mean(im_i))/ \
                  (np.sum(np.abs(np.sqrt(il_i)-np.sqrt(im_i))))
     return accum
@@ -397,7 +400,7 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
     Ih = ndimage.zoom(np.ones(image_size), scale_factor, order=0) # HR image
     hr_shape = np.shape(Ih)
     # Ih_sq = 0.5 * np.ones(image_size)  # Constant amplitude
-    Ih_sq = np.sqrt(Ih)
+    Ih_sq = 0.5 * Ih
 
     # Ih_sq = np.sqrt(image_dict[(0, 0)])
     Ph = np.ones_like(Ih_sq)  # and null phase

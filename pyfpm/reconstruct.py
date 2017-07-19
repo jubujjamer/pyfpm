@@ -71,6 +71,17 @@ def image_rescaling(image, cfg):
     hr_shape = np.shape(Ih)
     return Ih, hr_shape
 
+def preprocess_images(samples, backgrounds, xoff, yoff, cfg, corr_mode='background'):
+    iterator = fpmm.set_iterator(cfg)
+    for index, theta, shift in iterator:
+        sample = fpmm.crop_image(samples[(theta, shift)],
+                                 cfg.patch_size, xoff, yoff)
+        background = fpmm.crop_image(backgrounds[(theta, shift)],
+                                     cfg.patch_size, xoff, yoff)
+        im_array = image_correction(sample, background, mode=corr_mode)
+        im_array, resc_size = image_rescaling(im_array, cfg)
+        samples[(theta, shift)] = im_array
+    return samples
 
 
 def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
@@ -113,9 +124,9 @@ def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
 def generate_il(im_array, f_ih, theta, phi, cfg):
     ps = fpmm.ps_required(cfg.phi[1], cfg.wavelength, cfg.na)
     image_size = np.shape(im_array)
-    pupil = fpmm.generate_pupil(theta=theta, phi=phi,
-                                image_size=image_size, wavelength=cfg.wavelength,
-                                pixel_size=ps, na=cfg.na)
+    pupil = fpmm.generate_pupil(theta=theta, phi=phi, image_size=image_size,
+                                wavelength=cfg.wavelength, pixel_size=ps,
+                                na=cfg.na)
     pupil_shift = fftshift(pupil)
     # Step 2: lr of the estimated image using the known pupil
     f_il = ifft2(f_ih*pupil_shift)  # space pupil * fourier image
@@ -140,13 +151,15 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point = None, 
     # mask = get_mask(samples, backgrounds, xoff, yoff, cfg)
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
-    Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'mean')
+    Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'zero')
     f_ih = fft2(Et)  # unshifted transform, shift is later applied to the pupil
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         fig.show()
         # fig, axes = implot.init_plot(4)
     # Steps 2-5
+    samples = preprocess_images(samples, backgrounds, xoff, yoff, cfg)
+
     for iteration in range(cfg.n_iter):
         iterator = fpmm.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
@@ -156,21 +169,17 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point = None, 
                                                   cfg=cfg)
             print(theta, phi)
             # Final step: squared inverse fft for visualization
-            im_array = fpmm.crop_image(samples[(theta, shift)],
-                                       cfg.patch_size, xoff, yoff)
-            background = fpmm.crop_image(backgrounds[(theta, shift)],
-                                         cfg.patch_size, xoff, yoff)
-            if np.mean(im_array) < 10:
-                print("deleted")
-                continue
-
-            im_array = image_correction(im_array, background, mode='threshold')
-            im_array, resc_size = image_rescaling(im_array, cfg)
+            # im_array = fpmm.crop_image(samples[(theta, shift)],
+            #                            cfg.patch_size, xoff, yoff)
+            # background = fpmm.crop_image(backgrounds[(theta, shift)],
+            #                              cfg.patch_size, xoff, yoff)
+            #
+            # im_array = image_correction(im_array, background, mode='background')
+            # im_array, resc_size = image_rescaling(im_array, cfg)
+            im_array = samples[(theta, shift)]
             Il = generate_il(im_array, f_ih, theta, phi, cfg)
-
-            #     print("Testing quality metric", quality_metric(image_dict, Il, cfg), phi)
             pupil = fpmm.generate_pupil(theta=theta, phi=phi,
-                                        image_size=resc_size, wavelength=cfg.wavelength,
+                                        image_size=np.shape(im_array), wavelength=cfg.wavelength,
                                         pixel_size=ps_required, na=cfg.objective_na)
             pupil_shift = fftshift(pupil)
             f_il = fft2(Il)
@@ -179,17 +188,17 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point = None, 
                 fft_rec = np.log10(np.abs(f_ih)+1)
                 fft_rec *= (255.0/fft_rec.max())
                 fft_rec = fftshift(fft_rec)
-                # fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
+                # Il = Image.fromarray(np.uint8(Il), 'L')
                 im_rec = np.power(np.abs(ifft2(f_ih)), 2)
                 im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('hot'))
                 ax = iter([ax1, ax2, ax3, ax4])
-                for image in [np.abs(fft_rec), im_rec, im_array, np.angle(ifft2(f_ih))]:
+                for image in [np.abs(fft_rec), np.abs(Il), im_array, np.angle(ifft2(f_ih))]:
                     plot_image(ax.next(), image)
                 fig.canvas.draw()
-        # print("Testing quality metric", quality_metric(image_dict, Il, cfg, max_phi))
+            print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(np.power(ifft2(f_ih), 2)), np.angle(ifft2(f_ih+1))
 
 
