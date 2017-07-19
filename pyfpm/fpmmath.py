@@ -7,10 +7,10 @@ Last update: 28/10/2016
 Usage:
 
 """
-__version__= "1.1.1"
-__author__='Juan M. Bujjamer'
-__all__=['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
-         'pixel_size_required', 'crop_image']
+__version__ = "1.1.1"
+__author__ = 'Juan M. Bujjamer'
+__all__ = ['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
+           'pixel_size_required', 'crop_image']
 
 from io import BytesIO
 from itertools import ifilter, product, cycle
@@ -19,7 +19,7 @@ import time
 import yaml
 
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg') # For the animations to work
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift

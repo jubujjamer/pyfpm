@@ -30,7 +30,7 @@ servo_init: 75 # Zero angle for the servo motor
 phi_spr: 2048
 # For the recosntruction
 n_iter: 50 # Max number of iterations
-# possible defects
+# Possible mehcanical defects
 platform_tilt: [0, 0] #[0, 2.1] #[spherical theta, spherical phi] [0, 2.1]
 source_center: [0, 0] #[0, 1.9] #[xcoord, ycoord] of the calibrated center [0, 1.9]
 source_tilt: [0, 0] #[spherical theta, sperical phi]
