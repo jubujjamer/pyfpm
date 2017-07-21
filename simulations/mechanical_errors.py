@@ -29,5 +29,17 @@ simclient = local.SimClient(cfg=cfg)
 
 iterator = fpm.set_iterator(cfg)
 
-for index, theta, phi in iterator:
-    print(index)
+# for index, theta, phi in iterator:
+#      apply_corrections(origin, light_dir, source_center,
+#                           source_tilt, platform_tilt)
+#     print(index)
+
+height = 100
+plat_coordinates = [0, 10]
+light_dir = [0, 0, 1]
+source_center = [0, 0]
+source_tilt = [0, 0]
+platform_tilt = [0, 0]
+print(ct.platform_to_spherical(plat_coordinates, light_dir, source_center, source_tilt, platform_tilt, height))
+print(ct.calculate_spot_center(plat_coordinates, light_dir, source_center,
+                              source_tilt, platform_tilt, height))

@@ -15,17 +15,17 @@ wavelength: 450E-9
 #magnification: 8
 pixel_size: 0.5E-6 #2.15E-6 #5.67E-6
 color: red
-theta: [0, 360, 20] # [min, max, step]
-phi: [0, 15, 1] # [min, max, step]
+theta: [0, 360, 40] # [min, max, step]
+phi: [0, 22, 3] # [min, max, step]
 phi_max_err: 0 # When corrected, phi max could be larger than specified
 max_power: 255
 # theta: [0, 200, 10] # [min, max, step]
 # phi: [59, 76, 1] # [min, max, step]
-shift: [0, 24, 2]
+shift: [0, 2, 2]
 shift_step: 0.0188 # 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
 theta_spr: 7680
 shift_max: 1800 # max steps to border
-sample_height: 106 # mm above led
+sample_height: 100 # mm above led
 servo_init: 75 # Zero angle for the servo motor
 phi_spr: 2048
 # For the recosntruction
@@ -35,7 +35,7 @@ platform_tilt: [0, 0] #[0, 2.1] #[spherical theta, spherical phi] [0, 2.1]
 source_center: [0, 0] #[0, 1.9] #[xcoord, ycoord] of the calibrated center [0, 1.9]
 source_tilt: [0, 0] #[spherical theta, sperical phi]
 # The client side of the equation
-sweep: radial_efficient_shift #radial_efficient #neopixels
+sweep: radial_efficient #radial_efficient_shift #radial_efficient #neopixels
 task: simulation
 action: reconstruct
 servertype: sampling # simulation or sampling
