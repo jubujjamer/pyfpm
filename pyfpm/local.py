@@ -12,7 +12,7 @@ import numpy as np
 from StringIO import StringIO
 import time
 
-from fpmmath import filter_by_pupil
+import pyfpm.fpmmath as fpm
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -173,6 +173,7 @@ class SimClient(BaseClient):
         self.cfg = cfg
         self.image_mag = self.load_image(cfg.input_mag)
         self.image_phase = self.load_image(cfg.input_phase)
+        self.image_model = self.load_image(cfg.modeled_image)
         self.pupil_rad = cfg.pupil_size
         self.image_size = cfg.video_size
 
@@ -180,17 +181,24 @@ class SimClient(BaseClient):
         with open(input_image, "r") as imageFile:
             return imageFile.read()
 
-    def acquire(self, theta=None, phi=None, power=None):
+    def acquire(self, theta=None, phi=None, acqpars=None):
+        """ Returs a simulated acquisition with given acquisition parameters.
+        Args:
+            theta (float):
+            phi (float):
+            acqpars (list):     [iso, shutter_speed, led_power]
+
+        Returns:
+            (ndarray):          complex 2d array
+        """
         theta = float(theta)
         phi = float(phi)
         # Return np.array processed using laser aiming data
         mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
         ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
-        # mag_array[mag_array < 10] = 100
-        # ph_array[ph_array < 10] = 100
         im_array = mag_array*np.exp(1j*ph_array)
-        # im_array = mag_array
-        return filter_by_pupil(im_array, theta, phi, power, self.cfg)
+        fpm.simulate_acquisition(theta, phi, acqpars)
+        return fpm.filter_by_pupil(im_array, theta, phi, power, self.cfg)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)

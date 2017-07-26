@@ -16,7 +16,7 @@ from pyfpm.fpmmath import set_iterator, translate
 import pyfpm.data as dt
 
 cfg = dt.load_config()
-print(cfg.max_power)
+print(cfg.max_led_power)
 
 def phi_rot(od, phi):
     """ od rotation -phi angle- or along y axis

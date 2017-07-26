@@ -36,10 +36,10 @@ def translate(value, input_min, input_max, output_min, output_max):
     """ Measuremente value rescaled by the selected span.
 
     Args:
-        value (float): the value to Convert
+        value (float): the value to be translated
 
     Returns:
-        (float): the value converted
+        (float): the final linearly translated value
     """
     # Figure out how 'wide' each range is
     input_span = input_max - input_min
@@ -52,21 +52,31 @@ def translate(value, input_min, input_max, output_min, output_max):
     return output_min + (value_scaled * output_span)
 
 
-def adjust_shutter_speed(theta, phi):
-    """ Apropriate shuter speed for a given phi and theta
+def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
+    """ Returns illumination and camera acquisition parameters.
+
+    Args:
+        theta (float)
+        phi (float)
+        cfg (named tuple): configuration and calibration information
+
+    Returns:
+        (list) [iso, shutter_speed, led_power] acording to given position
     """
-    ss = translate(phi, 0, 60, 50000, 900000)
-    return ss
-
-
-def adjust_power(theta, phi):
-    return power
-
-
-def acquisition_parameters(theta, phi):
-    ss = adjust_shutter_speed(theta, phi)
-    power = adjust_power(theta, phi)
-    return shutter_speed, power
+    # Camera parameters
+    shutter_speed_min = cfg.shutter_speed[0]
+    shutter_speed_max = cfg.shutter_speed[0]
+    if phi == None:
+        if shift == None:
+            raise Exception("Must assign a value either for phi or shift.")
+        shutter_speed = translate(phi, 0, cfg.shift_max,
+                                  shutter_speed_min, shutter_speed_max)
+    else:
+        shutter_speed = translate(phi, 0, 90,
+                                  shutter_speed_min, shutter_speed_max)
+    # Led parameters
+    led_power = cfg.max_led_power
+    return cfg.iso, shutter_speed, led_power
 
 
 def image_center(image_size=None):
@@ -161,7 +171,8 @@ def set_iterator(cfg=None):
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
                 p = phi_iter.next()
-            yield index, t, p
+            acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
+            yield index, t, p, acqpars
             index += 1
 
     elif itertype == 'radial_efficient_shift':
@@ -178,7 +189,8 @@ def set_iterator(cfg=None):
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
                 s = shift_iter.next()
-            yield index, t, s
+            acqpars = get_acquisition_pars(theta=theta, shift=s, cfg=cfg)
+            yield index, t, s, acqpars
             index += 1
 
 def test_similarity(image_ref, image_cmp):
@@ -334,7 +346,7 @@ def resample_image(image_array, new_size):
 
     Args:
         (array) The image to be resampled
-        (list) Tgw final dimensions
+        (list) The final dimensions
     """
     return np.resize(image_array, new_size)
 
@@ -357,6 +369,42 @@ def quality_metric(image_dict, image_lowq, cfg):
                  (np.sum(np.abs(np.sqrt(il_i)-np.sqrt(im_i))))
     return accum
 
+def simulate_acquisition(theta, phi, acqpars):
+    """
+    """
+    return
+
+def simulate_sample(cfg):
+    """ Returns 2D meshes with physical information about the sample and its
+    coordinates. Simulates some shapes and generates their height, refractive
+    index and absorption coefficient. It is hardcoded at maximum.
+    Args:
+
+    """
+    nx, ny = cfg.video_size
+    """Test surf on regularly spaced co-ordinates like MayaVi."""
+    xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]
+    def sample_height(xx, yy, cx, cy, rad):
+        sample_height = .1*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.2
+        sample_height[sample_height < 0] = 0
+        sample_height[sample_height > 0] += .1
+        return sample_height
+
+    def refraction_index(xx, yy):
+        refraction_index = 1.5*np.ones_like((xx, yy))
+        return refraction_index
+
+    def absorption(xx, yy):
+        sample_absorption = 1.5*np.zeros_like((xx,yy))
+        return sample_absorption
+
+    sample_height = sample_height(xx, yy, 0, 0, .55)
+    sample_refind = refraction_index(xx, yy)
+    sample_abs = absorption(xx, yy)
+#     h += height(xx, yy, .1, .2, .5)
+
+    s = mlab.surf(xx, yy, height)
+    return xx, yy, sample_height, sample_refind, sample_abs
 
 
 def generate_il(im_array, f_ih, theta, phi, power, image_size,

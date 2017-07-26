@@ -189,7 +189,7 @@ if task is 'manual_move':
             pc.set_coordinates(tp[0], tp[1], shift_set, units=plat_units)
             [theta_plat, phi_plat, shift_plat, power_plat] = pc.parameters_to_platform()
             power_set = max(0, power_set)
-            power_set = min(cfg.max_power, power_set)
+            power_set = min(cfg.max_led_power, power_set)
             print("parameters to platform", theta_plat, phi_plat, shift_plat, power_set)
             client.just_move(theta_plat, phi_plat, shift_plat, power_set)
             if show_this:

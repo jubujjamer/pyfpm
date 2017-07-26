@@ -48,7 +48,7 @@ def test_limits(tpsp, cfg):
     min_phi = cfg.phi[0]
     max_phi = cfg.phi[1]
     max_shift = cfg.shift_max
-    max_power = cfg.max_power
+    max_led_power = cfg.max_led_power
 
     tpsp[0] = max(min_theta, tpsp[0])
     tpsp[0] = min(max_theta, tpsp[0])
@@ -57,7 +57,7 @@ def test_limits(tpsp, cfg):
     tpsp[2] = max(0, tpsp[2])
     tpsp[2] = min(max_shift, tpsp[2])
     tpsp[3] = max(0, tpsp[3])
-    tpsp[3] = min(max_power, tpsp[3])
+    tpsp[3] = min(max_led_power, tpsp[3])
     return tpsp
 
 
