@@ -369,10 +369,32 @@ def quality_metric(image_dict, image_lowq, cfg):
                  (np.sum(np.abs(np.sqrt(il_i)-np.sqrt(im_i))))
     return accum
 
-def simulate_acquisition(theta, phi, acqpars):
+
+def laser_beam_simulation(xx, yy, theta, phi, acqpars, cfg):
+    """ Simulates a laser beam on the sample image.
+
+    Args:
+        theta (int):      azimuthal angle
+        phi (int):        zenithal angle
+        acqpars (list):    [iso, shutter_speed, led_power]
+
+    Return:
+        (array) image of the pupil
     """
-    """
-    return
+    def phase_on_sample(xx, yy):
+        sample_height = .1*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.1
+        sample_height[sample_height < 0] = 0
+        sample_height[sample_height > 0] += .1
+        return sample_height
+
+    # Plane beam
+    k_mod = 2.*np.pi/float(cfg.wavelength)
+    kx, ky = np.array([np.sin(p)*np.cos(t), np.sin(p)*np.sin(t)])*k_mod
+    lb_phase = np.exp(1j*xx*kx) + np.exp(1j*yy*ky)
+    lb = 1.lb_phase
+    return lb
+
+
 
 def simulate_sample(cfg):
     """ Returns 2D meshes with physical information about the sample and its
@@ -381,7 +403,7 @@ def simulate_sample(cfg):
     Args:
 
     """
-    nx, ny = cfg.video_size
+    nx, ny = cfg.simulation_size
     """Test surf on regularly spaced co-ordinates like MayaVi."""
     xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]
     def sample_height(xx, yy, cx, cy, rad):
@@ -404,6 +426,11 @@ def simulate_sample(cfg):
 #     h += height(xx, yy, .1, .2, .5)
     return xx, yy, sample_height, sample_refind, sample_abs
 
+
+def simulate_acquisition(theta, phi, acqpars):
+    """
+    """
+    return
 
 def generate_il(im_array, f_ih, theta, phi, power, image_size,
                 wavelength, pixel_size, na):
