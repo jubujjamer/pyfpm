@@ -385,7 +385,7 @@ def simulate_sample(cfg):
     """Test surf on regularly spaced co-ordinates like MayaVi."""
     xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]
     def sample_height(xx, yy, cx, cy, rad):
-        sample_height = .1*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.2
+        sample_height = .1*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.1
         sample_height[sample_height < 0] = 0
         sample_height[sample_height > 0] += .1
         return sample_height
@@ -398,12 +398,10 @@ def simulate_sample(cfg):
         sample_absorption = 1.5*np.zeros_like((xx,yy))
         return sample_absorption
 
-    sample_height = sample_height(xx, yy, 0, 0, .55)
+    sample_height = sample_height(xx, yy, 0, 0, .45)
     sample_refind = refraction_index(xx, yy)
     sample_abs = absorption(xx, yy)
 #     h += height(xx, yy, .1, .2, .5)
-
-    s = mlab.surf(xx, yy, height)
     return xx, yy, sample_height, sample_refind, sample_abs
 
 

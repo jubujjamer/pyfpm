@@ -173,7 +173,6 @@ class SimClient(BaseClient):
         self.cfg = cfg
         self.image_mag = self.load_image(cfg.input_mag)
         self.image_phase = self.load_image(cfg.input_phase)
-        self.image_model = self.load_image(cfg.modeled_image)
         self.pupil_rad = cfg.pupil_size
         self.image_size = cfg.video_size
 
