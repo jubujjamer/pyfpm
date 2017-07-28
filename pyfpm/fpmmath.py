@@ -391,7 +391,7 @@ def laser_beam_simulation(xx, yy, theta, phi, acqpars, cfg):
     k_mod = 2.*np.pi/float(cfg.wavelength)
     kx, ky = np.array([np.sin(p)*np.cos(t), np.sin(p)*np.sin(t)])*k_mod
     lb_phase = np.exp(1j*xx*kx) + np.exp(1j*yy*ky)
-    lb = 1.lb_phase
+    lb = 1.*lb_phase
     return lb
 
 
@@ -407,7 +407,7 @@ def simulate_sample(cfg):
     """Test surf on regularly spaced co-ordinates like MayaVi."""
     xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]
     def sample_height(xx, yy, cx, cy, rad):
-        sample_height = .1*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.1
+        sample_height = .05*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.1
         sample_height[sample_height < 0] = 0
         sample_height[sample_height > 0] += .1
         return sample_height

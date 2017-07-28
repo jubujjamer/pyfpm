@@ -37,9 +37,9 @@ source_tilt = [0, 0]
 platform_tilt = [0, 0]
 acqpars = [0, 0, 0]
 xx, yy, height, refind, absorption = fpm.simulate_sample(cfg)
-# mlab.figure(size=(600, 600), bgcolor=(1, 1, 1))
-# mlab.surf(xx, yy, height)
-# mlab.show()
+mlab.figure(size=(600, 600), bgcolor=(1, 1, 1))
+mlab.surf(xx, yy, height)
+mlab.show()
 
 # Light beam modeling
 t, p = [0, 0]
