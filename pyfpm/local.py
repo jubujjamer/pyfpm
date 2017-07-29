@@ -171,8 +171,12 @@ class Laser3dCalibrate(BaseClient):
 class SimClient(BaseClient):
     def __init__(self, cfg):# Y Datos del microscopio
         self.cfg = cfg
-        self.image_mag = self.load_image(cfg.input_mag)
-        self.image_phase = self.load_image(cfg.input_phase)
+        try:
+            self.image_mag = self.load_image(cfg.input_mag)
+            self.image_phase = self.load_image(cfg.input_phase)
+        except:
+            self.image_mag = None
+            self.image_phase = None
         self.pupil_rad = cfg.pupil_size
         self.image_size = cfg.video_size
 

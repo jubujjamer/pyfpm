@@ -388,9 +388,10 @@ def laser_beam_simulation(xx, yy, theta, phi, acqpars, cfg):
         return sample_height
 
     # Plane beam
+    t, p = np.radians(theta), np.radians(phi)
     k_mod = 2.*np.pi/float(cfg.wavelength)
     kx, ky = np.array([np.sin(p)*np.cos(t), np.sin(p)*np.sin(t)])*k_mod
-    lb_phase = np.exp(1j*xx*kx) + np.exp(1j*yy*ky)
+    lb_phase = np.exp(1j*xx*kx+1j*yy*ky)
     lb = 1.*lb_phase
     return lb
 
@@ -404,8 +405,9 @@ def simulate_sample(cfg):
 
     """
     nx, ny = cfg.simulation_size
+    wlen = float(cfg.wavelength)
     """Test surf on regularly spaced co-ordinates like MayaVi."""
-    xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]
+    xx, yy = np.mgrid[-1.:1:nx*1j, -1.:1:ny*1j]*1E-3
     def sample_height(xx, yy, cx, cy, rad):
         sample_height = .05*np.exp(-(2*(xx-cx)**2 + (yy-cy)**2)/rad**2)/(rad**2)-.1
         sample_height[sample_height < 0] = 0
@@ -416,15 +418,22 @@ def simulate_sample(cfg):
         refraction_index = 1.5*np.ones_like((xx, yy))
         return refraction_index
 
-    def absorption(xx, yy):
-        sample_absorption = 1.5*np.zeros_like((xx,yy))
-        return sample_absorption
+    def transference(xx, yy, cx, cy, rad):
+        ref_ind = 1.
+        transmittance = 1.
+        h0 = 10E-6
+        sample_height = h0*np.exp(-((xx-cx)**2 + (yy-cy)**2)/rad**2)-.5*h0
+        print(sample_height.min(), sample_height.max())
 
-    sample_height = sample_height(xx, yy, 0, 0, .45)
-    sample_refind = refraction_index(xx, yy)
-    sample_abs = absorption(xx, yy)
+        sample_height[sample_height < 0] = 0
+        # sample_height[sample_height > 0] += h0/2
+        phase = np.exp(1j*ref_ind*sample_height*2*np.pi/wlen)
+        print(ref_ind*sample_height.max()*2*np.pi, sample_height.max())
+        return phase*transmittance
+
+    sample_transference = transference(xx, yy, 0, 0, 1E-3)
 #     h += height(xx, yy, .1, .2, .5)
-    return xx, yy, sample_height, sample_refind, sample_abs
+    return xx, yy, sample_transference
 
 
 def simulate_acquisition(theta, phi, acqpars):
