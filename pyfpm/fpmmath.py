@@ -171,7 +171,11 @@ def set_iterator(cfg=None):
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
                 p = phi_iter.next()
-            acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
+            try:
+                acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
+            except:
+                print('Old cfg had no acqpars.')
+                acqpars = [0, 0, 0]
             yield index, t, p, acqpars
             index += 1
 
@@ -189,7 +193,12 @@ def set_iterator(cfg=None):
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
                 s = shift_iter.next()
-            acqpars = get_acquisition_pars(theta=theta, shift=s, cfg=cfg)
+            try:
+                acqpars = get_acquisition_pars(theta=t, shift=s, cfg=cfg)
+
+            except:
+                print('Old cfg had no acqpars.')
+                acqpars = [0, 0, 0]
             yield index, t, s, acqpars
             index += 1
 
@@ -198,8 +207,8 @@ def test_similarity(image_ref, image_cmp):
     """
     ref_mean = np.mean(image_ref)
     cmp_mean = np.mean(image_cmp)
-
     correction_factor = image_cmp/image_ref
+    return
 
 
 
@@ -279,7 +288,7 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
     """
     phi_max = cfg.phi[1]
     wavelength = cfg.wavelength
-    na = cfg.objective_na
+    na = float(cfg.na)
     ps_req = ps_required(phi_max, wavelength, na)
     original_shape = np.shape(im_array)
     scale_factor = cfg.pixel_size/ps_req
@@ -287,19 +296,18 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
     processing_shape = processing_shape.astype(int)
     im_array = resize_complex_image(im_array, processing_shape)
     pupil = generate_pupil(theta, phi, power, processing_shape,
-                            cfg.wavelength, ps_req, cfg.objective_na)
+                           wavelength, ps_req, na)
     if pupil is None:
         print("Invalid pupil.")
         return None
-    objectAmplitude = np.sqrt(im_array)
-
-    f_ih = fft2(objectAmplitude)
+    # objectAmplitude = np.sqrt(im_array)
+    f_ih = fft2(im_array)
     # Step 2: lr of the estimated image using the known pupil
     shifted_pupil = fftshift(pupil)
     proc_array = shifted_pupil * f_ih  # space pupil * fourier im
     proc_array = ifft2(proc_array)
     proc_array = resize_complex_image(proc_array, original_shape)
-    proc_array = np.power(np.abs(proc_array), 2)
+    proc_array = np.real(proc_array*np.conj(proc_array))
     return proc_array
 
 

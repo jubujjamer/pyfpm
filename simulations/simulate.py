@@ -18,9 +18,9 @@ import numpy as np
 import datetime
 from scipy import misc
 
-from pyfpm import web
 import pyfpm.local as local
-from pyfpm.fpmmath import set_iterator, reconstruct, generate_pupil
+from pyfpm.reconstruct import fpm_reconstruct
+from pyfpm.fpmmath import set_iterator,  generate_pupil
 # from pyfpm.data import json_savemeta, json_loadmeta
 import pyfpm.data as dt
 from pyfpm.data import save_yaml_metadata
@@ -34,30 +34,32 @@ class Formatter(object):
         return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
 
 # Simulation parameters
-CONFIG_FILE = './etc/config.yaml'
-cfg = dt.load_config(CONFIG_FILE)
+cfg = dt.load_config()
 
 mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
 out_file = os.path.join(cfg.output_sim,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
-in_file = os.path.join(cfg.output_sim, '2017-03-06_10:48:02.npy')
 iterator = set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
+samples, comp_cfg = dt.open_sampled('2017-08-04_14:46:29.npy', mode='simulation')
+
 # pc = PlatformCoordinates()
 
-task = 'test'
+task = 'reconstruct'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)
-    for index, theta, phi, power in iterator:
+    for index, theta, shift, acqpars in iterator:
         image_dict[(theta, phi)] = client.acquire(theta, phi, power)
     np.save(out_file, image_dict)
 
+
 elif task is 'reconstruct':
     start_time = time.time()
-    rec = recontruct(in_file, iterator, cfg=cfg, debug=False)
+    rec, phase = fpm_reconstruct(samples=samples, backgrounds=None, it=iterator,
+                                init_point=[0, 0], cfg=comp_cfg, debug=True)
     print('--- %s seconds ---' % (time.time() - start_time))
     plt.imshow(rec), plt.gray()
     plt.show()

@@ -43,6 +43,6 @@ y_range = range(0, cfg.video_size[0], dx)[:-1]
 #                           cfg=cfg, debug=False)
 #     misc.imsave('./misc/ph'+str(i)+'.png', phase)
 #     misc.imsave('./misc/im'+str(i)+'.png', rec)
-rec, phase = fpm_reconstruct(samples, background, iterator, [200, 170],
-                            cfg=cfg, debug=False)
+rec, phase = fpm_reconstruct(samples, background, iterator, [90, 80],
+                            cfg=comp_cfg, debug=True)
 plt.show()

@@ -27,7 +27,6 @@ def corrected_coordinates(theta=None, shift=None, phi=None, cfg=None):
     phi = np.degrees(np.arctan((1.*shift+1)/cfg.sample_height))
     return theta, phi
 
-
 def phi_rot(od, phi):
     """ od rotation -phi angle- or along y axis
     """

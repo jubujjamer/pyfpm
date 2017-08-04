@@ -195,9 +195,9 @@ class SimClient(BaseClient):
         # Return np.array processed using laser aiming data
         mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
         ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
-        im_array = mag_array*np.exp(1j*ph_array)
-        fpm.simulate_acquisition(theta, phi, acqpars)
-        return fpm.filter_by_pupil(im_array, theta, phi, power, self.cfg)
+        im_array = np.sqrt(mag_array)*np.exp(1j*ph_array)
+        # fpm.simulate_acquisition(theta, phi, acqpars)
+        return fpm.filter_by_pupil(im_array, theta, phi, acqpars[0], self.cfg)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)

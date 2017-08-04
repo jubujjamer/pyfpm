@@ -9,7 +9,7 @@ import numpy as np
 HOME_FOLDER = os.path.expanduser("~/pyfpm")
 ETC_FOLDER = os.path.join(HOME_FOLDER, "etc")
 CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
-OUT_SAMLPING = os.path.join(HOME_FOLDER, "out_simulation")
+OUT_SIMULATION = os.path.join(HOME_FOLDER, "out_simulation")
 OUT_SAMLPING = os.path.join(HOME_FOLDER, "out_sampling")
 
 print(HOME_FOLDER, CONFIG_FILE)
@@ -59,10 +59,12 @@ def iter_dict(image_dict):
         yield theta, phi, power, img
 
 
-def open_sampled(filename):
-    datafile = os.path.join(OUT_SAMLPING, filename)
+def open_sampled(filename, mode='sampling'):
+    if mode == 'sampling':
+        datafile = os.path.join(OUT_SAMLPING, filename)
+    if mode == 'simulation':
+        datafile = os.path.join(OUT_SIMULATION, filename)
     configfile = os.path.splitext(datafile)[0]+'.yaml'
-    print(configfile)
     config_dict = yaml.load(open(configfile, 'r'))
     config = collections.namedtuple('config', config_dict.keys())
     file_cfg = config(*config_dict.values())
