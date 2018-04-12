@@ -17,7 +17,7 @@ import datetime
 from pyfpm import web
 import pyfpm.local as local
 from pyfpm.reconstruct import fpm_reconstruct
-from pyfpm.fpmmath import set_iterator, generate_pupil
+import pyfpm.coordtrans as ct
 import pyfpm.data as dt
 
 # Simulation parameters
@@ -25,9 +25,9 @@ cfg = dt.load_config()
 mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
-iterator = set_iterator(cfg)
+iterator = ct.set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, sim_cfg = dt.open_sampled('2017-08-04_18:33:33.npy', mode='simulation')
+samples, sim_cfg = dt.open_sampled('20180412_175122.npy', mode='simulation')
 
 # Reconstruction
 start_time = time.time()

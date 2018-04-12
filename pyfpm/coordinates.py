@@ -12,11 +12,11 @@ import numpy as np
 # from itertools import ifilter, product
 
 import pyfpm.data as dt
-from pyfpm.fpmmath import set_iterator, translate
+from pyfpm.fpmmath import translate
 import pyfpm.data as dt
 
 cfg = dt.load_config()
-print(cfg.max_led_power)
+
 
 def phi_rot(od, phi):
     """ od rotation -phi angle- or along y axis

@@ -2,19 +2,125 @@
 # -*- coding: utf-8 -*-
 """ File coordtrans.py
 
-Last update: 24/105/2017
+Last update: 12/04/2018
+
+Description:
 
 Usage:
 """
+__version__ = "1.1.1"
+__author__ = 'Juan M. Bujjamer'
+__all__ = ['get_acquisition_pars', 'set_iterator', 'tidy', 'phi_rot']
 
 import yaml
 import numpy as np
+from itertools import product, cycle
 
-import pyfpm.data as dt
-from pyfpm.fpmmath import set_iterator, translate
+import pyfpm.fpmmath as fpm
 import pyfpm.data as dt
 
 cfg = dt.load_config()
+
+
+def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
+    """ Returns illumination and camera acquisition parameters. It calculates
+    them acording to the incident angles and illumination type (specified in cfg).
+
+    Args:
+        theta (float)
+        phi (float)
+        cfg (named tuple): configuration and calibration information
+
+    Returns:
+        (list) [iso, shutter_speed, led_power] acording to given position
+    """
+    # Camera parameters
+    shutter_speed_min = cfg.shutter_speed[0]
+    shutter_speed_max = cfg.shutter_speed[0]
+    if phi == None:
+        if shift == None:
+            raise Exception("Must assign a value either for phi or shift.")
+        shutter_speed = fpm.translate(phi, 0, cfg.shift_max,
+                                  shutter_speed_min, shutter_speed_max)
+    else:
+        shutter_speed = fpm.translate(phi, 0, 90,
+                                  shutter_speed_min, shutter_speed_max)
+    # Led parameters
+    led_power = cfg.max_led_power
+    return cfg.iso, shutter_speed, led_power
+
+
+def set_iterator(cfg=None):
+    shift_min, shift_max, shift_step = cfg.shift
+    phi_min, phi_max, phi_step = cfg.phi
+    theta_min, theta_max, theta_step = cfg.theta
+    itertype = cfg.sweep
+
+    if itertype == 'radial':
+        """ The iterator is moved.
+        """
+        # yield 0, 0, 0, 0
+        index = 0
+        for phi in np.arange(phi_min, phi_max, phi_step):
+            for theta in range(theta_min, theta_max, theta_step):
+                if phi == 0 and index > 0:
+                    continue
+                power = 100
+                yield index, theta, phi, power
+                index += 1
+
+    elif itertype == 'radial_efficient':
+        """ Increments radius of the circle and alternates clockwise and
+        anticlockwise movement when completing the circle.
+        """
+        # yield 0, 0, 0, 0
+        index = 0
+        direction_flag = 1
+        phi_list = np.arange(phi_min, phi_max, phi_step)
+        theta_list = list(range(theta_min, theta_max, theta_step))
+        theta_list.extend(theta_list[-2:0:-1])
+        theta_cycle = cycle(theta_list)
+        phi_iter = iter(phi_list)
+        ixx, iyy = [-1, -1]
+        # list(enumerate(it.product(range(3), range(8))))
+
+        for t in theta_cycle:
+            ixx += 1
+            if t == min(theta_list) or t == max(theta_list):
+                p = next(phi_iter)
+                iyy += 1
+            try:
+                acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
+            except:
+                print('Old cfg had no acqpars.')
+                acqpars = [0, 0, 0]
+            yield {'index': index, 'theta': t, 'phi': p, 'acqpars': acqpars, 'indexes': (ixx, iyy)}
+            # yield index, t, p, acqpars
+            index += 1
+
+    elif itertype == 'radial_efficient_shift':
+        """ The same as radial_efficient but specifying shift in contrast to phi.
+        """
+        # yield 0, 0, 0, 0
+        index = 0
+        direction_flag = 1
+        shift_list = np.arange(shift_min, shift_max, shift_step)
+        theta_list = range(theta_min, theta_max, theta_step)
+        theta_list.extend(theta_list[-2:0:-1])
+        theta_list_max = max(theta_list)
+
+        theta_cycle = cycle(theta_list)
+        shift_iter = iter(shift_list)
+        for t in theta_cycle:
+            if t == min(theta_list) or t == max(theta_list):
+                s = shift_iter.next()
+            try:
+                acqpars = get_acquisition_pars(theta=t, shift=s, cfg=cfg)
+            except:
+                print('Old cfg had no acqpars.')
+                acqpars = [0, 0, 0]
+            yield index, t, s, acqpars
+            index += 1
 
 
 def tidy(number):

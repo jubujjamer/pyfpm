@@ -68,4 +68,4 @@ def open_sampled(filename, mode='sampling'):
     config_dict = yaml.load(open(configfile, 'r'))
     config = collections.namedtuple('config', config_dict.keys())
     file_cfg = config(*config_dict.values())
-    return np.load(datafile)[()], file_cfg
+    return np.load(datafile, encoding='bytes')[()], file_cfg

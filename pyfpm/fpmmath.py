@@ -9,11 +9,10 @@ Usage:
 """
 __version__ = "1.1.1"
 __author__ = 'Juan M. Bujjamer'
-__all__ = ['translate', 'get_acquisition_pars', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
+__all__ = ['translate' 'image_center', 'generate_pupil', 'fpm_reconstruct', 'calculate_pupil_radius', 'adjust_shutter_speed',
            'pixel_size_required', 'crop_image']
 
 from io import BytesIO
-from itertools import product, cycle
 from io import StringIO
 import time
 import yaml
@@ -49,34 +48,6 @@ def translate(value, input_min, input_max, output_min, output_max):
     return output_min + (value_scaled * output_span)
 
 
-def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
-    """ Returns illumination and camera acquisition parameters. It calculates
-    them acording to the incident angles and illumination type (specified in cfg).
-
-    Args:
-        theta (float)
-        phi (float)
-        cfg (named tuple): configuration and calibration information
-
-    Returns:
-        (list) [iso, shutter_speed, led_power] acording to given position
-    """
-    # Camera parameters
-    shutter_speed_min = cfg.shutter_speed[0]
-    shutter_speed_max = cfg.shutter_speed[0]
-    if phi == None:
-        if shift == None:
-            raise Exception("Must assign a value either for phi or shift.")
-        shutter_speed = translate(phi, 0, cfg.shift_max,
-                                  shutter_speed_min, shutter_speed_max)
-    else:
-        shutter_speed = translate(phi, 0, 90,
-                                  shutter_speed_min, shutter_speed_max)
-    # Led parameters
-    led_power = cfg.max_led_power
-    return cfg.iso, shutter_speed, led_power
-
-
 def image_center(image_size=None):
     """ Center coordinates given the image size.
 
@@ -98,10 +69,14 @@ def resize_complex_image(im_array, final_shape):
     Returns:
         (complex array)
     """
-    scale_factor = float(final_shape[0])/np.shape(im_array)[0]
+    scale_factor = max(float(final_shape[0])/np.shape(im_array)[0],
+                       float(final_shape[1])/np.shape(im_array)[1])
     real_part = ndimage.zoom(np.real(im_array), scale_factor, order=0)
     im_part = ndimage.zoom(np.imag(im_array), scale_factor, order=0)
     rescaled_image = real_part+1j*im_part
+
+    print(np.array(im_array.shape)*scale_factor, rescaled_image.shape, rescaled_image.shape==final_shape, scale_factor)
+
     return rescaled_image
 
 def calculate_max_phi(wavelength, pixel_size, na):
@@ -131,78 +106,6 @@ def ps_required(phi_max=None, wavelength=None, na=None):
         na = float(na)
     return wavelength/(np.sin(phi_max_rad)+na)/2
 
-
-def set_iterator(cfg=None):
-    wavelength = cfg.wavelength
-    pixelsize = cfg.pixel_size  # See jupyter notebook
-    image_size = cfg.video_size
-    shift_min, shift_max, shift_step = cfg.shift
-    phi_min, phi_max, phi_step = cfg.phi
-    theta_min, theta_max, theta_step = cfg.theta
-    mode = cfg.task
-    itertype = cfg.sweep
-
-    if itertype == 'radial':
-        """ The iterator is moved.
-        """
-        # yield 0, 0, 0, 0
-        index = 0
-        for phi in np.arange(phi_min, phi_max, phi_step):
-            for theta in range(theta_min, theta_max, theta_step):
-                if phi == 0 and index > 0:
-                    continue
-                power = 100
-                yield index, theta, phi, power
-                index += 1
-
-    elif itertype == 'radial_efficient':
-        """ Increments radius of the circle and alternates clockwise and
-        anticlockwise movement when completing the circle.
-        """
-        # yield 0, 0, 0, 0
-        index = 0
-        direction_flag = 1
-        phi_list = np.arange(phi_min, phi_max, phi_step)
-        theta_list = list(range(theta_min, theta_max, theta_step))
-        theta_list.extend(theta_list[-2:0:-1])
-        theta_list_max = max(theta_list)
-
-        theta_cycle = cycle(theta_list)
-        phi_iter = iter(phi_list)
-        for t in theta_cycle:
-            if t == min(theta_list) or t == max(theta_list):
-                p = next(phi_iter)
-            try:
-                acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
-            except:
-                print('Old cfg had no acqpars.')
-                acqpars = [0, 0, 0]
-            yield index, t, p, acqpars
-            index += 1
-
-    elif itertype == 'radial_efficient_shift':
-        """ The same as radial_efficient but specifying shift in contrast to phi.
-        """
-        # yield 0, 0, 0, 0
-        index = 0
-        direction_flag = 1
-        shift_list = np.arange(shift_min, shift_max, shift_step)
-        theta_list = range(theta_min, theta_max, theta_step)
-        theta_list.extend(theta_list[-2:0:-1])
-        theta_list_max = max(theta_list)
-
-        theta_cycle = cycle(theta_list)
-        shift_iter = iter(shift_list)
-        for t in theta_cycle:
-            if t == min(theta_list) or t == max(theta_list):
-                s = shift_iter.next()
-            try:
-                acqpars = get_acquisition_pars(theta=t, shift=s, cfg=cfg)
-            except:
-                print('Old cfg had no acqpars.')
-                acqpars = [0, 0, 0]
-            yield index, t, s, acqpars
-            index += 1
 
 def test_similarity(image_ref, image_cmp):
     """ A measurement of the similarity between two images.

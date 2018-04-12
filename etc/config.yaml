@@ -1,34 +1,31 @@
 # Configuration file for both server and clients
 # Let's start with the server first
 serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
-camtype:  picamera # picamera or opencv or test
-video_id: 0
+camtype:  picamera # picamera, opencv, test
+video_id: 0 # This is for the raspberry pi camera /dev
 video_size: [480, 640] # [240, 324] #[346, 540] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
 patch_size: [150, 150] # Size of the image frame to acquire
 simulation_size: [500, 500]
-client: ledclient
+client: ledclient #ledclient, matrixclient
 server_host: '0.0.0.0'
 server_ip: http://0.0.0.0:5000 #http://10.99.39.174:5000
 # Microscope parameters
 objective_na: 0.1 #0.12
-na: 0.3 # Numerical aperture desired
-pupil_size: 500 # Function of NA, wavelength video size and magnification
-wavelength: 450E-9 # Should be the same as color
-#magnification: 8
+na: 0.1 # Numerical aperture
+pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
+wavelength: 450E-9 # TODO: Should match with color
 pixel_size: 1.80E-6 # 2.15E-6 # 5.67E-6
 color: red
-theta: [0, 360, 10] # [min, max, step]
-phi: [0, 15, 1] # [min, max, step]
-# For the recosntruction
-n_iter: 50 # Max number of iterations
-# Possible mehcanical defects
-platform_tilt: [0, 0] #[0, 2.1] #[spherical theta, spherical phi] [0, 2.1]
-source_center: [0, 0] #[0, 1.9] #[xcoord, ycoord] of the calibrated center [0, 1.9]
-source_tilt: [0, 0] #[spherical theta, sperical phi]
+# Reconstruction parameters
+n_iter: 5 # Max number of iterations
 # The client side of the equation
-sweep: radial_efficient #radial_efficient_shift #radial_efficient #neopixels
-task: simulation
-action: reconstruct
+## For the iteration construction
+shift: [0, 2, 2] # [min, max, step]
+theta: [0, 360, 10] # [min, max, step]
+phi: [0, 10, 1] # [min, max, step]
+sweep: radial_efficient #radial_efficient_shift, radial_efficient, neopixels
+# End of iterator
+task: sample # reconstruct, sample, inspect, calibrate, manual_move
 servertype: simulation # simulation or sampling
 output_cal: ./etc/calibration_20170302.npy
 output_sample: /home/lec/pyfpm/out_sampling/
@@ -44,12 +41,14 @@ iso: 400
 iso_range: [100, 800]
 shutter_speed: [50000, 6000000] # exposure time in us
 
-
 ## The enclosed are motor-specific parameters, would be good to separate them
 ################################################################################
+# Possible mehcanical defects
+platform_tilt: [0, 0] #[0, 2.1] #[spherical theta, spherical phi] [0, 2.1]
+source_center: [0, 0] #[0, 1.9] #[xcoord, ycoord] of the calibrated center [0, 1.9]
+source_tilt: [0, 0] #[spherical theta, sperical phi]
 phi_max_err: 0 # When corrected, phi max could be larger than specified
 max_led_power: 255
-shift: [0, 2, 2]
 shift_step: 0.0188 # 0.0193 # mm/step [MS1 MS2 MS3] = [1 1 0]
 theta_spr: 7680
 shift_max: 1800 # max steps to border

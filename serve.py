@@ -16,7 +16,6 @@ from pyfpm.web import create_server
 import pyfpm.local as local
 from pyfpm.devices import Laser3d, Camera
 import pyfpm.data as dt
-# Find serial controller of the light supply
 # Simulation parameters
 cfg = dt.load_config()
 

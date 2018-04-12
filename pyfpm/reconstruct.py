@@ -146,7 +146,7 @@ def preprocess_images(samples, backgrounds, xoff, yoff, cfg, corr_mode='backgrou
     --------
         (dictionary) dictionary with teh corrected samples.
     """
-    iterator = fpmm.set_iterator(cfg)
+    iterator = ct.set_iterator(cfg)
     if corr_mode == 'background':
         for index, theta, shift, aqcpars in iterator:
             sample = fpmm.crop_image(samples[(theta, shift)],
@@ -280,15 +280,17 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
     samples = preprocess_images(samples, backgrounds, xoff, yoff, cfg,
                                 corr_mode='bypass')
     for iteration in range(cfg.n_iter):
-        iterator = fpmm.set_iterator(cfg)
+        iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
-        for index, theta, phi, acqpars in iterator:
+        # for index, theta, phi, acqpars in iterator:
+        for it in iterator:
+            index, theta, phi = it['index'], it['theta'], it['phi']
+            print(it['theta'], it['phi'], it['indexes'])
             # theta, phi = ct.corrected_coordinates(theta=theta, shift=shift,
             #                                       cfg=cfg)
-            print(theta, phi)
             # Final step: squared inverse fft for visualization
-            im_array = fpmm.crop_image(samples[(theta, phi)],
+            im_array = fpmm.crop_image(samples[it['indexes']],
                                         cfg.patch_size, xoff, yoff)
             # background = fpmm.crop_image(backgrounds[(theta, shift)],
             #                              cfg.patch_size, xoff, yoff)
@@ -313,12 +315,15 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
                 # Il = Image.fromarray(np.uint8(Il), 'L')
                 im_rec = ifft2(f_ih)
                 im_rec *= (255.0/im_rec.max())
-                def plot_image(ax, image):
+                def plot_image(ax, image, title):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('gray'))
-                ax = iter([ax1, ax2, ax3, ax4])
+                    ax.set_title(title)
+                axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
+                            (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
                 for image in [np.abs(fft_rec), np.abs(im_rec), im_array, np.angle(ifft2(f_ih))]:
-                    plot_image(ax.next(), image)
+                    ax, title = next(axiter)
+                    plot_image(ax, image, title)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(np.power(ifft2(f_ih), 2)), np.angle(ifft2(f_ih+1))
@@ -343,7 +348,7 @@ def dpc_init(samples=None, backgrounds=None, it=None, init_point=None,
         # fig, axes = implot.init_plot(4)
     # Steps 2-5
     for iteration in range(cfg.n_iter):
-        iterator = fpmm.set_iterator(cfg)
+        iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for index, theta, shift in iterator:
