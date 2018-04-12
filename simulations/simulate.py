@@ -9,7 +9,7 @@ Usage:
 
 """
 import time
-from StringIO import StringIO
+from io import StringIO
 import os
 
 import matplotlib.pyplot as plt
@@ -43,11 +43,11 @@ out_file = os.path.join(cfg.output_sim,
                         '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now()))
 iterator = set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, comp_cfg = dt.open_sampled('2017-08-04_14:46:29.npy', mode='simulation')
+# samples, comp_cfg = dt.open_sampled('2017-08-04_14:46:29.npy', mode='simulation')
 
 # pc = PlatformCoordinates()
 
-task = 'reconstruct'
+task = 'acquire'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)

@@ -10,7 +10,7 @@ hosted in some url.
 Usage:
 
 """
-from StringIO import StringIO
+from io import StringIO
 import time
 import os
 import datetime
@@ -63,7 +63,7 @@ pc.generate_model(cfg.plat_model)
 # resolution details
 iterator = set_iterator(cfg)
 
-task = 'reconstruct'
+task = 'acquire'
 if task is 'acquire':
     image_dict = dict()
     save_yaml_metadata(out_file, cfg)

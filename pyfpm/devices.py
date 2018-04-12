@@ -15,7 +15,7 @@ import cv2
 from io import BytesIO
 
 # import picamera
-import camera
+from . import camera
 import pyfpm.data as dt
 
 from pyfpm.coordinates import PlatformCoordinates
@@ -37,8 +37,8 @@ class LaserAim(object):
         self.move_phi(phi)
 
     def set_laser_power(self, laser_power):
-	""" Adjusts laser power manually between 0-255.
-    """
+        """ Adjusts laser power manually between 0-255.
+        """
         serial_message = "POW %d" % int(laser_power)
         self._serial_write(serial_message)
         time.sleep(.1)

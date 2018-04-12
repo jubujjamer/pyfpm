@@ -22,7 +22,7 @@ from scipy import ndimage
 
 from pyfpm.coordinates import PlatformCoordinates
 import pyfpm.fpmmath as fpmm
-import coordtrans as ct
+from . import coordtrans as ct
 
 # from . import implot
 # import fpmmath.optics_tools as ot

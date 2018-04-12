@@ -9,7 +9,7 @@ Usage:
 
 import yaml
 import numpy as np
-from itertools import ifilter, product
+# from itertools import ifilter, product
 
 import pyfpm.data as dt
 from pyfpm.fpmmath import set_iterator, translate
@@ -236,7 +236,7 @@ class PlatformCoordinates(object):
             model_cfg = dt.load_model_file(cfg.model_name)
             model = model_cfg.model_type
         except:
-            print "No model created, run 'generate_model' first"
+            print("No model created, run 'generate_model' first")
             model = 'nomodel'
 
         if model == 'nomodel':

@@ -9,7 +9,6 @@ Usage:
 
 import yaml
 import numpy as np
-from itertools import ifilter, product
 
 import pyfpm.data as dt
 from pyfpm.fpmmath import set_iterator, translate

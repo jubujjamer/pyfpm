@@ -9,12 +9,12 @@ Usage:
 """
 __version__ = "1.1.1"
 __author__ = 'Juan M. Bujjamer'
-__all__ = ['translate', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
+__all__ = ['translate', 'get_acquisition_pars', 'image_center', 'generate_pupil', 'fpm_reconstruct', 'set_iterator', 'calculate_pupil_radius', 'adjust_shutter_speed',
            'pixel_size_required', 'crop_image']
 
 from io import BytesIO
-from itertools import ifilter, product, cycle
-from StringIO import StringIO
+from itertools import product, cycle
+from io import StringIO
 import time
 import yaml
 
@@ -27,9 +27,6 @@ from scipy.optimize import fsolve
 from PIL import Image
 from scipy import ndimage
 import random
-
-# from . import implot
-# import fpmmath.optics_tools as ot
 
 
 def translate(value, input_min, input_max, output_min, output_max):
@@ -53,7 +50,8 @@ def translate(value, input_min, input_max, output_min, output_max):
 
 
 def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
-    """ Returns illumination and camera acquisition parameters.
+    """ Returns illumination and camera acquisition parameters. It calculates
+    them acording to the incident angles and illumination type (specified in cfg).
 
     Args:
         theta (float)
@@ -158,11 +156,14 @@ def set_iterator(cfg=None):
                 index += 1
 
     elif itertype == 'radial_efficient':
+        """ Increments radius of the circle and alternates clockwise and
+        anticlockwise movement when completing the circle.
+        """
         # yield 0, 0, 0, 0
         index = 0
         direction_flag = 1
         phi_list = np.arange(phi_min, phi_max, phi_step)
-        theta_list = range(theta_min, theta_max, theta_step)
+        theta_list = list(range(theta_min, theta_max, theta_step))
         theta_list.extend(theta_list[-2:0:-1])
         theta_list_max = max(theta_list)
 
@@ -170,7 +171,7 @@ def set_iterator(cfg=None):
         phi_iter = iter(phi_list)
         for t in theta_cycle:
             if t == min(theta_list) or t == max(theta_list):
-                p = phi_iter.next()
+                p = next(phi_iter)
             try:
                 acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
             except:
@@ -180,6 +181,8 @@ def set_iterator(cfg=None):
             index += 1
 
     elif itertype == 'radial_efficient_shift':
+        """ The same as radial_efficient but specifying shift in contrast to phi.
+        """
         # yield 0, 0, 0, 0
         index = 0
         direction_flag = 1
@@ -195,7 +198,6 @@ def set_iterator(cfg=None):
                 s = shift_iter.next()
             try:
                 acqpars = get_acquisition_pars(theta=t, shift=s, cfg=cfg)
-
             except:
                 print('Old cfg had no acqpars.')
                 acqpars = [0, 0, 0]
@@ -209,8 +211,6 @@ def test_similarity(image_ref, image_cmp):
     cmp_mean = np.mean(image_cmp)
     correction_factor = image_cmp/image_ref
     return
-
-
 
 def calculate_pupil_radius(na, npx, pixel_size, wavelength):
     """ pupil radius from wavelength, numerical aperture, pixel size and

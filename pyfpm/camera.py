@@ -29,8 +29,9 @@ class BaseCamera(object):
     """Base class for cameras
     """
 
-    with open(os.path.join(current_path, 'web', 'static', 'img', 'noimage.jpg')) as f:
+    with open(os.path.join(current_path, 'web', 'static', 'img', 'no-image.png'), 'rb') as f:
         NO_IMAGE = f.read()
+
 
     def __init__(self, **kwargs):
         self.camprops = dict()

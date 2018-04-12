@@ -29,7 +29,7 @@ if cfg.servertype == 'sampling':
     cam = Camera(video_id=cfg.video_id, camtype=cfg.camtype)
     client = local.Laser3dCalibrate(cam, laser3d)
 elif cfg.servertype == 'simulation':
-    client = local.DummyClient()
+    client = local.SimClient(cfg)
 
 app = create_server(client)
 app.run(host=cfg.server_host, debug=cfg.debug)

@@ -9,10 +9,10 @@ Usage:
 import shutil
 from scipy import misc
 import numpy as np
-from StringIO import StringIO
 import time
-
-import pyfpm.fpmmath as fpm
+from io import StringIO
+## To work with py 2 or py 3
+import pyfpm.fpmmath as fpmm
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -175,14 +175,15 @@ class SimClient(BaseClient):
             self.image_mag = self.load_image(cfg.input_mag)
             self.image_phase = self.load_image(cfg.input_phase)
         except:
+            print('File not found.')
             self.image_mag = None
             self.image_phase = None
         self.pupil_rad = cfg.pupil_size
         self.image_size = cfg.video_size
 
     def load_image(self, input_image):
-        with open(input_image, "r") as imageFile:
-            return imageFile.read()
+        with open(input_image, 'rb') as imageFile:
+            return misc.imread(imageFile, 'RGB')
 
     def acquire(self, theta=None, phi=None, acqpars=None):
         """ Returs a simulated acquisition with given acquisition parameters.
@@ -197,11 +198,11 @@ class SimClient(BaseClient):
         theta = float(theta)
         phi = float(phi)
         # Return np.array processed using laser aiming data
-        mag_array = misc.imread(StringIO(self.image_mag), 'RGB')
-        ph_array = misc.imread(StringIO(self.image_phase), 'RGB')
+        mag_array = self.image_mag
+        ph_array = self.image_phase
         im_array = np.sqrt(mag_array)*np.exp(1j*ph_array)
         # fpm.simulate_acquisition(theta, phi, acqpars)
-        return fpm.filter_by_pupil(im_array, theta, phi, acqpars[0], self.cfg)
+        return fpmm.filter_by_pupil(im_array, theta, phi, acqpars[0], self.cfg)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)
@@ -224,17 +225,17 @@ class DummyClient(BaseClient):
         # self.proc_image = image
         self.dumb = 100
 
-    def acquire(self, theta=None, phi=None, power=None):
+    def acquire(self, *args, **kwargs):
         # Return np.array processed using laser aiming data
-        return "print"
+        return("print")
 
     def move_phi(self, phi, mode='relative'):
         print("Ooookay")
-        return "I'm moving but I'm lazy"
+        return("I'm moving but I'm lazy")
 
     def move_theta(self, phi, mode='relative'):
         print("Ooookay")
-        return "I'm moving but I'm lazy"
+        return("I'm moving but I'm lazy")
 
     def set_power(self, power):
         print("power", power)
