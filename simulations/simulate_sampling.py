@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 
-import pyfpm.local as local
+from . import pyfpm.local as local
 import pyfpm.coordtrans as ct
 import pyfpm.fpmmath as fpmm
 import pyfpm.data as dt

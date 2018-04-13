@@ -9,6 +9,9 @@ import base64
 import json
 import socket
 import os
+import queue
+import guid
+import threading
 
 import numpy as np
 import yaml
@@ -18,8 +21,26 @@ from .. import local
 
 FOLDER = os.path.abspath(os.path.dirname(__file__))
 
-
 def create_server(client):
+
+    cache_lock = threading.RLock()
+    q = queue.Queue()
+    cache = {}
+
+    def worker():
+        while True:
+            settings = q.get()
+            if settings is None:
+                break
+            guid = settings.pop('uuid')
+            img = client.acquire(**settings)
+            with cache_lock:
+                cache[guid] = img
+            q.task_done()
+
+    t = threading.Thread(target=worker)
+    t.start()
+
     app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
                        static_folder=os.path.join(FOLDER, 'static'))
     # app.config.update(PROPAGATE_EXCEPTIONS = True)
@@ -117,6 +138,28 @@ def create_server(client):
         except socket.error:
             print("An error")
             pass
+
+    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
+    def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
+        print ("app", float(theta), float(phi), color)
+        try:
+            if len(cache) > 10:
+                return Response('no hay lugar')
+
+            # TODO COMO DICT
+            setings = theta, phi, shift, power, color,
+                                 shutter_speed, iso
+            settings['uuid'] = out = uuid.uuid4().hex
+            return Response(out)
+        except socket.error:
+            print("An error")
+            pass
+
+    @app.route("/get_img/<uuid>")
+    def get_img(uuid):
+        with cache_lock:
+            return Response(cache.pop(uuid),
+                            mimetype='image/png')
 
     @app.route("/just_move/<theta>/<phi>/<shift>/<power>/<color>")
     def just_move(theta=None, phi=None, shift=None, power=None, color=None):

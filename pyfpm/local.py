@@ -11,7 +11,7 @@ from scipy import misc
 import numpy as np
 import time
 from io import StringIO
-## To work with py 2 or py 3
+## To work with py 2 or
 import pyfpm.fpmmath as fpmm
 
 class BaseClient(object):
