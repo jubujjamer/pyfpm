@@ -264,10 +264,8 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
     --------
         (ndarray) The reconstructed modulus and phase of the sampled image.
     """
-    # pc = PlatformCoordinates(theta=0, phi=0, height=cfg.sample_height, cfg=cfg)
     xoff, yoff = init_point  # Selection of the image patch
     ps_required = fpmm.ps_required(cfg.phi[1], cfg.wavelength, cfg.na)
-    # mask = get_mask(samples, backgrounds, xoff, yoff, cfg)
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
     Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'zero')
@@ -275,7 +273,6 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         fig.show()
-        # fig, axes = implot.init_plot(4)
     # Steps 2-5
     samples = preprocess_images(samples, backgrounds, xoff, yoff, cfg,
                                 corr_mode='bypass')
@@ -283,7 +280,6 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
-        # for index, theta, phi, acqpars in iterator:
         for it in iterator:
             index, theta, phi = it['index'], it['theta'], it['phi']
             print(it['theta'], it['phi'], it['indexes'])
@@ -291,13 +287,11 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
             #                                       cfg=cfg)
             # Final step: squared inverse fft for visualization
             im_array = fpmm.crop_image(samples[it['indexes']],
-                                        cfg.patch_size, xoff, yoff)
+                                       cfg.patch_size, xoff, yoff)
             # background = fpmm.crop_image(backgrounds[(theta, shift)],
             #                              cfg.patch_size, xoff, yoff)
-            #
             # im_array = image_correction(im_array, background, mode='background')
             im_array, resc_size = image_rescaling(im_array, cfg)
-
             Il = generate_il(im_array, f_ih, theta, phi, cfg)
             pupil = fpmm.generate_pupil(theta=theta, phi=phi,
                                         image_size=np.shape(im_array),
@@ -317,7 +311,7 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
                 im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image, title):
                     ax.cla()
-                    ax.imshow(image, cmap=plt.get_cmap('gray'))
+                    ax.imshow(image, cmap=plt.get_cmap('hot'))
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])

@@ -9,12 +9,9 @@ Usage:
 
 """
 import time
-
 import matplotlib.pyplot as plt
 import numpy as np
-import datetime
 
-from pyfpm import web
 import pyfpm.local as local
 from pyfpm.reconstruct import fpm_reconstruct
 import pyfpm.coordtrans as ct
