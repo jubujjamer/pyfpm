@@ -28,7 +28,7 @@ out_file = os.path.join(cfg.output_sim,
 iterator = ct.set_iterator(cfg)
 simclient = local.SimClient(cfg=cfg)
 
-fig, ax1 = plt.subplots(1, 1, figsize=(25, 15))
+fig, ax1 = plt.subplots(1, 1, figsize=(5, 5))
 fig.show()
 image_dict = dict()
 # for index, theta, phi, acqpars in iterator:
