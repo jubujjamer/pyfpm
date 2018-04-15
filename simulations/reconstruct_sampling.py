@@ -9,7 +9,7 @@ Usage:
 
 """
 import time
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 import pyfpm.local as local
@@ -24,12 +24,14 @@ itertype = cfg.sweep
 server_ip = cfg.server_ip
 iterator = ct.set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, sim_cfg = dt.open_sampled('20180412_175122.npy', mode='simulation')
+samples, sim_cfg = dt.open_sampled('simtest.npy', mode='simulation')
 
 # Reconstruction
 start_time = time.time()
 rec, phase = fpm_reconstruct(samples=samples, backgrounds=None, it=iterator,
-                             init_point=[0, 0], cfg=cfg, debug=True)
+                             init_point=[0, 0], cfg=cfg, debug=cfg.debug)
 print('--- %s seconds ---' % (time.time() - start_time))
-plt.imshow(rec), plt.gray()
-plt.show()
+if not cfg.debug:
+    import matplotlib.pylab as plt
+    plt.imshow(rec), plt.gray()
+    plt.show()

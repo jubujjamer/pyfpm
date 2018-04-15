@@ -12,8 +12,6 @@ CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
 OUT_SIMULATION = os.path.join(HOME_FOLDER, "out_simulation")
 OUT_SAMLPING = os.path.join(HOME_FOLDER, "out_sampling")
 
-print(HOME_FOLDER, CONFIG_FILE)
-
 def save_yaml_metadata(outname, cfg):
     base = os.path.splitext(outname)[0]
     outname = base + '.yaml'
@@ -45,12 +43,15 @@ def save_model(model_name, model):
         yaml.dump(model, outfile, default_flow_style=False)
     return
 
-def generate_out_file(out_folder):
+def generate_out_file(out_folder=OUT_SIMULATION, fname = None):
     """ File name with the date and hour to have one different file name
     to each measurment
     """
-    out_file = os.path.join(out_folder,
-                    '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now()))
+    if fname is None:
+        out_file = os.path.join(out_folder,
+                        '{:%Y%m%d_%H%M%S}'.format(datetime.datetime.now()))
+    else:
+        out_file = os.path.join(out_folder, fname)
     return out_file
 
 

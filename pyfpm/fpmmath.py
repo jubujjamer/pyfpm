@@ -17,9 +17,6 @@ from io import StringIO
 import time
 import yaml
 
-import matplotlib
-# matplotlib.use('TkAgg') # For the animations to work
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
 from scipy.optimize import fsolve
@@ -74,9 +71,6 @@ def resize_complex_image(im_array, final_shape):
     real_part = ndimage.zoom(np.real(im_array), scale_factor, order=0)
     im_part = ndimage.zoom(np.imag(im_array), scale_factor, order=0)
     rescaled_image = real_part+1j*im_part
-
-    print(np.array(im_array.shape)*scale_factor, rescaled_image.shape, rescaled_image.shape==final_shape, scale_factor)
-
     return rescaled_image
 
 def calculate_max_phi(wavelength, pixel_size, na):
@@ -148,9 +142,76 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
     # image_gray = 1.*image_gray + image_gray*defocus
     return image_gray
 
+# def generate_pupil(theta=None, phi=None, image_size=None,
+#                    wavelength=None, pixel_size=None, na=None):
+#     """ Pupil center in cartesian coordinates.
+#
+#     Args:
+#         theta (int):      azimuthal angle
+#         phi (int):        zenithal angle
+#         image_size(list): size of the image of the pupil
+#
+#     Return:
+#         (array) image of the pupil
+#     """
+#     if image_size is not None:
+#         npx = image_size[0]  # Half image size  each side
+#     if theta is not None:
+#         theta_rad = np.radians(theta)
+#     if phi is not None:
+#         phi_rad = np.radians(phi)
+#     if wavelength is not None:
+#         wavelength = float(wavelength)
+#     if pixel_size is not None:
+#         pixel_size = float(pixel_size)
+#     if na is not None:
+#         na = float(na)
+#     phi_max = np.arcsin(wavelength/(2*pixel_size)-na)
+#     if phi_rad > phi_max:
+#         print("Zenithal angle has come to a limit, consider to extend the image size.")
+#         return None
+#         # return np.zeros(image_size, dtype=np.uint8)
+#     pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
+#     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
+#     [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
+#     xc, yc = image_center(image_size)
+#     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
+#     return image_gray
 
-def generate_pupil(theta=None, phi=None, power=None, image_size=None,
-                   wavelength=None, pixel_size=None, na=None):
+# def generate_pupil(theta=None, phi=None, image_size=None,
+#                    wavelength=None, pixel_size=None, na=None):
+#     """ Pupil center in cartesian coordinates.
+#
+#     Args:
+#         theta (int):      azimuthal angle
+#         phi (int):        zenithal angle
+#         image_size(list): size of the image of the pupil
+#
+#     Return:
+#         (array) image of the pupil
+#     """
+#     if image_size is not None:
+#         npx = image_size[0]  # Half image size  each side
+#     if theta is not None:
+#         theta_rad = np.radians(theta)
+#     if phi is not None:
+#         phi_rad = np.radians(phi)
+#     if wavelength is not None:
+#         wavelength = float(wavelength)
+#     if pixel_size is not None:
+#         pixel_size = float(pixel_size)
+#     if na is not None:
+#         na = float(na)
+#         # return np.zeros(image_size, dtype=np.uint8)
+#     pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
+#     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
+#     [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
+#     xc, yc = image_center(image_size)
+#     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
+#     return image_gray
+
+def generate_pupil(fx=None, fy=None, image_size=None,
+                   pupil_radius=None):
     """ Pupil center in cartesian coordinates.
 
     Args:
@@ -163,28 +224,47 @@ def generate_pupil(theta=None, phi=None, power=None, image_size=None,
     """
     if image_size is not None:
         npx = image_size[0]  # Half image size  each side
-    if theta is not None:
-        theta_rad = np.radians(theta)
-    if phi is not None:
-        phi_rad = np.radians(phi)
-    if wavelength is not None:
-        wavelength = float(wavelength)
-    if pixel_size is not None:
-        pixel_size = float(pixel_size)
-    if na is not None:
-        na = float(na)
-    phi_max = np.arcsin(wavelength/(2*pixel_size)-na)
-    if phi_rad > phi_max:
-        print("Zenithal angle has come to a limit, consider to extend the image size.")
-        return None
+    if pupil_radius is not None:
+        pupil_radius = float(pupil_radius)
         # return np.zeros(image_size, dtype=np.uint8)
-    pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
-    coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
-    [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
     xc, yc = image_center(image_size)
     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
+def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
+                             pupil_radius, kdsc):
+    """ Filtered image by a pupil calculated using generate_pupil
+    """
+    if im_array is not None:
+        npx = im_array.shape[0]  # Half image size  each side
+    if theta is not None:
+        theta_rad = np.radians(theta)
+    if phi is not None:
+        phi_rad = np.radians(phi)
+
+    # calculares low res image size
+    xc, yc = image_center(im_array.shape)
+
+    coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
+                       np.sin(phi_rad)*np.sin(theta_rad)])
+    #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)
+    [kx, ky] = coords*kdsc
+
+    pupil = generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    f_ih_shift = fftshift(fft2(im_array))
+    kyl = int(np.round(yc+ky-(lrsize+1)/2))
+    kyh = int(np.round(yc+ky+(lrsize+1)/2-1))
+    kxl = int(np.round(xc+kx-(lrsize+1)/2))
+    kxh = int(np.round(xc+kx+(lrsize+1)/2-1))
+    print(lrsize, pupil_radius, kyl, kyh, kxl, kxh)
+
+    f_ih_shift = f_ih_shift[kyl:kyh, kxl:kxh]
+    # Step 2: lr of the estimated image using the known pupil
+    proc_array = pupil * f_ih_shift  # space pupil * fourier im
+    proc_array = ifft2(proc_array)
+    # proc_array = resize_complex_image(proc_array, original_shape)
+    # proc_array = np.abs(proc_array*np.conj(proc_array))
+    return proc_array
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):
     """ Filtered image by a pupil calculated using generate_pupil
@@ -212,7 +292,6 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
     proc_array = resize_complex_image(proc_array, original_shape)
     proc_array = np.real(proc_array*np.conj(proc_array))
     return proc_array
-
 
 def show_filtered_image(self, image, theta, phi, power, pup_rad):
     """ Image in bytearray format to use with the flask response function

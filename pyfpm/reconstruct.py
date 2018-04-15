@@ -288,6 +288,7 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
             # Final step: squared inverse fft for visualization
             im_array = fpmm.crop_image(samples[it['indexes']],
                                        cfg.patch_size, xoff, yoff)
+            print(im_array.dtype)
             # background = fpmm.crop_image(backgrounds[(theta, shift)],
             #                              cfg.patch_size, xoff, yoff)
             # im_array = image_correction(im_array, background, mode='background')
@@ -304,11 +305,11 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
             # If debug mode is on
             if debug and index % 1 == 0:
                 fft_rec = np.log10(np.abs(f_ih)+1)
-                fft_rec *= (255.0/fft_rec.max())
+                # fft_rec *= (255.0/fft_rec.max())
                 fft_rec = fftshift(fft_rec)
                 # Il = Image.fromarray(np.uint8(Il), 'L')
                 im_rec = ifft2(f_ih)
-                im_rec *= (255.0/im_rec.max())
+                # im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image, title):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('hot'))
@@ -372,12 +373,12 @@ def dpc_init(samples=None, backgrounds=None, it=None, init_point=None,
                 # fft_rec = Image.fromarray(np.uint8(fft_rec*255), 'L')
                 im_rec = ifft2(f_ih)
                 # im_rec *= (255.0/im_rec.max())
-                im_rec_abs = np.sqrt(np.real(im_rec*np.conj(im_rec)))
+                im_rec_abs = np.abs(im_rec*np.conj(im_rec))
                 def plot_image(ax, image):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('hot'))
                 ax = iter([ax1, ax2, ax3, ax4])
-                for image in [np.abs(fft_rec), im_rec_abs, im_array, np.angle(im_rec)]:
+                for image in [np.abs(fft_rec), im_rec, im_array, np.angle(im_rec)]:
                     plot_image(ax.next(), image)
                 fig.canvas.draw()
         # print("Testing quality metric", quality_metric(image_dict, Il, cfg, max_phi))

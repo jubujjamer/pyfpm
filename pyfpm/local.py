@@ -11,6 +11,7 @@ from scipy import misc
 import numpy as np
 import time
 from io import StringIO
+import os
 ## To work with py 2 or
 import pyfpm.fpmmath as fpmm
 
@@ -171,19 +172,40 @@ class Laser3dCalibrate(BaseClient):
 class SimClient(BaseClient):
     def __init__(self, cfg):# Y Datos del microscopio
         self.cfg = cfg
+        HOME_FOLDER = os.path.expanduser("~/pyfpm")
         try:
-            self.image_mag = self.load_image(cfg.input_mag)
-            self.image_phase = self.load_image(cfg.input_phase)
+            self.image_mag = self.load_image(os.path.join(HOME_FOLDER, cfg.input_mag))
+            self.image_phase = self.load_image(os.path.join(HOME_FOLDER, cfg.input_phase))
+            # Transform into complete field image
+            mag_array = self.image_mag
+            ph_array = np.pi*(self.image_phase)/np.amax(self.image_phase)
+            self.im_array = mag_array*np.exp(1j*ph_array)
         except:
             print('File not found.')
             self.image_mag = None
             self.image_phase = None
-        self.pupil_rad = cfg.pupil_size
-        self.image_size = cfg.video_size
+        # Some repetitively used parameters
+        self.ps = float(cfg.pixel_size)
+        self.wavelength = float(cfg.wavelength)
+        npx = float(cfg.patch_size[0])
+        na = float(cfg.na)
+        self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
+        self.ps_req = self.wavelength/(2*(na+np.sin(np.radians(cfg.phi[1]))))
+        self.lhscale = self.ps/self.ps_req
+        self.lrsize = int(np.ceil(npx/self.lhscale))
+        ## To convert coordinates to discretized kself.
+        # k_discrete = sin(theta)*k0/dk = sin(t)*2pi/l*1/(2*pi/(ps*npx))
+        self.kdsc = self.ps*npx/self.wavelength
+        # self.pupil_rad = cfg.pupil_size
+        # self.image_size = cfg.video_size
 
     def load_image(self, input_image):
+        """ Loads phase and magnitude input images and crops to patch size.
+        """
         with open(input_image, 'rb') as imageFile:
-            return misc.imread(imageFile, 'RGB')
+            image_array = misc.imread(imageFile, 'F')
+            npx = int(self.cfg.patch_size[0])
+            return image_array[0:npx, 0:npx]
 
     def acquire(self, theta=None, phi=None, acqpars=None):
         """ Returs a simulated acquisition with given acquisition parameters.
@@ -197,12 +219,10 @@ class SimClient(BaseClient):
         """
         theta = float(theta)
         phi = float(phi)
-        # Return np.array processed using laser aiming data
-        mag_array = self.image_mag
-        ph_array = self.image_phase
-        im_array = np.sqrt(mag_array)*np.exp(1j*ph_array)
         # fpm.simulate_acquisition(theta, phi, acqpars)
-        return fpmm.filter_by_pupil(im_array, theta, phi, acqpars[0], self.cfg)
+        filtered = fpmm.filter_by_pupil_simulate(self.im_array, theta, phi,
+                            self.lrsize, self.pupil_radius, self.kdsc)
+        return np.abs(filtered)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)
