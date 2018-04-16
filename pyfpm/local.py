@@ -189,13 +189,17 @@ class SimClient(BaseClient):
         self.wavelength = float(cfg.wavelength)
         npx = float(cfg.patch_size[0])
         na = float(cfg.na)
-        self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
-        self.ps_req = self.wavelength/(2*(na+np.sin(np.radians(cfg.phi[1]))))
+        # NOTE: I had to put 2.2 in the denominator in place of 2 in order to
+        # have a ps a bit smaller than strictly necesary, because of rounding errors
+        self.ps_req = self.wavelength/(2.1*(na+np.sin(np.radians(cfg.phi[1]))))
         self.lhscale = self.ps/self.ps_req
-        self.lrsize = int(np.ceil(npx/self.lhscale))
+        self.lrsize = int(np.floor(npx/self.lhscale))
+         # NOTE: I was using ps here, but in the tutorial uses ps_req
+        self.pupil_radius = int(np.ceil(self.ps_req*na*npx/self.wavelength))
         ## To convert coordinates to discretized kself.
         # k_discrete = sin(theta)*k0/dk = sin(t)*2pi/l*1/(2*pi/(ps*npx))
-        self.kdsc = self.ps*npx/self.wavelength
+        # NOTE: The same observation about ps and ps_req
+        self.kdsc = self.ps_req*npx/self.wavelength
         # self.pupil_rad = cfg.pupil_size
         # self.image_size = cfg.video_size
 

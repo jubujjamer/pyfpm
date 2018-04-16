@@ -22,8 +22,32 @@ from pyfpm.coordinates import PlatformCoordinates
 
 cfg = dt.load_config()
 
+
+class LedMatrixRGB(object):
+    """ Gives interface for the 3D.
+    """
+
+    def __init__(self, nx=None, ny=None, color=None, power=0):
+        self.set_laser_power(0)
+        self.nx(0)
+        self.ny(0)
+
+    def set_power(self, power):
+        """ Adjusts power manually between 0-255.
+        """
+        print('doit')
+
+    def led_on(self, nx, ny, power, color):
+        print('doit')
+
+
+    def __del__(self):
+        print('Goodbye')
+
+
 class LaserAim(object):
-    """Hello
+    """ Aimed Led implemented by means of a servo and a stepper.
+    Two degrees of freedom (theta - the stepper - and phi - the servo).
     """
     ZERO_ANGLE = 90
     # Steps covering 90 degrees
@@ -71,7 +95,10 @@ class LaserAim(object):
 
 
 class LedAim(object):
-
+    """ This was used by the 9 Nopixels put in line in a 'U' shaped platform.
+    Two degrees of freedom. It used a for the theta motion and the digital led
+    selection.
+    """
     ZERO_ANGLE = 90
     # Steps covering 90 degrees
     CONV_FACTOR = 3000. / 90.
@@ -93,30 +120,6 @@ class LedAim(object):
         """
         self._move_theta_motor(angle*self.CONV_FACTOR)
 
-    # def set_led(self, led, mode, power):
-    #     """ There are 9 leds, selectable by the led argument.
-    #     Four modes are implemented:
-    #         0: red only, 1: green only, 2 :blue only, 3: white
-    #     power goes from 0 to 255
-    #     """
-    #     serial_message = "LED %d %d %d" % (int(led), int(mode), int(power))
-    #     self._serial_write(serial_message)
-    #
-    # def set_parameters(self, phi, power, color):
-    #     """ Set acquisition as the client requires.
-    #     """
-    #     allowed_intensities = range(256)
-    #     allowed_modes = [0, 1, 2, 3]
-    #
-    #     mode = {"red": 0, "green": 1, "blue": 2, "white": 3}
-    #     allowed_phi = {-80: 8, -60: 7, -40: 6, -20: 5,
-    #                    0: 4, 20: 3, 40: 2, 60: 1, 80: 0}
-    #     led = allowed_phi[min(allowed_phi, key=lambda x: abs(x-phi))]
-    #     if not mode[color] in allowed_modes or not power in allowed_intensities:
-    #         serial_message = "LED %d %d %d" % (0, 0, 0)
-    #         print("Please set the parameters correctly. I'll leave it all shut.")
-    #     else: serial_message = "LED %d %d %d" % (int(led), int(mode[color]), int(power))
-    #     self._serial_write(serial_message)
     def set_led(self, led, mode, power):
         """ There are 9 leds, selectable by the led argument.
         Four modes are implemented:
@@ -155,6 +158,10 @@ class LedAim(object):
 
 
 class Laser3d(object):
+    """ Latest used moving LED (despite it being called Laer3D).
+        Three degrees of freedom (theta, shift, phi) by means of thre steppers,
+        plus the led parameters.
+    """
 
     def __init__(self, port=None, theta=None, phi=None, shift=None, power=None):
         self._ser_dev = None
