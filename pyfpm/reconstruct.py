@@ -280,7 +280,6 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
         fig.show()
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
-    print(factor)
     for iteration in range(cfg.n_iter):
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
@@ -309,7 +308,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and index % 1 == 0:
+            if debug and index % 20 == 0:
                 im_out= ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())

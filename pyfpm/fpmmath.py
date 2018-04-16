@@ -18,7 +18,7 @@ import time
 import yaml
 
 import numpy as np
-from numpy.fft import fft2, ifft2, fftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.optimize import fsolve
 from PIL import Image
 from scipy import ndimage
@@ -244,6 +244,7 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
 
     # calculares low res image size
     xc, yc = image_center(im_array.shape)
+    factor = (lrsize/im_array.shape[0])**2
 
     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
                        np.sin(phi_rad)*np.sin(theta_rad)])
@@ -258,11 +259,13 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
     kxh = kxl + lrsize - 1
     # kxh = int(np.round(xc+kx+(lrsize)/2-1))
     # print(im_array.shape, pupil_radius, kyl, kyh, kxl, kxh)
+    print(kyl, yc, ky)
+
     f_ih_shift = f_ih_shift[kyl:kyh, kxl:kxh]
     # print(f_ih_shift.shape)
     # Step 2: lr of the estimated image using the known pupil
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
-    proc_array = ifft2(proc_array)
+    proc_array = ifft2(ifftshift(proc_array))
     # proc_array = resize_complex_image(proc_array, original_shape)
     # proc_array = np.abs(proc_array*np.conj(proc_array))
     return proc_array
