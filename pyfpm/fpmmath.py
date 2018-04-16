@@ -250,15 +250,16 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
     #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)
     [kx, ky] = coords*kdsc
 
-    pupil = generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    pupil = generate_pupil(0, 0, [lrsize-1, lrsize-1], pupil_radius)
     f_ih_shift = fftshift(fft2(im_array))
-    kyl = int(np.round(yc+ky-(lrsize+1)/2))
-    kyh = int(np.round(yc+ky+(lrsize+1)/2-1))
-    kxl = int(np.round(xc+kx-(lrsize+1)/2))
-    kxh = int(np.round(xc+kx+(lrsize+1)/2-1))
+    kyl = int(np.round(yc+ky-(lrsize)/2))
+    kyh = int(np.round(yc+ky+(lrsize)/2-1))
+    kxl = int(np.round(xc+kx-(lrsize)/2))
+    kxh = int(np.round(xc+kx+(lrsize)/2-1))
     print(lrsize, pupil_radius, kyl, kyh, kxl, kxh)
 
     f_ih_shift = f_ih_shift[kyl:kyh, kxl:kxh]
+    print(f_ih_shift.shape)
     # Step 2: lr of the estimated image using the known pupil
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
     proc_array = ifft2(proc_array)
