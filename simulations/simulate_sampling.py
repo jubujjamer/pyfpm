@@ -30,7 +30,6 @@ simclient = local.SimClient(cfg=cfg)
 fig, ax1 = plt.subplots(1, 1, figsize=(5, 5))
 fig.show()
 image_dict = dict()
-# for index, theta, phi, acqpars in iterator:
 for it in iterator:
     print(it['theta'], it['phi'], it['indexes'])
     # iso, shutter_speed, led_power = acqpars

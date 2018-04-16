@@ -28,8 +28,9 @@ samples, sim_cfg = dt.open_sampled('simtest.npy', mode='simulation')
 
 # Reconstruction
 start_time = time.time()
-rec, phase = fpm_reconstruct(samples=samples, backgrounds=None, it=iterator,
-                             init_point=[0, 0], cfg=cfg, debug=cfg.debug)
+rec, phase = fpm_reconstruct(samples=samples, hrshape=cfg.patch_size, it=iterator,
+                             cfg=cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
+                             kdsc=client.kdsc)
 print('--- %s seconds ---' % (time.time() - start_time))
 if not cfg.debug:
     import matplotlib.pylab as plt

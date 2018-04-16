@@ -16,7 +16,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.fft import fft2, ifft2, fftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from PIL import Image
 from scipy import ndimage
 
@@ -161,7 +161,7 @@ def preprocess_images(samples, backgrounds, xoff, yoff, cfg, corr_mode='backgrou
     return samples
 
 
-def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
+def initialize(hrsize=None, backgrounds=None, xoff=None, yoff=None, cfg=None,
                mode='zero'):
     """ Initializes the algorithm using one of various modalities.
 
@@ -185,11 +185,11 @@ def initialize(samples, backgrounds=None, xoff=None, yoff=None, cfg=None,
     --------
         (ndarray) a complex image with the same size of the samples.
     """
-    image = fpmm.crop_image(samples[(0, 0)], cfg.patch_size, xoff, yoff)
-    image, image_size = image_rescaling(image, cfg)
+    # image = fpmm.crop_image(samples[(0, 0)], cfg.patch_size, xoff, yoff)
+    # image, image_size = image_rescaling(image, cfg)
     if mode == 'zero':
-        Ih_sq = 0.5 * np.ones_like(image)  # Homogeneous amplitude
-        Ph = np.zeros_like(Ih_sq)          # and null phase
+        Ih_sq = 0.5 * np.ones(hrsize)  # Homogeneous amplitude
+        Ph = np.zeros(hrsize)          # and null phase
         Et = Ih_sq * np.exp(1j*Ph)
     elif mode == 'transmission':
         background = fpmm.crop_image(backgrounds[(0, 0)], cfg.patch_size, xoff, yoff)
@@ -242,8 +242,10 @@ def generate_il(im_array, f_ih, theta, phi, cfg):
     # Iupdate *= 150
     return Iupdate
 
-def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
-                    cfg=None,  debug=False):
+# im_array, theta, phi, lrsize, pupil_radius, kdsc
+
+def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
+                    kdsc=None, cfg=None,  debug=False):
     """ FPM reconstructon using the alternating projections algorithm. Here
     the complete samples and (optional) background images are loaded and Then
     cropped according to the patch size set in the configuration tuple (cfg).
@@ -264,51 +266,54 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
     --------
         (ndarray) The reconstructed modulus and phase of the sampled image.
     """
-    xoff, yoff = init_point  # Selection of the image patch
-    ps_required = fpmm.ps_required(cfg.phi[1], cfg.wavelength, cfg.na)
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
-    Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'zero')
-    f_ih = fft2(Et)  # unshifted transform, shift is later applied to the pupil
+    # objectRecover = initialize(hrshape, cfg, 'zero')
+    objectRecover = np.ones(hrshape)
+    lrsize = samples[(0, 0)].shape[0]
+    print(lrsize, pupil_radius)
+    xc, yc = fpmm.image_center(hrshape)
+    pupil = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         fig.show()
     # Steps 2-5
-    samples = preprocess_images(samples, backgrounds, xoff, yoff, cfg,
-                                corr_mode='bypass')
+    factor = (lrsize/hrshape[0])**2
+    print(factor)
     for iteration in range(cfg.n_iter):
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
-            index, theta, phi = it['index'], it['theta'], it['phi']
+            index, theta_rad, phi_rad = it['index'], np.radians(it['theta']), np.radians(it['phi'])
             print(it['theta'], it['phi'], it['indexes'])
-            # theta, phi = ct.corrected_coordinates(theta=theta, shift=shift,
-            #                                       cfg=cfg)
-            # Final step: squared inverse fft for visualization
-            im_array = fpmm.crop_image(samples[it['indexes']],
-                                       cfg.patch_size, xoff, yoff)
-            print(im_array.dtype)
-            # background = fpmm.crop_image(backgrounds[(theta, shift)],
-            #                              cfg.patch_size, xoff, yoff)
-            # im_array = image_correction(im_array, background, mode='background')
-            im_array, resc_size = image_rescaling(im_array, cfg)
-            Il = generate_il(im_array, f_ih, theta, phi, cfg)
-            pupil = fpmm.generate_pupil(theta=theta, phi=phi,
-                                        image_size=np.shape(im_array),
-                                        wavelength=cfg.wavelength,
-                                        pixel_size=ps_required,
-                                        na=cfg.objective_na)
-            pupil_shift = fftshift(pupil)  # Shifts pupil to match unshifted fft
-            f_il = fft2(Il)
-            f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
+            lr_sample = samples[it['indexes']]
+            # From generate_il
+            # Calculating coordinates
+            coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
+                               np.sin(phi_rad)*np.sin(theta_rad)])
+            [kx, ky] = coords*kdsc
+            # f_ih_shift = fftshift(fft2(lr_sample))
+            kyl = int(np.round(yc+ky-(lrsize)/2))
+            kyh = kyl + lrsize
+            kxl = int(np.round(xc+kx-(lrsize)/2))
+            kxh = kxl + lrsize
+            # Il = generate_il(im_array, f_ih, theta, phi, cfg)
+            lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil
+            # Step 2: lr of the estimated image using the known pupil
+            im_lowRes = ifft2(ifftshift(lowResFT))  # space pupil * fourier image
+            im_lowRes = 1/factor * lr_sample * np.exp(1j*np.angle(im_lowRes))
+            lowResFT = fftshift(fft2(im_lowRes))*pupil
+            objectRecoverFT[kyl:kyh, kxl:kxh] = (1-pupil)*objectRecoverFT[kyl:kyh, kxl:kxh] + lowResFT
+            # Step 3: spectral pupil area replacement
+            ####################################################################
             # If debug mode is on
             if debug and index % 1 == 0:
-                fft_rec = np.log10(np.abs(f_ih)+1)
+                im_out= ifft2(ifftshift(objectRecoverFT))
+                fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
-                fft_rec = fftshift(fft_rec)
                 # Il = Image.fromarray(np.uint8(Il), 'L')
-                im_rec = ifft2(f_ih)
                 # im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image, title):
                     ax.cla()
@@ -316,12 +321,94 @@ def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
-                for image in [np.abs(fft_rec), np.abs(im_rec), im_array, np.angle(ifft2(f_ih))]:
+                for image in [np.abs(fft_rec), np.abs(im_out), lr_sample, np.angle(im_out)]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(np.power(ifft2(f_ih), 2)), np.angle(ifft2(f_ih+1))
+
+
+# def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
+#                     cfg=None,  debug=False):
+#     """ FPM reconstructon using the alternating projections algorithm. Here
+#     the complete samples and (optional) background images are loaded and Then
+#     cropped according to the patch size set in the configuration tuple (cfg).
+#
+#     Args:
+#     -----
+#         samples: the acquired samples as a dictionary with angles as keys.
+#         backgrounds: the acquired background as a dictionary with angles as
+#                      keys. They must be acquired right after or before taking
+#                      the samples.
+#         it: iterator with additional sampling information for each sample.
+#         init_point: [xoff, yoff] center of the patch to be reconstructed.
+#         cfg: configuration (named tuple)
+#         debug: set it to 'True' if you want to see the reconstruction proccess
+#                (it slows down the reconstruction).
+#
+#     Returns:
+#     --------
+#         (ndarray) The reconstructed modulus and phase of the sampled image.
+#     """
+#     xoff, yoff = init_point  # Selection of the image patch
+#     ps_required = fpmm.ps_required(cfg.phi[1], cfg.wavelength, cfg.na)
+#     # Getting the maximum angle by the given configuration
+#     # Step 1: initial estimation
+#     Et = initialize(samples, backgrounds, xoff, yoff, cfg, 'zero')
+#     f_ih = fft2(Et)  # unshifted transform, shift is later applied to the pupil
+#     if debug:
+#         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
+#         fig.show()
+#     # Steps 2-5
+#     samples = preprocess_images(samples, backgrounds, xoff, yoff, cfg,
+#                                 corr_mode='bypass')
+#     for iteration in range(cfg.n_iter):
+#         iterator = ct.set_iterator(cfg)
+#         print('Iteration n. %d' % iteration)
+#         # Patching for testing
+#         for it in iterator:
+#             index, theta, phi = it['index'], it['theta'], it['phi']
+#             print(it['theta'], it['phi'], it['indexes'])
+#             # theta, phi = ct.corrected_coordinates(theta=theta, shift=shift,
+#             #                                       cfg=cfg)
+#             # Final step: squared inverse fft for visualization
+#             im_array = fpmm.crop_image(samples[it['indexes']],
+#                                        cfg.patch_size, xoff, yoff)
+#             print(im_array.dtype)
+#             # background = fpmm.crop_image(backgrounds[(theta, shift)],
+#             #                              cfg.patch_size, xoff, yoff)
+#             # im_array = image_correction(im_array, background, mode='background')
+#             im_array, resc_size = image_rescaling(im_array, cfg)
+#             Il = generate_il(im_array, f_ih, theta, phi, cfg)
+#             pupil = fpmm.generate_pupil(theta=theta, phi=phi,
+#                                         image_size=np.shape(im_array),
+#                                         wavelength=cfg.wavelength,
+#                                         pixel_size=ps_required,
+#                                         na=cfg.objective_na)
+#             pupil_shift = fftshift(pupil)  # Shifts pupil to match unshifted fft
+#             f_il = fft2(Il)
+#             f_ih = f_il*pupil_shift + f_ih*(1 - pupil_shift)
+#             # If debug mode is on
+#             if debug and index % 1 == 0:
+#                 fft_rec = np.log10(np.abs(f_ih)+1)
+#                 # fft_rec *= (255.0/fft_rec.max())
+#                 fft_rec = fftshift(fft_rec)
+#                 # Il = Image.fromarray(np.uint8(Il), 'L')
+#                 im_rec = ifft2(f_ih)
+#                 # im_rec *= (255.0/im_rec.max())
+#                 def plot_image(ax, image, title):
+#                     ax.cla()
+#                     ax.imshow(image, cmap=plt.get_cmap('hot'))
+#                     ax.set_title(title)
+#                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
+#                             (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
+#                 for image in [np.abs(fft_rec), np.abs(im_rec), im_array, np.angle(ifft2(f_ih))]:
+#                     ax, title = next(axiter)
+#                     plot_image(ax, image, title)
+#                 fig.canvas.draw()
+#             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
+#     return np.abs(np.power(ifft2(f_ih), 2)), np.angle(ifft2(f_ih+1))
 
 
 def dpc_init(samples=None, backgrounds=None, it=None, init_point=None,
