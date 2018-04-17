@@ -11,18 +11,18 @@ server_host: '0.0.0.0'
 server_ip: http://0.0.0.0:5000 #http://10.99.39.174:5000
 # Microscope parameters
 objective_na: 0.1 #0.12
-na: 0.08 # Numerical aperture
+na: 0.02 # Numerical aperture
 pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
 wavelength: 630E-9 # TODO: Should match with color
 pixel_size: 2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
 color: red
 # Reconstruction parameters
-n_iter: 5 # Max number of iterations
+n_iter: 20 # Max number of iterations
 # The client side of the equation
 ## For the iteration construction
 shift: [0, 2, 2] # [min, max, step]
-theta: [0, 360, 20] # [min, max, step]
-phi: [0, 7, 0.5] # [min, max, step]
+theta: [0, 360, 3] # [min, max, step]
+phi: [0, 20, .5] # [min, max, step]
 sweep: radial_efficient #radial_efficient_shift, radial_efficient, neopixels
 # End of iterator
 task: sample # reconstruct, sample, inspect, calibrate, manual_move
