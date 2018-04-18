@@ -89,6 +89,7 @@ def set_iterator(cfg=None):
             if t == min(theta_list) or t == max(theta_list):
                 p = next(phi_iter)
                 iyy += 1
+                ixx = 0
             try:
                 acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
             except:
@@ -97,6 +98,36 @@ def set_iterator(cfg=None):
             yield {'index': index, 'theta': t, 'phi': p, 'acqpars': acqpars, 'indexes': (ixx, iyy)}
             # yield index, t, p, acqpars
             index += 1
+
+    elif itertype == 'led_matrix':
+        """ Iterates over led matrix.
+        """
+
+        asize = int(cfg.array_size)
+        led_gap = float(cfg.led_gap)
+        height = float(cfg.sample_height)
+
+        xx = range(int(-(asize-1)/2)+1, int((asize-1)/2))
+        zz = product(xx, xx)
+        inditer = product(range(asize), range(asize))
+
+        # x = np.arange(-(asize-1)/2+1, (asize-1)/2)
+        # y = np.arange(-(asize-1)/2+1, (asize-1)/2)
+        # xx, yy = np.meshgrid(x, y)
+        # zz = -np.sin(np.atan(xx*led_gap(90))-np.sin(np.atan(xx*led_gap(90))
+        # ziter = iter(zz.flaten)
+        for x, y in zz:
+            x *= led_gap
+            y *= led_gap
+            print(x, y)
+            if x != 0:
+                t = np.arctan(y/x)
+            else:
+                t = 0
+            p = np.arctan(np.sqrt(x**2+y**2)/height)
+            yield {'indexes': next(inditer), 'theta': np.degrees(t), 'phi': np.degrees(p)}
+        # yield 0, 0, 0, 0
+
 
     elif itertype == 'radial_efficient_shift':
         """ The same as radial_efficient but specifying shift in contrast to phi.

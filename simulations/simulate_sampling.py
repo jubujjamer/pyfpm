@@ -31,12 +31,15 @@ fig, ax1 = plt.subplots(1, 1, figsize=(5, 5))
 fig.show()
 image_dict = dict()
 for it in iterator:
+    # print(it['kx'], it['ky'])
     print(it['theta'], it['phi'], it['indexes'])
-    # iso, shutter_speed, led_power = acqpars
-    im_array = simclient.acquire(it['theta'], it['phi'], it['acqpars'])
-    image_dict[it['indexes']] = im_array
-    ax1.cla()
-    img = ax1.imshow(im_array, cmap=plt.get_cmap('hot'))
-    fig.canvas.draw()
-dt.save_yaml_metadata(out_file, cfg)
-np.save(out_file, image_dict)
+
+    # print(it['theta'], it['phi'], it['indexes'])
+#     # iso, shutter_speed, led_power = acqpars
+#     im_array = simclient.acquire(it['theta'], it['phi'], it['acqpars'])
+#     image_dict[it['indexes']] = im_array
+#     ax1.cla()
+#     img = ax1.imshow(im_array, cmap=plt.get_cmap('hot'))
+#     fig.canvas.draw()
+# dt.save_yaml_metadata(out_file, cfg)
+# np.save(out_file, image_dict)
