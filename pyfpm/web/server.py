@@ -147,8 +147,7 @@ def create_server(client):
                 return Response('no hay lugar')
 
             # TODO COMO DICT
-            setings = theta, phi, shift, power, color,
-                                 shutter_speed, iso
+            setings = theta, phi, shift, power, color, shutter_speed, iso
             settings['uuid'] = out = uuid.uuid4().hex
             return Response(out)
         except socket.error:
