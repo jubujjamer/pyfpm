@@ -271,7 +271,6 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     # objectRecover = initialize(hrshape, cfg, 'zero')
     objectRecover = np.ones(hrshape)
     lrsize = samples[(0, 0)].shape[0]
-    print(lrsize, pupil_radius)
     xc, yc = fpmm.image_center(hrshape)
     pupil = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
@@ -294,10 +293,12 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                                np.sin(phi_rad)*np.sin(theta_rad)])
             [kx, ky] = coords*kdsc
             # f_ih_shift = fftshift(fft2(lr_sample))
-            kyl = int(np.round(yc+ky-(lrsize)/2))
+            kyl = int(np.round(yc+ky-(lrsize+1)/2))
             kyh = kyl + lrsize
-            kxl = int(np.round(xc+kx-(lrsize)/2))
+            kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
+            print(pupil_radius, lrsize)
+
             # Il = generate_il(im_array, f_ih, theta, phi, cfg)
             lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil
             # Step 2: lr of the estimated image using the known pupil
@@ -308,7 +309,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and index % 20 == 0:
+            if debug and index % 40 == 0:
                 im_out= ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
@@ -316,7 +317,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                 # im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image, title):
                     ax.cla()
-                    ax.imshow(image, cmap=plt.get_cmap('hot'))
+                    ax.imshow(image, cmap=plt.get_cmap('gray'))
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
