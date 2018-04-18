@@ -26,19 +26,25 @@ cfg = dt.load_config()
 out_file = dt.generate_out_file(fname = 'simtest.npy')
 iterator = ct.set_iterator(cfg)
 simclient = local.SimClient(cfg=cfg)
+imshape = simclient.im_array.shape
+xc, yc = fpmm.image_center(imshape)
+
+
+pupil_radius = simclient.pupil_radius
+kdsc = simclient.kdsc
+pup_list = list()
 
 fig, ax1 = plt.subplots(1, 1, figsize=(5, 5))
 fig.show()
 image_dict = dict()
 for it in iterator:
-    # print(it['kx'], it['ky'])
-    print('theta: %.1f phi: %.1f' % (it['theta'], it['phi']))
-    # print(it['theta'], it['phi'], it['indexes'])
-#     # iso, shutter_speed, led_power = acqpars
-    im_array = simclient.acquire(it['theta'], it['phi'], it['acqpars'])
-    image_dict[it['indexes']] = im_array
+    print(it['indexes'])
+    [kx, ky] = ct.angles_to_k(it['theta'], it['phi'], kdsc)
+    # print('theta: %.1f phi: %.1f' % (it['theta'], it['phi']))
+    pup_array = fpmm.pupil_image(yc+ky, yc+kx, pupil_radius, imshape)
+    pup_list.append(pup_array)
     ax1.cla()
-    img = ax1.imshow(im_array, cmap=plt.get_cmap('hot'))
+    img = ax1.imshow(pup_array, cmap=plt.get_cmap('hot'))
     fig.canvas.draw()
 dt.save_yaml_metadata(out_file, cfg)
 np.save(out_file, image_dict)

@@ -16,11 +16,29 @@ import yaml
 import numpy as np
 from itertools import product, cycle
 
-import pyfpm.fpmmath as fpm
 import pyfpm.data as dt
 
 cfg = dt.load_config()
 
+
+def translate(value, input_min, input_max, output_min, output_max):
+    """ Measuremente value rescaled by the selected span.
+
+    Args:
+        value (float): the value to be translated
+
+    Returns:
+        (float): the final linearly translated value
+    """
+    # Figure out how 'wide' each range is
+    input_span = input_max - input_min
+    output_span = output_max - output_min
+
+    # Convert the left range into a 0-1 range (float)
+    value_scaled = float(value - input_min) / float(input_span)
+
+    # Convert the 0-1 range into a value in the right range.
+    return output_min + (value_scaled * output_span)
 
 def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
     """ Returns illumination and camera acquisition parameters. It calculates
@@ -40,15 +58,34 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
     if phi == None:
         if shift == None:
             raise Exception("Must assign a value either for phi or shift.")
-        shutter_speed = fpm.translate(phi, 0, cfg.shift_max,
+        shutter_speed = translate(phi, 0, cfg.shift_max,
                                   shutter_speed_min, shutter_speed_max)
     else:
-        shutter_speed = fpm.translate(phi, 0, 90,
+        shutter_speed = translate(phi, 0, 90,
                                   shutter_speed_min, shutter_speed_max)
     # Led parameters
     led_power = cfg.max_led_power
     return cfg.iso, shutter_speed, led_power
 
+
+def angles_to_k(theta, phi, kdsc):
+    """ Returns kx, ky coordinates for the given theta and phi.
+
+    Args:
+        theta (float)
+        phi (float)
+
+    Returns:
+        (list) [kx, ky] wave numbers
+    """
+    theta_rad = np.radians(theta)
+    phi_rad = np.radians(phi)
+    coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
+                       np.sin(phi_rad)*np.sin(theta_rad)])
+    #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)
+    [kx, ky] = coords*kdsc
+
+    return kx, ky
 
 def set_iterator(cfg=None):
     shift_min, shift_max, shift_step = cfg.shift
@@ -102,12 +139,11 @@ def set_iterator(cfg=None):
     elif itertype == 'led_matrix':
         """ Iterates over led matrix.
         """
-
         asize = int(cfg.array_size)
         led_gap = float(cfg.led_gap)
         height = float(cfg.sample_height)
 
-        xx = range(int(-(asize-1)/2)+1, int((asize-1)/2))
+        xx = range(int(-(asize-1)/2), int((asize-1)/2)+1)
         zz = product(xx, xx)
         inditer = product(range(asize), range(asize))
 
@@ -116,16 +152,25 @@ def set_iterator(cfg=None):
         # xx, yy = np.meshgrid(x, y)
         # zz = -np.sin(np.atan(xx*led_gap(90))-np.sin(np.atan(xx*led_gap(90))
         # ziter = iter(zz.flaten)
+        i = 0
         for x, y in zz:
+            print(i)
+            i += 1
             x *= led_gap
             y *= led_gap
-            print(x, y)
             if x != 0:
                 t = np.arctan(y/x)
+                if x < 0:
+                    t += np.pi
+                if x > 0 and y < 0:
+                    t = 2*np.pi + t
             else:
-                t = 0
+                t = np.pi/2 * np.sign(y)
             p = np.arctan(np.sqrt(x**2+y**2)/height)
-            yield {'indexes': next(inditer), 'theta': np.degrees(t), 'phi': np.degrees(p)}
+            acqpars = get_acquisition_pars(theta=t, phi=p, cfg=cfg)
+            print('x: %.1f y: %.1f theta: %.1f phi: %.1f' % (x, y, np.degrees(t), np.degrees(p)))
+
+            yield {'indexes': next(inditer), 'theta': np.degrees(t), 'phi': np.degrees(p), 'acqpars': acqpars}
         # yield 0, 0, 0, 0
 
 

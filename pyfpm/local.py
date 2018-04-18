@@ -43,6 +43,25 @@ class Client(BaseClient):
     def get_pupil_size(self):
         return self.metadata['pupil_size']
 
+class LedMatrixClient(BaseClient):
+    def __init__(self, camera, ledmat, **metadata):
+        self.camera = camera
+        self.ledaim = ledmat
+        self.metadata = metadata
+
+    def acquire(self, theta=None, phi=None, power=None, color=None):
+        if theta is not None:
+            print("Moving motor")
+            self.ledaim.move_theta(int(theta))
+        if phi is not None and power is not None and color is not None:
+            print("parameters", phi, power, color)
+            self.ledaim.set_parameters(int(phi), int(power), str(color))
+        else:
+            self.ledaim.set_parameters(0, 0, "red")
+        return self.camera.capture_png()
+
+    def led_on(self, col, row):
+        
 
 class LedClient(BaseClient):
     def __init__(self, camera, ledaim, **metadata):
@@ -185,13 +204,14 @@ class SimClient(BaseClient):
             self.image_mag = None
             self.image_phase = None
         # Some repetitively used parameters
-        self.ps = float(cfg.pixel_size)
+        self.ps = float(cfg.pixel_size)/float(cfg.x)
         self.wavelength = float(cfg.wavelength)
         npx = float(cfg.patch_size[0])
         na = float(cfg.na)
         # NOTE: I had to put 2.2 in the denominator in place of 2 in order to
         # have a ps a bit smaller than strictly necesary, because of rounding errors
-        self.ps_req = self.wavelength/(4*(na+np.sin(np.radians(cfg.phi[1]))))
+        # self.ps_req = self.wavelength/(4*(na+np.sin(np.radians(cfg.phi[1]))))
+        self.ps_req = self.ps/4
         self.lhscale = self.ps/self.ps_req
         self.lrsize = int(np.floor(npx/self.lhscale))
          # NOTE: I was using ps here, but in the tutorial uses ps_req

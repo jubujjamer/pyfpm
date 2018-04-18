@@ -9,7 +9,7 @@ Usage:
 """
 __version__ = "1.1.1"
 __author__ = 'Juan M. Bujjamer'
-__all__ = ['translate' 'image_center', 'generate_pupil', 'fpm_reconstruct', 'calculate_pupil_radius', 'adjust_shutter_speed',
+__all__ = ['image_center', 'generate_pupil', 'fpm_reconstruct', 'calculate_pupil_radius', 'adjust_shutter_speed',
            'pixel_size_required', 'crop_image']
 
 from io import BytesIO
@@ -24,25 +24,8 @@ from PIL import Image
 from scipy import ndimage
 import random
 
+import pyfpm.coordtrans as ct
 
-def translate(value, input_min, input_max, output_min, output_max):
-    """ Measuremente value rescaled by the selected span.
-
-    Args:
-        value (float): the value to be translated
-
-    Returns:
-        (float): the final linearly translated value
-    """
-    # Figure out how 'wide' each range is
-    input_span = input_max - input_min
-    output_span = output_max - output_min
-
-    # Convert the left range into a 0-1 range (float)
-    value_scaled = float(value - input_min) / float(input_span)
-
-    # Convert the 0-1 range into a value in the right range.
-    return output_min + (value_scaled * output_span)
 
 
 def image_center(image_size=None):
@@ -246,10 +229,12 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
     xc, yc = image_center(im_array.shape)
     factor = (lrsize/im_array.shape[0])**2
 
-    coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
-                       np.sin(phi_rad)*np.sin(theta_rad)])
+    [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
+    # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
+    #                    np.sin(phi_rad)*np.sin(theta_rad)])
     #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)
-    [kx, ky] = coords*kdsc
+    # [kx, ky] = coords*kdsc
+
     pupil = generate_pupil(0, 0, [lrsize-1, lrsize-1], pupil_radius)
     f_ih_shift = fftshift(fft2(im_array))
     kyl = int(np.round(yc+ky-(lrsize)/2))

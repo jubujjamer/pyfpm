@@ -16,6 +16,7 @@ from io import BytesIO
 
 # import picamera
 from . import camera
+from . import ledmat
 import pyfpm.data as dt
 
 from pyfpm.coordinates import PlatformCoordinates
@@ -26,6 +27,7 @@ cfg = dt.load_config()
 class LedMatrixRGB(object):
     """ Gives interface for the 3D.
     """
+    self.matrix = ledmat.LedMatBase
 
     def __init__(self, nx=None, ny=None, color=None, power=0):
         self.set_laser_power(0)
@@ -38,8 +40,8 @@ class LedMatrixRGB(object):
         print('doit')
 
     def led_on(self, nx, ny, power, color):
+        self.matrix.SetPixel(nx, ny, 1, 0, 0)
         print('doit')
-
 
     def __del__(self):
         print('Goodbye')

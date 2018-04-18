@@ -20,7 +20,7 @@ from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from PIL import Image
 from scipy import ndimage
 
-from pyfpm.coordinates import PlatformCoordinates
+# from pyfpm.coordinates import PlatformCoordinates
 import pyfpm.fpmmath as fpmm
 from . import coordtrans as ct
 
@@ -272,6 +272,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     objectRecover = np.ones(hrshape)
     lrsize = samples[(0, 0)].shape[0]
     xc, yc = fpmm.image_center(hrshape)
+    print(lrsize, pupil_radius)
     pupil = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
@@ -284,14 +285,18 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
-            index, theta_rad, phi_rad = it['index'], np.radians(it['theta']), np.radians(it['phi'])
+
+            indexes, theta, phi = it['indexes'], it['theta'], it['phi']
             print(it['theta'], it['phi'], it['indexes'])
+            if phi > 20 and iteration < 5:
+                continue
             lr_sample = samples[it['indexes']]
             # From generate_il
             # Calculating coordinates
-            coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
-                               np.sin(phi_rad)*np.sin(theta_rad)])
-            [kx, ky] = coords*kdsc
+            [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
+            # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
+            #                    np.sin(phi_rad)*np.sin(theta_rad)])
+            # [kx, ky] = coords*kdsc
             # f_ih_shift = fftshift(fft2(lr_sample))
             kyl = int(np.round(yc+ky-(lrsize+1)/2))
             kyh = kyl + lrsize
@@ -309,8 +314,8 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and index % 40 == 0:
-                im_out= ifft2(ifftshift(objectRecoverFT))
+            if debug and indexes[1] % 10 == 0:
+                im_out = ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
                 # Il = Image.fromarray(np.uint8(Il), 'L')
@@ -326,7 +331,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                     plot_image(ax, image, title)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
-    return np.abs(np.power(ifft2(f_ih), 2)), np.angle(ifft2(f_ih+1))
+    return np.abs(im_out), np.angle(im_out)
 
 
 # def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
