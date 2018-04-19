@@ -20,6 +20,8 @@ MULTITHREAD = False
 
 FOLDER = os.path.abspath(os.path.dirname(__file__))
 
+
+## When I decideto manage it in a multithreading fashion
 if MULTITHREAD:
     import threading
     import queue
@@ -50,14 +52,6 @@ if MULTITHREAD:
         # app.config.update(PROPAGATE_EXCEPTIONS = True)
         return app
 
-else:
-    def create_server(client):
-        app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
-                           static_folder=os.path.join(FOLDER, 'static'))
-        # app.config.update(PROPAGATE_EXCEPTIONS = True)
-        return app
-
-
     @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
     def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
         print ("app", float(theta), float(phi), color)
@@ -72,6 +66,14 @@ else:
         except socket.error:
             print("An error")
             pass
+
+
+else:
+    def create_server(client):
+        app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
+                           static_folder=os.path.join(FOLDER, 'static'))
+        # app.config.update(PROPAGATE_EXCEPTIONS = True)
+        return app
 
     @app.route("/")
     def init():
