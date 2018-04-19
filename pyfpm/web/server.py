@@ -48,6 +48,15 @@ if MULTITHREAD:
         app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
                            static_folder=os.path.join(FOLDER, 'static'))
         # app.config.update(PROPAGATE_EXCEPTIONS = True)
+        return app
+
+else:
+    def create_server(client):
+        app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
+                           static_folder=os.path.join(FOLDER, 'static'))
+        # app.config.update(PROPAGATE_EXCEPTIONS = True)
+        return app
+
 
     @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
     def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
@@ -186,7 +195,6 @@ if MULTITHREAD:
     @app.route("/metadata")
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
-
 
 
 def create_sim_server(mic_client, sim_client):
