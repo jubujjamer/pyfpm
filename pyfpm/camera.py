@@ -12,7 +12,7 @@ except ImportError:
     picamera = None
 
 current_path = os.path.dirname(os.path.abspath(__file__))
-
+print(current_path)
 
 def _prop(name):
 
@@ -146,6 +146,7 @@ class RaspiStill(BaseCamera):
         with threading.Lock():
             print('Acquiring %s' % threading.current_thread())
             try:
+                print(self.cmd)
                 subprocess.check_call(self.cmd)
             except subprocess.CalledProcessError as e:
                 print(e)
@@ -153,9 +154,7 @@ class RaspiStill(BaseCamera):
 
             with open(self.tmpfile) as fi:
                 out = fi.read()
-
             os.remove(self.tmpfile)
-
             return out
 
     def update_mode(self):

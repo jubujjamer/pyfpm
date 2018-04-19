@@ -173,6 +173,18 @@ def set_iterator(cfg=None):
             yield {'indexes': next(inditer), 'theta': np.degrees(t), 'phi': np.degrees(p), 'acqpars': acqpars}
         # yield 0, 0, 0, 0
 
+    elif itertype == 'led_matrix_rect':
+        """ Iterates over led matrix in rectangular coordinates.
+        """
+        matsize = 32
+        asize = int(cfg.array_size)
+        xx = range(int(matsize/2-asize/2), int(matsize/2+asize/2))
+        zz = product(xx, xx)
+
+        for x, y in zz:
+            acqpars = get_acquisition_pars(theta=0, phi=0, cfg=cfg)
+            yield {'indexes': (x, y), 'nx': x, 'ny': y, 'acqpars': acqpars}
+
 
     elif itertype == 'radial_efficient_shift':
         """ The same as radial_efficient but specifying shift in contrast to phi.

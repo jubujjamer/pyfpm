@@ -6,7 +6,11 @@ import collections
 import datetime
 import numpy as np
 
-HOME_FOLDER = os.path.expanduser("~/pyfpm")
+try:
+    os.environ["SUDO_USER"]
+    HOME_FOLDER = os.path.join("/home/pi/pyfpm")
+except:
+    HOME_FOLDER = os.path.expanduser("~/pyfpm")
 ETC_FOLDER = os.path.join(HOME_FOLDER, "etc")
 CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
 OUT_SIMULATION = os.path.join(HOME_FOLDER, "out_simulation")

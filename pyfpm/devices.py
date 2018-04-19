@@ -14,8 +14,10 @@ import yaml
 from io import BytesIO
 
 # import picamera
+import numpy as np
 from . import camera
-from . import ledmat
+from rgbmatrix import RGBMatrix, RGBMatrixOptions
+# from . import ledmat
 import pyfpm.data as dt
 
 # from pyfpm.cordinates import PlatformCoordinates
@@ -27,19 +29,37 @@ class LedMatrixRGB(object):
     """ Gives interface for the 3D.
     """
     def __init__(self, nx=None, ny=None, color=None, power=0):
-        self.matrix = ledmat.LedMatBase
-        self.set_laser_power(0)
-        self.nx(0)
-        self.ny(0)
+        self.matrix_opts = RGBMatrixOptions()
+        self.set_power(0)
+        self.nx = nx
+        self.ny = ny
+        self.set_options()
+
+    def set_options(self):
+        self.matrix_opts.rows = 32
+        self.matrix_opts.chain_length = 1
+        # self.matrix_opts.parallel = 1
+        self.matrix_opts.pwm_bits = 2
+        self.matrix_opts.pwm_lsb_nanoseconds = 500
+        self.matrix_opts.drop_privileges = False
+        # self.matrix_opts.hardware_mapping = 'regular'
+        self.matrix = RGBMatrix(options=self.matrix_opts)
 
     def set_power(self, power):
         """ Adjusts power manually between 0-255.
         """
         print('doit')
 
-    def led_on(self, nx, ny, power, color):
-        self.matrix.SetPixel(nx, ny, 1, 0, 0)
-        print('doit')
+    def set_pixel(self, x, y, power, color):
+        self.matrix.Clear()
+        nx, ny, power = int(x), int(y), int(power)
+        print(nx, ny)
+        if color == 'R':
+            self.matrix.SetPixel(nx, ny, power, 0, 0)
+        if color == 'G':
+            self.matrix.SetPixel(nx, ny, 0, power, 0)
+        if color == 'B':
+            self.matrix.SetPixel(nx, ny, 0, 0, power)
 
     def __del__(self):
         print('Goodbye')
@@ -360,4 +380,4 @@ class Camera(object):
             self.cap.release()
             cv2.destroyAllWindows()
         except:
-            self.cap.close()
+            print("Not necessary")

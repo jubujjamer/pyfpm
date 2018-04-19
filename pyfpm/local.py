@@ -46,22 +46,13 @@ class Client(BaseClient):
 class LedMatrixClient(BaseClient):
     def __init__(self, camera, ledmat, **metadata):
         self.camera = camera
-        self.ledaim = ledmat
+        self.led_matrix = ledmat
         self.metadata = metadata
 
-    def acquire(self, theta=None, phi=None, power=None, color=None):
-        if theta is not None:
-            print("Moving motor")
-            self.ledaim.move_theta(int(theta))
-        if phi is not None and power is not None and color is not None:
-            print("parameters", phi, power, color)
-            self.ledaim.set_parameters(int(phi), int(power), str(color))
-        else:
-            self.ledaim.set_parameters(0, 0, "red")
-        return self.camera.capture_png()
-
-    def led_on(self, col, row):
-        print("Hello")
+    def acquire(self, nx=None, ny=None, power=None, color=None,
+                shutter_speed=100, iso=100):
+        self.led_matrix.set_pixel(nx, ny, power, color)
+        return self.camera.capture_png(shutter_speed, iso)
 
 class LedClient(BaseClient):
     def __init__(self, camera, ledaim, **metadata):

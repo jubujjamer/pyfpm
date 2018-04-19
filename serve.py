@@ -14,19 +14,21 @@ import yaml
 
 from pyfpm.web import create_server
 import pyfpm.local as local
-from pyfpm.devices import Laser3d, Camera
+from pyfpm.devices import Laser3d, Camera, LedMatrixRGB
 import pyfpm.data as dt
 # Simulation parameters
 cfg = dt.load_config()
 
-output_file = open(cfg.output_cal, "w")
+# output_file = open(cfg.output_cal, "w")
 # laser3d = Laser3d(port=serialport+str(0))
 
 if cfg.servertype == 'sampling':
-    laser3d = Laser3d(port=cfg.serialport)
+    # laser3d = Laser3d(port=cfg.serialport)
+    ledmat = LedMatrixRGB()
     # Run the camera with open cv
     cam = Camera(video_id=cfg.video_id, camtype=cfg.camtype)
-    client = local.Laser3dCalibrate(cam, laser3d)
+    client = local.LedMatrixClient(cam, ledmat)
+    # client = local.Laser3dCalibrate(cam, laser3d)
 elif cfg.servertype == 'simulation':
     client = local.SimClient(cfg)
 

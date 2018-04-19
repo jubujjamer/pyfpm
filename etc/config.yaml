@@ -8,7 +8,7 @@ patch_size: [256, 256] # Size of the image frame to acquire, square
 simulation_size: [500, 500]
 client: ledclient #ledclient, matrixclient
 server_host: '0.0.0.0'
-server_ip: http://0.0.0.0:5000 #http://10.99.39.174:5000
+server_ip: http://10.99.39.174:5000 #http://0.0.0.0:5000 #http://10.99.39.174:5000
 # Microscope parameters
 objective_na: 0.1 #0.12
 x: 4
@@ -24,10 +24,10 @@ n_iter: 20 # Max number of iterations
 shift: [0, 2, 2] # [min, max, step]
 theta: [0, 360, 3] # [min, max, step]
 phi: [0, 20, .5] # [min, max, step]
-sweep: led_matrix #radial_efficient #radial_efficient_shift, radial_efficient, neopixels
+sweep: led_matrix_rect #led_matrix #radial_efficient #radial_efficient_shift, radial_efficient, neopixels
 # End of iterator
 task: sample # reconstruct, sample, inspect, calibrate, manual_move
-servertype: simulation # simulation or sampling
+servertype: sampling # simulation or sampling
 output_cal: ./etc/calibration_20170302.npy
 output_sample: /home/juan/pyfpm/out_sampling/
 output_sim: out_simulation/
@@ -59,4 +59,4 @@ phi_spr: 2048
 ################################################################################
 # Led matrix specific
 led_gap: 6 ## in mm
-array_size: 45
+array_size: 9

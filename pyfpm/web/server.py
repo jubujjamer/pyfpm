@@ -139,6 +139,16 @@ def create_server(client):
             print("An error")
             pass
 
+    @app.route("/acquire_ledmatrix/<nx>/<ny>/<power>/<color>/<shutter_speed>/<iso>")
+    def acquire_ledmatrix(nx, ny, power, color, shutter_speed, iso):
+        try:
+            return Response(client.acquire(nx, ny, power, color,
+                            shutter_speed, iso),
+                            mimetype='image/png')
+        except socket.error:
+            print("An error")
+            pass
+
     # @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
     # def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
     #     print ("app", float(theta), float(phi), color)
