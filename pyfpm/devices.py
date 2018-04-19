@@ -11,7 +11,6 @@ import os
 import serial
 import time
 import yaml
-import cv2
 from io import BytesIO
 
 # import picamera
@@ -294,6 +293,7 @@ class Camera(object):
     def __init__(self, video_id=0, camtype='picamera'):
         self.camtype = camtype
         if(camtype == 'opencv'):
+            import cv2
             cap = cv2.VideoCapture(video_id)
             self.cap = cap
             self.cap.open(video_id)

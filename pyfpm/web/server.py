@@ -9,9 +9,6 @@ import base64
 import json
 import socket
 import os
-import queue
-import guid
-import threading
 
 import numpy as np
 import yaml
@@ -19,31 +16,53 @@ from flask import Flask, Response, render_template, request
 
 from .. import local
 
+MULTITHREAD = False
+
 FOLDER = os.path.abspath(os.path.dirname(__file__))
 
-def create_server(client):
+if MULTITHREAD:
+    import threading
+    import queue
+    import guid
 
-    cache_lock = threading.RLock()
-    q = queue.Queue()
-    cache = {}
+    def create_server(client):
 
-    def worker():
-        while True:
-            settings = q.get()
-            if settings is None:
-                break
-            guid = settings.pop('uuid')
-            img = client.acquire(**settings)
-            with cache_lock:
-                cache[guid] = img
-            q.task_done()
+        cache_lock = threading.RLock()
+        q = queue.Queue()
+        cache = {}
 
-    t = threading.Thread(target=worker)
-    t.start()
+        def worker():
+            while True:
+                settings = q.get()
+                if settings is None:
+                    break
+                guid = settings.pop('uuid')
+                img = client.acquire(**settings)
+                with cache_lock:
+                    cache[guid] = img
+                q.task_done()
 
-    app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
-                       static_folder=os.path.join(FOLDER, 'static'))
-    # app.config.update(PROPAGATE_EXCEPTIONS = True)
+        t = threading.Thread(target=worker)
+        t.start()
+
+        app = Flask("FPM", template_folder=os.path.join(FOLDER, 'templates'),
+                           static_folder=os.path.join(FOLDER, 'static'))
+        # app.config.update(PROPAGATE_EXCEPTIONS = True)
+
+    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
+    def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
+        print ("app", float(theta), float(phi), color)
+        try:
+            if len(cache) > 10:
+                return Response('no hay lugar')
+
+            # TODO COMO DICT
+            setings = theta, phi, shift, power, color, shutter_speed, iso
+            settings['uuid'] = out = uuid.uuid4().hex
+            return Response(out)
+        except socket.error:
+            print("An error")
+            pass
 
     @app.route("/")
     def init():
@@ -139,20 +158,7 @@ def create_server(client):
             print("An error")
             pass
 
-    @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
-    def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
-        print ("app", float(theta), float(phi), color)
-        try:
-            if len(cache) > 10:
-                return Response('no hay lugar')
 
-            # TODO COMO DICT
-            setings = theta, phi, shift, power, color, shutter_speed, iso
-            settings['uuid'] = out = uuid.uuid4().hex
-            return Response(out)
-        except socket.error:
-            print("An error")
-            pass
 
     @app.route("/get_img/<uuid>")
     def get_img(uuid):
