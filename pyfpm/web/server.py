@@ -186,7 +186,6 @@ if MULTITHREAD:
     @app.route("/metadata")
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
-    return app
 
 
 
