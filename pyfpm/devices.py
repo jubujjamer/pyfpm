@@ -18,7 +18,7 @@ from . import camera
 from . import ledmat
 import pyfpm.data as dt
 
-from pyfpm.coordinates import PlatformCoordinates
+# from pyfpm.cordinates import PlatformCoordinates
 
 cfg = dt.load_config()
 
@@ -26,9 +26,8 @@ cfg = dt.load_config()
 class LedMatrixRGB(object):
     """ Gives interface for the 3D.
     """
-    self.matrix = ledmat.LedMatBase
-
     def __init__(self, nx=None, ny=None, color=None, power=0):
+        self.matrix = ledmat.LedMatBase
         self.set_laser_power(0)
         self.nx(0)
         self.ny(0)
@@ -247,10 +246,10 @@ class Laser3d(object):
         self._send_command(lcom)
         self._power = power
 
-    def get_centered_parameters(self):
-        pc = PlatformCoordinates(self._tps)
-        phi = self.pc.phi_to_center()
-        return self.theta, phi, self.shift
+    # def get_centered_parameters(self):
+    #     pc = PlatformCoordinates(self._tps)
+    #     phi = self.pc.phi_to_center()
+    #     return self.theta, phi, self.shift
 
     def _send_command(self, command):
         # ser_dev.flushOutput()

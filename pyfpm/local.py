@@ -61,7 +61,7 @@ class LedMatrixClient(BaseClient):
         return self.camera.capture_png()
 
     def led_on(self, col, row):
-        
+        print("Hello")
 
 class LedClient(BaseClient):
     def __init__(self, camera, ledaim, **metadata):
