@@ -17,7 +17,6 @@ from io import BytesIO
 import numpy as np
 from . import camera
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
-# from . import ledmat
 import pyfpm.data as dt
 
 # from pyfpm.cordinates import PlatformCoordinates
@@ -39,10 +38,10 @@ class LedMatrixRGB(object):
         self.matrix_opts.rows = 32
         self.matrix_opts.chain_length = 1
         # self.matrix_opts.parallel = 1
-        self.matrix_opts.pwm_bits = 2
-        self.matrix_opts.pwm_lsb_nanoseconds = 500
+        self.matrix_opts.pwm_bits = 4
+        self.matrix_opts.pwm_lsb_nanoseconds = 300
         self.matrix_opts.drop_privileges = False
-        # self.matrix_opts.hardware_mapping = 'regular'
+        self.matrix_opts.hardware_mapping = 'regular'
         self.matrix = RGBMatrix(options=self.matrix_opts)
 
     def set_power(self, power):

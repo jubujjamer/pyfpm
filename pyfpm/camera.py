@@ -152,7 +152,7 @@ class RaspiStill(BaseCamera):
                 print(e)
                 return self.NO_IMAGE
 
-            with open(self.tmpfile) as fi:
+            with open(self.tmpfile, 'rb') as fi:
                 out = fi.read()
             os.remove(self.tmpfile)
             return out

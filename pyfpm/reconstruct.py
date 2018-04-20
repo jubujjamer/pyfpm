@@ -270,7 +270,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     # Step 1: initial estimation
     # objectRecover = initialize(hrshape, cfg, 'zero')
     objectRecover = np.ones(hrshape)
-    lrsize = samples[(0, 0)].shape[0]
+    lrsize = samples[(15, 15)].shape[0]
     xc, yc = fpmm.image_center(hrshape)
     print(lrsize, pupil_radius)
     pupil = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
@@ -285,15 +285,18 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
-
-            indexes, theta, phi = it['indexes'], it['theta'], it['phi']
-            print(it['theta'], it['phi'], it['indexes'])
-            if phi > 20 and iteration < 5:
-                continue
+            # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
+            indexes, kx_rel, ky_rel = ct.k_to_angles(it, cfg)
+            print(indexes, kx_rel, ky_rel)
+            # if phi > 20 and iteration < 5:
+            #     continue
             lr_sample = samples[it['indexes']]
             # From generate_il
             # Calculating coordinates
-            [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
+            [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
+            # if kx > 80 or ky > 80:
+            #      continue
+            # [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
             # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
             #                    np.sin(phi_rad)*np.sin(theta_rad)])
             # [kx, ky] = coords*kdsc
@@ -302,7 +305,6 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             kyh = kyl + lrsize
             kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
-            print(pupil_radius, lrsize)
 
             # Il = generate_il(im_array, f_ih, theta, phi, cfg)
             lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil

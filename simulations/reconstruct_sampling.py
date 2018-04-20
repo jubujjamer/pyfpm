@@ -24,11 +24,13 @@ itertype = cfg.sweep
 server_ip = cfg.server_ip
 iterator = ct.set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, sim_cfg = dt.open_sampled('simtest.npy', mode='simulation')
+samples, sim_cfg = dt.open_sampled('outest.npy', mode='simulation')
 
 # Reconstruction
 start_time = time.time()
-rec, phase = fpm_reconstruct(samples=samples, hrshape=cfg.patch_size, it=iterator,
+
+hr = int(client.lhscale)*256
+rec, phase = fpm_reconstruct(samples=samples, hrshape=[hr, hr], it=iterator,
                              cfg=cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
                              kdsc=client.kdsc)
 print('--- %s seconds ---' % (time.time() - start_time))

@@ -386,3 +386,28 @@ def spot_image(source_position, light_dir, radius=20, color='r'):
     image_gray = [c < radius**2]
     image[:, :] = image_gray[0]
     return image
+
+def k_to_angles(it, cfg):
+    """ .
+
+    Parameters:
+    -----------
+        it:     (dict) iterator output.
+        cfg:   (named array) azimuthal angle.
+
+    Output:
+    -------
+        theta: (tuple) .
+    """
+    led_gap = float(cfg.led_gap)
+    height = float(cfg.sample_height)
+    mat_center = np.array([15, 15])
+    offset = np.array([1, 1]) # offset
+    mat_center -= offset
+    nx, ny = it['nx'], it['ny']
+    kx, ky = nx-mat_center[0], ny-mat_center[1]
+
+    kx_rel= np.sin(np.arctan(kx*led_gap/height))
+    ky_rel= np.sin(np.arctan(ky*led_gap/height))
+
+    return it['indexes'], kx_rel, ky_rel
