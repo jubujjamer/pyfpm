@@ -29,7 +29,7 @@ samples, sim_cfg = dt.open_sampled('outest.npy', mode='simulation')
 # Reconstruction
 start_time = time.time()
 
-hr = int(client.lhscale)*256
+hr = int(client.lhscale)*int(cfg.patch_size[0])
 rec, phase = fpm_reconstruct(samples=samples, hrshape=[hr, hr], it=iterator,
                              cfg=cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
                              kdsc=client.kdsc)

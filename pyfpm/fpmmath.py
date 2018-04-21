@@ -120,6 +120,11 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
     xx, yy = np.meshgrid(range(ny), range(nx))
     c = (xx-cx)**2+(yy-cy)**2
     image_gray = [c < pup_rad**2][0]
+    #     # focus test
+    #     z = 10e-6;
+    #     kzm = sqrt(k0^2-kxm.^2-kym.^2);
+    #     pupil = exp(1i.*z.*real(kzm)).*exp(-abs(z).*abs(imag(kzm)));
+    #     aberratedCTF = pupil.*CTF;
     # defocus = np.exp(-1j*ot.annular_zernike(4, 2, 0, np.sqrt(c)/pup_rad ))
     # # print(np.max(image_gray*np.sqrt((c-xx)**2+(c-yy)**2) ))
     # image_gray = 1.*image_gray + image_gray*defocus
@@ -239,16 +244,10 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
     f_ih_shift = fftshift(fft2(im_array))
     kyl = int(np.round(yc+ky-(lrsize)/2))
     kyh = kyl + lrsize - 1
-    # kyh = int(np.round(yc+ky+(lrsize)/2-1))
     kxl = int(np.round(xc+kx-(lrsize)/2))
     kxh = kxl + lrsize - 1
-    # kxh = int(np.round(xc+kx+(lrsize)/2-1))
     # print(im_array.shape, pupil_radius, kyl, kyh, kxl, kxh)
-    print(kyl, yc, ky)
-
     f_ih_shift = f_ih_shift[kyl:kyh, kxl:kxh]
-    print(f_ih_shift.shape[0])
-    print(pupil_radius, lrsize)
     # Step 2: lr of the estimated image using the known pupil
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
     proc_array = ifft2(ifftshift(proc_array))

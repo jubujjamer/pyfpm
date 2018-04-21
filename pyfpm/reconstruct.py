@@ -273,7 +273,18 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     lrsize = samples[(15, 15)].shape[0]
     xc, yc = fpmm.image_center(hrshape)
     print(lrsize, pupil_radius)
-    pupil = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    CTF = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    # focus test
+    # dky = 2*np.pi/(float(cfg.ps_req)*hrshape[0])
+    kmax = np.pi/float(cfg.pixel_size)
+    step = kmax/((lrsize-1)/2)
+    kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step));
+    z = -.35E-6
+    k0 = 2*np.pi/float(cfg.wavelength)
+    kzm = np.sqrt(k0**2-kxm**2-kym**2);
+    pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)));
+    pupil = CTF*pupil;
+
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
@@ -285,12 +296,13 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
+            acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
-            indexes, kx_rel, ky_rel = ct.k_to_angles(it, cfg)
+            indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg)
             print(indexes, kx_rel, ky_rel)
-            # if phi > 20 and iteration < 5:
-            #     continue
-            lr_sample = samples[it['indexes']]
+            if indexes[0] > 19 or indexes[0] < 11 or indexes[1] > 19 or indexes[1] < 11:
+                 continue
+            lr_sample = samples[it['indexes']]/(acqpars[1])
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
@@ -316,7 +328,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and indexes[1] % 10 == 0:
+            if debug and indexes[0] % 5 == 0:
                 im_out = ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())

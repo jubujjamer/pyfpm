@@ -32,7 +32,7 @@ fig.show()
 image_dict = dict()
 for it in iterator:
     # print(it['kx'], it['ky'])
-    print('theta: %.1f phi: %.1f' % (it['theta'], it['phi']))
+    print('kx: %.1f ky: %.1f' % (it['nx'], it['ny']))
     # print(it['theta'], it['phi'], it['indexes'])
 #     # iso, shutter_speed, led_power = acqpars
     im_array = simclient.acquire(it['theta'], it['phi'], it['acqpars'])

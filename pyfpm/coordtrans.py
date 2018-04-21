@@ -21,6 +21,19 @@ import pyfpm.data as dt
 cfg = dt.load_config()
 
 
+def image_center(image_size=None):
+    """ Center coordinates given the image size.
+
+    Args:
+        image_size (list): list with the image sizes
+
+    Returns:
+        (int): integers with each dimension's mean size
+    """
+    if image_size is not None:
+        yc, xc = np.array(image_size)/2
+    return int(xc), int(yc)
+
 def translate(value, input_min, input_max, output_min, output_max):
     """ Measuremente value rescaled by the selected span.
 
@@ -40,7 +53,7 @@ def translate(value, input_min, input_max, output_min, output_max):
     # Convert the 0-1 range into a value in the right range.
     return output_min + (value_scaled * output_span)
 
-def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
+def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg=None):
     """ Returns illumination and camera acquisition parameters. It calculates
     them acording to the incident angles and illumination type (specified in cfg).
 
@@ -53,6 +66,13 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, cfg=None):
         (list) [iso, shutter_speed, led_power] acording to given position
     """
     # Camera parameters
+    if nx is not None:
+        shutter_speed = 1E6
+        iso = 1000
+        if nx in [14, 15, 16, 17] or ny in [14, 15, 16, 17]:
+            shutter_speed = 100000
+            iso = 200
+        return float(cfg.iso), shutter_speed, 255
     shutter_speed_min = cfg.shutter_speed[0]
     shutter_speed_max = cfg.shutter_speed[0]
     if phi == None:
@@ -184,6 +204,37 @@ def set_iterator(cfg=None):
         for x, y in zz:
             acqpars = get_acquisition_pars(theta=0, phi=0, cfg=cfg)
             yield {'indexes': (x, y), 'nx': x, 'ny': y, 'acqpars': acqpars}
+
+
+    elif itertype == 'led_matrix_ordered':
+        """ Iterates over led matrix in rectangular coordinates, starting by the center
+        and going through the square in spirals.
+        """
+        matsize = int(cfg.matsize)-1
+        asize = int(cfg.array_size)
+        asize = 9
+        lasti = (asize-1)/2
+        ## The sequence will be +y, -x, -y, -x
+        xc, yc = image_center([matsize, matsize])
+        def out_dict(x, y):
+            nx = xc+x
+            ny = yc+y
+            acqpars = get_acquisition_pars(nx=nx, ny=ny, cfg=cfg)
+            return {'indexes': (int(nx), int(ny)), 'nx': nx, 'ny': ny, 'acqpars': acqpars}
+
+        yield out_dict(0, 0)
+        for i in np.arange(1, lasti+1):
+            print('here')
+            increasing = np.arange(-i+1, i+1)
+            decreasing= np.arange(i-1, -i-1, -1)
+            for y in increasing:
+                yield out_dict(i, y)
+            for x in decreasing:
+                yield out_dict(x, i)
+            for y in decreasing:
+                yield out_dict(-i, y)
+            for x in increasing:
+                yield out_dict(x, -i)
 
 
     elif itertype == 'radial_efficient_shift':
@@ -387,7 +438,7 @@ def spot_image(source_position, light_dir, radius=20, color='r'):
     image[:, :] = image_gray[0]
     return image
 
-def k_to_angles(it, cfg):
+def n_to_krels(it, cfg):
     """ .
 
     Parameters:
@@ -401,9 +452,8 @@ def k_to_angles(it, cfg):
     """
     led_gap = float(cfg.led_gap)
     height = float(cfg.sample_height)
-    mat_center = np.array([15, 15])
-    offset = np.array([1, 1]) # offset
-    mat_center -= offset
+    offset = np.array([-0, -0.6]) # offset
+    mat_center = np.array([15, 15])-offset
     nx, ny = it['nx'], it['ny']
     kx, ky = nx-mat_center[0], ny-mat_center[1]
 
