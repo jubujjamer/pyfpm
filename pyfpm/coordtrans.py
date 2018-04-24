@@ -224,7 +224,6 @@ def set_iterator(cfg=None):
 
         yield out_dict(0, 0)
         for i in np.arange(1, lasti+1):
-            print('here')
             increasing = np.arange(-i+1, i+1)
             decreasing= np.arange(i-1, -i-1, -1)
             for y in increasing:
@@ -438,7 +437,7 @@ def spot_image(source_position, light_dir, radius=20, color='r'):
     image[:, :] = image_gray[0]
     return image
 
-def n_to_krels(it, cfg):
+def n_to_krels(it, cfg, xoff, yoff):
     """ .
 
     Parameters:
@@ -452,7 +451,7 @@ def n_to_krels(it, cfg):
     """
     led_gap = float(cfg.led_gap)
     height = float(cfg.sample_height)
-    offset = np.array([-0, -0.6]) # offset
+    offset = np.array([xoff, yoff]) # offset
     mat_center = np.array([15, 15])-offset
     nx, ny = it['nx'], it['ny']
     kx, ky = nx-mat_center[0], ny-mat_center[1]

@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 import pyfpm.local as local
-from pyfpm.reconstruct import fpm_reconstruct
+from pyfpm.reconstruct import fpm_reconstruct_wrap
 import pyfpm.coordtrans as ct
 import pyfpm.data as dt
 
@@ -30,7 +30,7 @@ samples, sim_cfg = dt.open_sampled('outest.npy', mode='simulation')
 start_time = time.time()
 
 hr = int(client.lhscale)*int(cfg.patch_size[0])
-rec, phase = fpm_reconstruct(samples=samples, hrshape=[hr, hr], it=iterator,
+rec, phase = fpm_reconstruct_wrap(samples=samples, hrshape=[hr, hr], it=iterator,
                              cfg=cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
                              kdsc=client.kdsc)
 print('--- %s seconds ---' % (time.time() - start_time))

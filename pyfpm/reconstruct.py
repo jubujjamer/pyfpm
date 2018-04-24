@@ -348,6 +348,119 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     return np.abs(im_out), np.angle(im_out)
 
 
+def fpm_reconstruct_wrap(samples=None, hrshape=None, it=None, pupil_radius=None,
+                    kdsc=None, cfg=None,  debug=False):
+    """ FPM reconstructon using the alternating projections algorithm. Here
+    the complete samples and (optional) background images are loaded and Then
+    cropped according to the patch size set in the configuration tuple (cfg).
+
+    Args:
+    -----
+        samples: the acquired samples as a dictionary with angles as keys.
+        backgrounds: the acquired background as a dictionary with angles as
+                     keys. They must be acquired right after or before taking
+                     the samples.
+        it: iterator with additional sampling information for each sample.
+        init_point: [xoff, yoff] center of the patch to be reconstructed.
+        cfg: configuration (named tuple)
+        debug: set it to 'True' if you want to see the reconstruction proccess
+               (it slows down the reconstruction).
+
+    Returns:
+    --------
+        (ndarray) The reconstructed modulus and phase of the sampled image.
+    """
+    from skimage.measure import compare_ssim as ssim
+
+    # Getting the maximum angle by the given configuration
+    # Step 1: initial estimation
+    # objectRecover = initialize(hrshape, cfg, 'zero')
+    im_out = None
+    objectRecover = np.ones(hrshape)
+    lrsize = samples[(15, 15)].shape[0]
+    xc, yc = fpmm.image_center(hrshape)
+
+    def pupil_wrap(zfocus, radius):
+        CTF = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+        # focus test
+        # dky = 2*np.pi/(float(cfg.ps_req)*hrshape[0])
+        kmax = np.pi/float(cfg.pixel_size)
+        step = kmax/((lrsize-1)/2)
+        kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step));
+        k0 = 2*np.pi/float(cfg.wavelength)
+        kzm = np.sqrt(k0**2-kxm**2-kym**2);
+        pupil = np.exp(1j*zfocus*np.real(kzm))*np.exp(-np.abs(zfocus)*np.abs(np.imag(kzm)));
+        return CTF*pupil;
+
+    objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
+    if debug:
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
+        fig.show()
+    # Steps 2-5
+    factor = (lrsize/hrshape[0])**2
+
+    im_cmp = Image.fromarray(samples[(15, 15)])
+    im_cmp = im_cmp.resize(hrshape)
+    im_cmp = np.array(im_cmp)
+    im_cmp = im_cmp.astype('float64')
+    for iteration in range(20):
+        objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
+
+        zfocus = (-.4E-6)
+        xoff = -0.45+0.1*iteration
+        yoff = -.1.
+        pupil = pupil_wrap(zfocus, pupil_radius)
+        print(xoff, yoff, zfocus*1E6)
+        if im_out is not None:
+            im_out /= np.amax(im_out)
+            im_cmp /= np.amax(im_cmp)
+            print('ssim %.2f' % ssim(im_cmp, im_out))
+        for iteration in range(5):
+            iterator = ct.set_iterator(cfg)
+            print('Iteration n. %d' % iteration)
+            # Patching for testing
+            for it in iterator:
+                acqpars = it['acqpars']
+                indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg, xoff, yoff)
+                if indexes[0] > 19 or indexes[0] < 11 or indexes[1] > 19 or indexes[1] < 11:
+                     continue
+                lr_sample = samples[it['indexes']]/(acqpars[1])
+                # From generate_il
+                # Calculating coordinates
+                [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
+                kyl = int(np.round(yc+ky-(lrsize+1)/2))
+                kyh = kyl + lrsize
+                kxl = int(np.round(xc+kx-(lrsize+1)/2))
+                kxh = kxl + lrsize
+
+                # Il = generate_il(im_array, f_ih, theta, phi, cfg)
+                lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil
+                # Step 2: lr of the estimated image using the known pupil
+                im_lowRes = ifft2(ifftshift(lowResFT))  # space pupil * fourier image
+                im_lowRes = 1/factor * lr_sample * np.exp(1j*np.angle(im_lowRes))
+                lowResFT = fftshift(fft2(im_lowRes))*pupil
+                objectRecoverFT[kyl:kyh, kxl:kxh] = (1-pupil)*objectRecoverFT[kyl:kyh, kxl:kxh] + lowResFT
+                # Step 3: spectral pupil area replacement
+                ####################################################################
+        im_out = np.abs(ifft2(ifftshift(objectRecoverFT)))
+        if debug:
+            fft_rec = np.log10(np.abs(objectRecoverFT))
+            # fft_rec *= (255.0/fft_rec.max())
+            # Il = Image.fromarray(np.uint8(Il), 'L')
+            # im_rec *= (255.0/im_rec.max())
+            def plot_image(ax, image, title):
+                ax.cla()
+                ax.imshow(image, cmap=plt.get_cmap('gray'))
+                ax.set_title(title)
+            axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
+                        (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
+            for image in [np.abs(fft_rec), im_out, im_cmp, np.angle(ifft2(ifftshift(objectRecoverFT)))]:
+                ax, title = next(axiter)
+                plot_image(ax, image, title)
+            fig.canvas.draw()
+            # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
+    return np.abs(im_out), np.angle(im_out)
+
 # def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
 #                     cfg=None,  debug=False):
 #     """ FPM reconstructon using the alternating projections algorithm. Here
