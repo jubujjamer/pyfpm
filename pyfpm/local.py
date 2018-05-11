@@ -43,6 +43,7 @@ class Client(BaseClient):
     def get_pupil_size(self):
         return self.metadata['pupil_size']
 
+
 class LedMatrixClient(BaseClient):
     def __init__(self, camera, ledmat, **metadata):
         self.camera = camera
@@ -53,6 +54,10 @@ class LedMatrixClient(BaseClient):
                 shutter_speed=100, iso=100):
         self.led_matrix.set_pixel(nx, ny, power, color)
         return self.camera.capture_png(shutter_speed, iso)
+
+    def set_pixel(self, nx=None, ny=None, power=None, color=None):
+        self.led_matrix.set_pixel(nx, ny, power, color)
+        return
 
 class LedClient(BaseClient):
     def __init__(self, camera, ledaim, **metadata):

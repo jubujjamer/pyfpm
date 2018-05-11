@@ -25,6 +25,12 @@ class Client(BaseClient):
         else:
             print("Failed to load webpage")
 
+    def set_pixel(self, nx=0, ny=0, power=255, color='G'):
+        response = requests.get(self.url +
+                                '/set_pixel/%d/%d/%d/%s/' % (nx, ny, power, color),
+                                stream=True)
+        return
+
     def acquire(self, theta, phi, shift=0, power=100, color='green', shutter_speed=100, iso=100):
         response = requests.get(self.url +
                                 '/acquire/%d/%d/%d/%d/%s/%d/%d' % (theta, phi, shift, power, color,

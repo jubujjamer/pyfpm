@@ -52,9 +52,6 @@ print("theta: %i, phi: % i | theta_corr: %.2f phi_corr %.2f" % (270, 10, t_corr,
 
 
 
-
-
-
 #
 # print(pc.calculate_spot_center())
 # fig, ax = plt.subplots()

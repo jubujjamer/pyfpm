@@ -149,6 +149,15 @@ def create_server(client):
             print("An error")
             pass
 
+    @app.route("/set_pixel/<nx>/<ny>/<power>/<color>")
+    def set_pixel(nx, ny, power, color):
+        try:
+            return Response(client.set_pixel(nx, ny, power, color))
+        except socket.error:
+            print("An error")
+            pass
+
+
     # @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
     # def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
     #     print ("app", float(theta), float(phi), color)
