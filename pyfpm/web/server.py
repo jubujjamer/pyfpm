@@ -132,8 +132,7 @@ def create_server(client):
     def acquire(theta, phi, shift, power, color, shutter_speed, iso):
         print ("app", float(theta), float(phi), color)
         try:
-            return Response(client.acquire(theta, phi, shift, power, color,
-                            shutter_speed, iso),
+            return Response(client.acquire(theta, phi, shift, power, color, shutter_speed, iso),
                             mimetype='image/png')
         except socket.error:
             print("An error")
@@ -200,7 +199,6 @@ def create_server(client):
     def metadata():
         return json.dumps(dict(pupil_size=client.get_pupil_size()))
     return app
-
 
 
 def create_sim_server(mic_client, sim_client):

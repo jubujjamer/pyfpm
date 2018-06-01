@@ -3,7 +3,7 @@
 serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
 camtype:  picamera # picamera, opencv, test
 video_id: 0 # This is for the raspberry pi camera /dev
-video_size: [1944, 2592] #[972, 1296] #[480, 640] # [240, 324] #[346, 540] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
+video_size: [480, 640] #[1944, 2592] #[972, 1296] #[480, 640] # [240, 324] #[346, 540] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
 patch_size: [256, 256] # Size of the image frame to acquire, square
 simulation_size: [500, 500]
 client: ledclient #ledclient, matrixclient
@@ -29,7 +29,7 @@ sweep: led_matrix_ordered #led_matrix_rect #led_matrix #radial_efficient #radial
 task: sample # reconstruct, sample, inspect, calibrate, manual_move
 servertype: sampling # simulation or sampling
 output_cal: ./etc/calibration_20170302.npy
-output_sample: /home/juan/pyfpm/out_sampling/
+output_sample: out_sampling/
 output_sim: out_simulation/
 input_mag: 'imgs/alambre.png' # If task is simulation
 input_phase: 'imgs/lines0_0.png' # If task is simulation

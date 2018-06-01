@@ -10,7 +10,7 @@ try:
     os.environ["SUDO_USER"]
     HOME_FOLDER = os.path.join("/home/pi/pyfpm")
 except:
-    HOME_FOLDER = os.path.expanduser("~/pyfpm")
+    HOME_FOLDER = os.path.expanduser("~/git/pyfpm")
 ETC_FOLDER = os.path.join(HOME_FOLDER, "etc")
 CONFIG_FILE = os.path.join(HOME_FOLDER, "etc/config.yaml")
 OUT_SIMULATION = os.path.join(HOME_FOLDER, "out_simulation")
@@ -47,15 +47,16 @@ def save_model(model_name, model):
         yaml.dump(model, outfile, default_flow_style=False)
     return
 
-def generate_out_file(out_folder=OUT_SIMULATION, fname = None):
+def generate_out_file(out_folder=OUT_SIMULATION, fname=None):
     """ File name with the date and hour to have one different file name
     to each measurment
     """
+    outdir = os.path.join(HOME_FOLDER, out_folder)
     if fname is None:
-        out_file = os.path.join(out_folder,
+        out_file = os.path.join(outdir,
                         '{:%Y%m%d_%H%M%S}'.format(datetime.datetime.now()))
     else:
-        out_file = os.path.join(out_folder, fname)
+        out_file = os.path.join(outdir, fname)
     return out_file
 
 

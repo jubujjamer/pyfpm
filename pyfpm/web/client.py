@@ -29,7 +29,10 @@ class Client(BaseClient):
         response = requests.get(self.url +
                                 '/set_pixel/%d/%d/%d/%s/' % (nx, ny, power, color),
                                 stream=True)
-        return
+        if response.status_code == 200:
+            return response.raw
+        else:
+            print("Failed to load webpage")
 
     def acquire(self, theta, phi, shift=0, power=100, color='green', shutter_speed=100, iso=100):
         response = requests.get(self.url +

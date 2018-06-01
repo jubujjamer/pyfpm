@@ -39,9 +39,10 @@ class LedMatrixRGB(object):
         self.matrix_opts.chain_length = 1
         # self.matrix_opts.parallel = 1
         self.matrix_opts.pwm_bits = 4
-        self.matrix_opts.pwm_lsb_nanoseconds = 300
-        self.matrix_opts.drop_privileges = False
+        self.matrix_opts.pwm_lsb_nanoseconds = 900
+        self.matrix_opts.drop_privileges = True
         self.matrix_opts.hardware_mapping = 'regular'
+        # self.matrix_opts.gpio_slowdown=1
         self.matrix = RGBMatrix(options=self.matrix_opts)
 
     def set_power(self, power):
@@ -52,7 +53,6 @@ class LedMatrixRGB(object):
     def set_pixel(self, x, y, power, color):
         self.matrix.Clear()
         nx, ny, power = int(x), int(y), int(power)
-        print(nx, ny)
         if color == 'R':
             self.matrix.SetPixel(nx, ny, power, 0, 0)
         if color == 'G':
