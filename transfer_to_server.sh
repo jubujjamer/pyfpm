@@ -6,4 +6,5 @@ sshpass -p raspberry rsync -avg ./serve.py pi@10.99.39.174:/home/pi/git/pyfpm/se
 sshpass -p raspberry rsync -avg ./pyfpm/ pi@10.99.39.174:/home/pi/git/pyfpm/pyfpm/
 sshpass -p raspberry rsync -avg ./sampling/ pi@10.99.39.174:/home/pi/git/pyfpm/sampling/
 sshpass -p raspberry rsync -avg ./sampling/ pi@10.99.39.174:/home/pi/git/pyfpm/sampling/
+# sshpass -p raspberry rsync -avg ./server_run.sh pi@10.99.39.174:/home/pi/git/pyfpm/server_run.sh
 # ssh -X pi@10.99.39.174 'cd /home/pi/pyfpm; python serve.py'
