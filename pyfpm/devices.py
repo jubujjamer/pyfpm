@@ -286,9 +286,9 @@ class Laser3d(object):
 
 
 class Camera(object):
-    """Microscope camera interface with opencv.
+    """Microscope camera interface with opencv or raspberry camera.
 
-    Setting parameters:
+    Setting parameters for opencv:
     CV_CAP_PROP_FRAME_WIDTH Width of the frames in the video stream.
     CV_CAP_PROP_FRAME_HEIGHT Height of the frames in the video stream.
     CV_CAP_PROP_FPS Frame rate.
@@ -318,9 +318,16 @@ class Camera(object):
             self.config_cap()
         elif(camtype == 'picamera'):
             self.cap = camera.RaspiStill(tmpfile='tmp.png', bin='raspistill',
-                awb='off', format='png', width=cfg.video_size[1],
-                height=cfg.video_size[0], timeacq=100, nopreview='-n',
-                iso=400, shutter_speed=1000)
+                                         awb='off', format='png', width=cfg.video_size[1],
+                                         height=cfg.video_size[0], timeacq=100, nopreview='-n',
+                                         iso=400, shutter_speed=1000)
+        elif(camtype == 'picamerayuv'):
+            print("Selected camera %s" % camtype)
+            self.cap = camera.RaspiYUV(bin='raspiyuv', awb='off', width=cfg.video_size[1],
+                                         height=cfg.video_size[0], timeacq=100, nopreview='-n',
+                                         iso=400, shutter_speed=1000, patch_size=cfg.patch_size[0],
+                                         xoff=0, yoff=0)
+
         else:
             self.cap = None
 
@@ -353,6 +360,42 @@ class Camera(object):
         # print cap.get(cv2.CAP_PROP_EXPOSURE)
 
     def capture_png(self, shutter_speed, iso):
+        """ Deprecated, use capture_image instead.
+        """
+        camtype = self.camtype
+        if(camtype == 'opencv'):
+            time.sleep(.5)
+            # Don't know why it doesn't updates up to the 5th reading
+            # a buffer flush thing
+            for i in range(5):
+                ret, frame = self.cap.read()
+            ret, buf = cv2.imencode('.png', frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+            return bytearray(buf)
+        elif(camtype == 'picamera' or camtype == 'picamerayuv'):
+            if shutter_speed is not None:
+                self.cap.shutter_speed = shutter_speed
+            if iso is not None:
+                self.cap.iso = iso
+            return self.cap.acquire()
+        else:
+            return None
+
+    def capture_image(self, shutter_speed=None, iso=None, xoff=None, yoff=None):
+        """ Captures an image in uncompressed PNG or YUV format.
+
+        Parameters
+        ----------
+        shutter_speed : int
+            'ss' parameter for the raspistill or raspiyuv command.
+        iso : int
+            'iso' parameter for the raspistill or raspiyuv command.
+
+        Returns
+        -------
+        ndarray
+            Bynary RGB image.
+
+        """
         camtype = self.camtype
         if(camtype == 'opencv'):
             time.sleep(.5)
@@ -367,7 +410,16 @@ class Camera(object):
                 self.cap.shutter_speed = shutter_speed
             if iso is not None:
                 self.cap.iso = iso
-                print(self.cap.iso)
+            return self.cap.acquire()
+        elif(camtype == 'picamerayuv'):
+            if shutter_speed is not None:
+                self.cap.shutter_speed = shutter_speed
+            if iso is not None:
+                self.cap.iso = iso
+            if xoff is not None:
+                self.cap.xoff = xoff
+            if yoff is not None:
+                self.cap.yoff = yoff
             return self.cap.acquire()
         else:
             return None

@@ -16,6 +16,7 @@ import os
 import numpy as np
 import yaml
 from flask import Flask, Response, render_template, request
+from flask.json import jsonify
 
 from .. import local
 
@@ -138,12 +139,18 @@ def create_server(client):
             print("An error")
             pass
 
-    @app.route("/acquire_ledmatrix/<nx>/<ny>/<power>/<color>/<shutter_speed>/<iso>")
-    def acquire_ledmatrix(nx, ny, power, color, shutter_speed, iso):
+    @app.route("/acquire_ledmatrix/<nx>/<ny>/<power>/<color>/<shutter_speed>/<iso>/<xoff>/<yoff>")
+    def acquire_ledmatrix(nx, ny, power, color, shutter_speed, iso, xoff, yoff):
         try:
-            return Response(client.acquire(nx, ny, power, color,
-                            shutter_speed, iso),
-                            mimetype='image/png')
+            # return Response(client.acquire(nx, ny, power, color,
+            #                 shutter_speed, iso), mimetype='image/png')
+            y_values = client.acquire(nx, ny, power, color, shutter_speed, iso, xoff, yoff)
+            # return Response(y_values, mimetype='image/png')
+            # print('sending', jsonify(y_values.tolist()), y_values.tolist())
+            # json_stream = jsonify(y_values.tolist())
+            json_stream = json.dumps(y_values.tolist())
+            print('json ready')
+            return json_stream
         except socket.error:
             print("An error")
             pass

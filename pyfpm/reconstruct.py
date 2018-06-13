@@ -279,11 +279,11 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     kmax = np.pi/float(cfg.pixel_size)
     step = kmax/((lrsize-1)/2)
     kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step));
-    z = -.35E-6
+    z = .05E-6
     k0 = 2*np.pi/float(cfg.wavelength)
-    kzm = np.sqrt(k0**2-kxm**2-kym**2);
-    pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)));
-    pupil = CTF*pupil;
+    kzm = np.sqrt(k0**2-kxm**2-kym**2)
+    pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
+    pupil = CTF*pupil
 
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
@@ -298,11 +298,10 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
         for it in iterator:
             acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
-            indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg)
-            print(indexes, kx_rel, ky_rel)
-            if indexes[0] > 19 or indexes[0] < 11 or indexes[1] > 19 or indexes[1] < 11:
-                 continue
-            lr_sample = samples[it['indexes']]/(acqpars[1])
+            indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg, xoff=0, yoff=0)
+            lr_sample = samples[it['indexes']]*(5E4/acqpars[1])
+            if indexes in [ (16, 16), (16, 14), (13, 15)]:
+                continue
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
@@ -328,7 +327,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and indexes[0] % 5 == 0:
+            if debug and indexes[0] % 1 == 0:
                 im_out = ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
@@ -339,10 +338,11 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                     ax.imshow(image, cmap=plt.get_cmap('gray'))
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
-                            (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
+                            (ax3, 'Acquired image %i %i' % (indexes[0], indexes[1])), (ax4, 'Reconstructed phase')])
                 for image in [np.abs(fft_rec), np.abs(im_out), lr_sample, np.angle(im_out)]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
+                time.sleep(1)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(im_out), np.angle(im_out)
@@ -403,14 +403,13 @@ def fpm_reconstruct_wrap(samples=None, hrshape=None, it=None, pupil_radius=None,
     im_cmp = im_cmp.resize(hrshape)
     im_cmp = np.array(im_cmp)
     im_cmp = im_cmp.astype('float64')
-    for iteration in range(20):
+    for iteration in range(5):
         objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
 
-        zfocus = (-.4E-6)
-        xoff = -0.45+0.1*iteration
-        yoff = -.1.
+        zfocus = 0
+        xoff = 0
+        yoff = 0.
         pupil = pupil_wrap(zfocus, pupil_radius)
-        print(xoff, yoff, zfocus*1E6)
         if im_out is not None:
             im_out /= np.amax(im_out)
             im_cmp /= np.amax(im_cmp)
@@ -422,9 +421,9 @@ def fpm_reconstruct_wrap(samples=None, hrshape=None, it=None, pupil_radius=None,
             for it in iterator:
                 acqpars = it['acqpars']
                 indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg, xoff, yoff)
-                if indexes[0] > 19 or indexes[0] < 11 or indexes[1] > 19 or indexes[1] < 11:
-                     continue
-                lr_sample = samples[it['indexes']]/(acqpars[1])
+                # if indexes[0] > 19 or indexes[0] < 11 or indexes[1] > 19 or indexes[1] < 11:
+                #      continue
+                lr_sample = samples[it['indexes']]
                 # From generate_il
                 # Calculating coordinates
                 [kx, ky] = kdsc*kx_rel, kdsc*ky_rel

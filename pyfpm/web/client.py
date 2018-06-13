@@ -5,6 +5,8 @@
 #
 ##########################################################
 import requests
+from flask import request
+import numpy as np
 
 from ..local import BaseClient
 
@@ -15,15 +17,26 @@ class Client(BaseClient):
         self.url = url
         # self.metadata = requests.get(self.url + '/metadata').json()
 
-    def acquire_ledmatrix(self, nx=0, ny=0, power=255, color='G', shutter_speed=100, iso=100):
-        response = requests.get(self.url +
+    def acquire_ledmatrix(self, nx=0, ny=0, power=255, color='G', shutter_speed=100, iso=100, xoff=0, yoff=0):
+        filetype = 'yuv'
+        if filetype == 'png':
+            response = requests.get(self.url +
                                 '/acquire_ledmatrix/%d/%d/%d/%s/%d/%d' % (nx, ny, power, color,
                                 shutter_speed, iso),
                                 stream=True)
-        if response.status_code == 200:
-            return response.raw
-        else:
-            print("Failed to load webpage")
+            if response.status_code == 200:
+                return response.raw()
+            else:
+                print("Failed to load webpage")
+        if filetype == 'yuv':
+            response = requests.get(self.url +
+                                    '/acquire_ledmatrix/%d/%d/%d/%s/%d/%d/%d/%d' % (nx, ny, power, color,
+                                    shutter_speed, iso, xoff, yoff))
+            if response.status_code == 200:
+                json_receive = response.json()
+                return json_receive
+            else:
+                print("Failed to load webpage")
 
     def set_pixel(self, nx=0, ny=0, power=255, color='G'):
         response = requests.get(self.url +

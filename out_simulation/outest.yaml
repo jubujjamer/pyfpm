@@ -2,7 +2,7 @@
 - - - serialport
     - /dev/ttyACM0
   - - camtype
-    - picamera
+    - picamerayuv
   - - video_id
     - 0
   - - video_size
@@ -23,7 +23,7 @@
   - - objective_na
     - 0.1
   - - x
-    - 4
+    - 0.5
   - - na
     - 0.1
   - - pupil_size
@@ -31,7 +31,7 @@
   - - wavelength
     - 630E-9
   - - pixel_size
-    - 1.4e-06
+    - 2.8e-06
   - - color
     - red
   - - n_iter
@@ -49,7 +49,7 @@
       - 20
       - 0.5
   - - sweep
-    - led_matrix_rect
+    - led_matrix_ordered
   - - task
     - sample
   - - servertype
@@ -57,7 +57,7 @@
   - - output_cal
     - ./etc/calibration_20170302.npy
   - - output_sample
-    - /home/juan/pyfpm/out_sampling/
+    - out_sampling/
   - - output_sim
     - out_simulation/
   - - input_mag
@@ -73,7 +73,7 @@
   - - debug
     - true
   - - iso
-    - 400
+    - 100
   - - iso_range
     - - 100
       - 800
@@ -108,6 +108,8 @@
   - - led_gap
     - 6
   - - array_size
-    - 10
+    - 5
+  - - matsize
+    - 32
   - - timestamp
-    - 2018-04-20 173803
+    - 2018-06-13 161408

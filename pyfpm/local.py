@@ -51,9 +51,11 @@ class LedMatrixClient(BaseClient):
         self.metadata = metadata
 
     def acquire(self, nx=None, ny=None, power=None, color=None,
-                shutter_speed=100, iso=100):
+                shutter_speed=100, iso=100, xoff=0, yoff=0):
         self.led_matrix.set_pixel(nx, ny, power, color)
-        return self.camera.capture_png(shutter_speed, iso)
+        out_image = self.camera.capture_image(shutter_speed, iso, xoff, yoff)
+        # print('yuv to rgb out', out_image)
+        return out_image
 
     def set_pixel(self, nx=None, ny=None, power=None, color=None):
         self.led_matrix.set_pixel(nx, ny, power, color)

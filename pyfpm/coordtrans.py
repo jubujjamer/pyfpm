@@ -65,14 +65,16 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
     Returns:
         (list) [iso, shutter_speed, led_power] acording to given position
     """
+    ss_rect_map = {(13, 13): 1E7, (13, 14): 1E7, (13, 15): 1E7, (13, 16): 1E7, (13, 17): 1E7,
+                   (14, 13): 1E7, (14, 14): 1E5, (14, 15): 1E5, (14, 16): 1E5, (14, 17): 1E7,
+                   (15, 13): 1E7, (15, 14): 1E5, (15, 15): 5E4, (15, 16): 1E5, (15, 17): 1E7,
+                   (16, 13): 1E7, (16, 14): 1E5, (16, 15): 1E5, (16, 16): 1E5, (16, 17): 1E7,
+                   (17, 13): 1E7, (17, 14): 1E7, (17, 15): 1E7, (17, 16): 1E7, (17, 17): 1E7}
+    power = 255
     # Camera parameters
     if nx is not None:
-        shutter_speed = 1E6
-        iso = 1000
-        if nx in [14, 15, 16, 17] or ny in [14, 15, 16, 17]:
-            shutter_speed = 100000
-            iso = 200
-        return float(cfg.iso), shutter_speed, 255
+        shutter_speed = ss_rect_map[nx, ny]
+        return float(cfg.iso), shutter_speed, power
     shutter_speed_min = cfg.shutter_speed[0]
     shutter_speed_max = cfg.shutter_speed[0]
     if phi == None:
@@ -212,7 +214,7 @@ def set_iterator(cfg=None):
         """
         matsize = int(cfg.matsize)-1
         asize = int(cfg.array_size)
-        asize = 9
+        # asize = 9
         lasti = (asize-1)/2
         ## The sequence will be +y, -x, -y, -x
         xc, yc = image_center([matsize, matsize])
