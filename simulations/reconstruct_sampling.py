@@ -19,12 +19,13 @@ import pyfpm.data as dt
 
 # Simulation parameters
 cfg = dt.load_config()
+
 mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
 iterator = ct.set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, sim_cfg = dt.open_sampled('outest.npy', mode='simulation')
+samples, sim_cfg = dt.open_sampled('20180615_190312.npy', mode='sampling')
 
 # Reconstruction
 start_time = time.time()

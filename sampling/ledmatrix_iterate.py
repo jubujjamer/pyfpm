@@ -33,15 +33,15 @@ client = web.Client(cfg.server_ip)
 # [1100, 750]
 # [1200, 400]
 def acquire_image(ss, nx, ny, Nmean=1):
-    image_mean = np.zeros((256, 256))
+    image_mean = np.zeros(cfg.patch_size)
     for i in range(Nmean):
         image_response = client.acquire_ledmatrix(nx=nx, ny=ny, power=255,
-                    shutter_speed=ss, iso=100, xoff=1100, yoff=750)
+                    shutter_speed=ss, iso=100, xoff=1500, yoff=1300)
         image_i = np.array(image_response).reshape(cfg.patch_size)
         image_mean += image_i
     return image_mean/Nmean
 
-out_file = dt.generate_out_file(fname = 'outest.npy')
+out_file = dt.generate_out_file(out_folder=cfg.output_sample)
 image_dict = dict()
 
 # Start analysis
@@ -53,7 +53,7 @@ for it in iterator:
     nx, ny = it['nx'], it['ny']
     iso, ss, power = it['acqpars']
     print(nx, ny, ss)
-    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=4)
+    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=3)
     image_dict[it['indexes']] = im_array
     for ax in axes:
         ax.cla()
@@ -65,4 +65,4 @@ for it in iterator:
 
 dt.save_yaml_metadata(out_file, cfg)
 np.save(out_file, image_dict)
-plt.show()
+# plt.show()

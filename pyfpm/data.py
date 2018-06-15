@@ -70,6 +70,8 @@ def open_sampled(filename, mode='sampling'):
         datafile = os.path.join(OUT_SAMLPING, filename)
     if mode == 'simulation':
         datafile = os.path.join(OUT_SIMULATION, filename)
+    print(datafile)
+
     configfile = os.path.splitext(datafile)[0]+'.yaml'
     config_dict = yaml.load(open(configfile, 'r'))
     config = collections.namedtuple('config', config_dict.keys())

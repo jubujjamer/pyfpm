@@ -213,7 +213,7 @@ class SimClient(BaseClient):
         self.lhscale = self.ps/self.ps_req
         self.lrsize = int(np.floor(npx/self.lhscale))
          # NOTE: I was using ps here, but in the tutorial uses ps_req
-        self.pupil_radius = int(np.ceil(self.ps_req*na*npx/self.wavelength))
+        self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
         print('radius', self.pupil_radius, self.ps_req*na*npx/self.wavelength)
         ## To convert coordinates to discretized kself.
         # k_discrete = sin(theta)*k0/dk = sin(t)*2pi/l*1/(2*pi/(ps*npx))
