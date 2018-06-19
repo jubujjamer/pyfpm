@@ -11,11 +11,11 @@ server_host: '0.0.0.0'
 server_ip: http://10.99.39.174:5000 #http://10.200.0.99:5000 http://10.99.39.174:5000 #http://0.0.0.0:5000
 # Microscope parameters
 # objective_na: 0.1 #0.12
-x: 2.
+x: 3.
 na: 0.3 # Numerical aperture
 # pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
 wavelength: 532E-9 # TODO: Should match with color
-pixel_size: 1.8E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
+pixel_size: 2.5E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
 color: red
 # Reconstruction parameters
 n_iter: 5 # Max number of iterations
@@ -41,7 +41,6 @@ debug: True # Show me images and be verbose
 iso: 100
 iso_range: [100, 800]
 shutter_speed: [50000, 6000000] # exposure time in us
-
 ## The enclosed are motor-specific parameters, would be good to separate them
 ################################################################################
 # Possible mehcanical defects
@@ -59,5 +58,5 @@ phi_spr: 2048
 ################################################################################
 # Led matrix specific
 led_gap: 6 ## in mm
-array_size: 7 ## Should be odd
+array_size: 19 ## Should be odd
 matsize: 32

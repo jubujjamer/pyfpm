@@ -32,11 +32,12 @@ out_file = dt.generate_out_file(cfg.output_sample)
 client = web.Client(cfg.server_ip)
 # [1100, 750]
 # [1200, 400]
+# xoff=1500, yoff=1300
 def acquire_image(ss, nx, ny, Nmean=1):
     image_mean = np.zeros(cfg.patch_size)
     for i in range(Nmean):
         image_response = client.acquire_ledmatrix(nx=nx, ny=ny, power=255,
-                    shutter_speed=ss, iso=100, xoff=1500, yoff=1300)
+                    shutter_speed=ss, iso=100, xoff=1600, yoff=1200)
         image_i = np.array(image_response).reshape(cfg.patch_size)
         image_mean += image_i
     return image_mean/Nmean
@@ -53,7 +54,7 @@ for it in iterator:
     nx, ny = it['nx'], it['ny']
     iso, ss, power = it['acqpars']
     print(nx, ny, ss)
-    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=3)
+    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=1)
     image_dict[it['indexes']] = im_array
     for ax in axes:
         ax.cla()

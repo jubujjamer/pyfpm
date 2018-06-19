@@ -129,7 +129,7 @@ def preprocess_images(samples, backgrounds, xoff, yoff, cfg, corr_mode='backgrou
     """ Applies a correction method to all the sampled images. Some of the
     methods need backroung images to substract illumination inhomogeneities.
 
-    Args:
+    Args:phase
     -----
         samples: the acquired samples as a dictionary with angles as keys.
         backgrounds: the acquired background as a dictionary with angles as
@@ -299,7 +299,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
             indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg, xoff=0, yoff=0)
-            lr_sample = samples[it['indexes']]
+            lr_sample = samples[it['indexes']]/20
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
@@ -325,7 +325,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # Step 3: spectral pupil area replacement
             ####################################################################
             # If debug mode is on
-            if debug and indexes[0] % 5 == 0:
+            if debug and (indexes[0]+indexes[1]) % 20 == 0:
                 im_out = ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
@@ -333,14 +333,17 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                 # im_rec *= (255.0/im_rec.max())
                 def plot_image(ax, image, title):
                     ax.cla()
-                    ax.imshow(image, cmap=plt.get_cmap('gray'))
+                    if 'phase' in title:
+                        ax.imshow(image, cmap=plt.get_cmap('hot'))
+                    else:
+                        ax.imshow(image, cmap=plt.get_cmap('gray'))
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
-                            (ax3, 'Acquired image %i %i' % (indexes[0], indexes[1])), (ax4, 'Reconstructed phase')])
-                for image in [np.abs(fft_rec), np.abs(im_out), lr_sample, np.angle(im_out)]:
+                            (ax3, 'Acquired image %i %i: %i' % (indexes[0], indexes[1], iteration)), (ax4, 'Phase [%.1f %.1f]' % (np.min(np.angle(im_out)), np.max(np.angle(im_out))))])
+                for image in [np.abs(fft_rec), np.abs(im_out), samples[(15, 15)], np.angle(im_out)]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
-                # time.sleep(1)
+                time.sleep(1)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(im_out), np.angle(im_out)

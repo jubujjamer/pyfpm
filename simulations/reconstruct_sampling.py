@@ -25,7 +25,11 @@ itertype = cfg.sweep
 server_ip = cfg.server_ip
 iterator = ct.set_iterator(cfg)
 client = local.SimClient(cfg=cfg)
-samples, sim_cfg = dt.open_sampled('20180615_190312.npy', mode='sampling')
+#20180615_190312
+#20180615_190312
+# 20180618_163559
+# 20180618_142136
+samples, sim_cfg = dt.open_sampled('20180618_163559.npy', mode='sampling')
 
 # Reconstruction
 start_time = time.time()
