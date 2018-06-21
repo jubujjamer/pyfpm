@@ -279,27 +279,33 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     kmax = np.pi/float(cfg.pixel_size)
     step = kmax/((lrsize-1)/2)
     kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step));
-    z = .25E-6
+    z = .5E-16
     k0 = 2*np.pi/float(cfg.wavelength)
     kzm = np.sqrt(k0**2-kxm**2-kym**2)
     pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
-    pupil = CTF*pupil
-
+    # pupil = CTF*pupil
+    # pupil = 1
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         fig.show()
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
+    # For the convergence index
+    N = len(samples)
+    conv_index = 0
+    # lrarray = np.zeros((lrsize, lrsize, N))
     for iteration in range(cfg.n_iter):
         iterator = ct.set_iterator(cfg)
+        print('Convergence index, %.5f' % conv_index)
+        conv_index = 0
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
             acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
             indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg, xoff=0, yoff=0)
-            lr_sample = samples[it['indexes']]/20
+            lr_sample = samples[it['indexes']]
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
@@ -314,18 +320,28 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             kyh = kyl + lrsize
             kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
-
             # Il = generate_il(im_array, f_ih, theta, phi, cfg)
-            lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil
+            lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*pupil*CTF
             # Step 2: lr of the estimated image using the known pupil
             im_lowRes = ifft2(ifftshift(lowResFT))  # space pupil * fourier image
             im_lowRes = 1/factor * lr_sample * np.exp(1j*np.angle(im_lowRes))
-            lowResFT = fftshift(fft2(im_lowRes))*pupil
-            objectRecoverFT[kyl:kyh, kxl:kxh] = (1-pupil)*objectRecoverFT[kyl:kyh, kxl:kxh] + lowResFT
+            # objectRecoverFT[kyl:kyh, kxl:kxh] = (1-pupil)*objectRecoverFT[kyl:kyh, kxl:kxh] + lowResFT
+            # lowResFT = fftshift(fft2(im_lowRes))*CTF/pupil
             # Step 3: spectral pupil area replacement
+            ## convergence index
+            conv_index += np.mean(np.abs(im_lowRes.ravel()))/np.sum(np.abs(im_lowRes.ravel()-lr_sample.ravel()))
+            ## pupil correction update
+            lowResFT2 = ifftshift(fft2(im_lowRes))*CTF/pupil
+            ORFT = objectRecoverFT[kyl:kyh, kxl:kxh].ravel()
+            objectRecoverFT[kyl:kyh, kxl:kxh] +=1E-6*(lowResFT-lowResFT2)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
+            pupil +=1E-2* (lowResFT-lowResFT2)*np.conjugate(objectRecoverFT[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
+            # pupil /=np.max(pupil.ravel())
+            pup_metrics = np.abs(ORFT)
+            # print('pupil', np.min(pup_metrics), np.max(pup_metrics))
+
             ####################################################################
             # If debug mode is on
-            if debug and (indexes[0]+indexes[1]) % 20 == 0:
+            if debug and (indexes[0]+indexes[1]) % 40 == 0:
                 im_out = ifft2(ifftshift(objectRecoverFT))
                 fft_rec = np.log10(np.abs(objectRecoverFT))
                 # fft_rec *= (255.0/fft_rec.max())
@@ -340,7 +356,7 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image %i %i: %i' % (indexes[0], indexes[1], iteration)), (ax4, 'Phase [%.1f %.1f]' % (np.min(np.angle(im_out)), np.max(np.angle(im_out))))])
-                for image in [np.abs(fft_rec), np.abs(im_out), samples[(15, 15)], np.angle(im_out)]:
+                for image in [np.abs(fft_rec), np.abs(im_out), np.log(np.imag(pupil*CTF)+1), np.angle(im_out)]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
                 time.sleep(1)

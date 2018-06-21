@@ -29,11 +29,10 @@ client = local.SimClient(cfg=cfg)
 #20180615_190312
 # 20180618_163559
 # 20180618_142136
-samples, sim_cfg = dt.open_sampled('20180618_163559.npy', mode='sampling')
+samples, sim_cfg = dt.open_sampled('20180618_142136.npy', mode='sampling')
 
 # Reconstruction
 start_time = time.time()
-
 hr = int(client.lhscale)*int(cfg.patch_size[0])
 rec, phase = fpm_reconstruct(samples=samples, hrshape=[hr, hr], it=iterator,
                              cfg=cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
