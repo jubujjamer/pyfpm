@@ -77,7 +77,7 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
 
     ss_dict = {}
     for led in ledmap:
-        ss_dict[(led[0], led[1])] = 5E5
+        ss_dict[(led[0], led[1])] = 1E4*(1+8*(np.abs(led[0]-15)+np.abs(led[0]-15)))
 
     power = 255
     # Camera parameters
