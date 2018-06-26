@@ -226,7 +226,6 @@ def set_iterator(cfg=None):
         """
         matsize = int(cfg.matsize)-1
         asize = int(cfg.array_size)
-        # asize = 9
         lasti = (asize-1)/2
         ## The sequence will be +y, -x, -y, -x
         xc, yc = image_center([matsize, matsize])
@@ -273,7 +272,6 @@ def set_iterator(cfg=None):
                 acqpars = [0, 0, 0]
             yield index, t, s, acqpars
             index += 1
-
 
 def tidy(number):
     """ Rounding function to work under mechanical precission.
