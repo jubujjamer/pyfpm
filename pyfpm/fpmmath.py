@@ -84,6 +84,53 @@ def ps_required(phi_max=None, wavelength=None, na=None):
     return wavelength/(np.sin(phi_max_rad)+na)/2
 
 
+def get_pixel_size(cfg):
+    ps = float(cfg.pixel_size)/float(cfg.x)
+    return ps
+
+def get_wavelength(cfg):
+    wlen = float(cfg.wavelength)
+    return wlen
+
+def get_na(cfg):
+    na = float(cfg.na)
+    return na
+
+def get_image_size(cfg):
+    image_size = int(cfg.patch_size[0])
+    return image_size
+
+def get_pixel_size_required(cfg):
+    ps = get_pixel_size(cfg)
+    ps_req = ps/2.5
+    return ps_req
+
+def get_times_improvement(cfg):
+    ps = get_pixel_size(cfg)
+    ps_req = get_pixel_size_required(cfg)
+    lhscale = ps/ps_req
+    return lhscale
+
+def get_pupil_radius(cfg):
+    ps = get_pixel_size(cfg)
+    wlen = get_wavelength(cfg)
+    na = get_na(cfg)
+    npx = float(cfg.patch_size[0])
+    pupil_radius = int(np.ceil(ps*na*npx/wlen))
+    return pupil_radius
+
+def get_k_discrete(cfg):
+    npx = float(cfg.patch_size[0])
+    ps_req = get_pixel_size_required(cfg)
+    wlen = get_wavelength(cfg)
+    kdsc = ps_req*npx/wlen
+    return kdsc
+
+def get_reconstructed_shape(cfg):
+    npx_hr = int(get_times_improvement(cfg)*int(get_image_size(cfg)))
+    return [npx_hr, npx_hr]
+
+
 def test_similarity(image_ref, image_cmp):
     """ A measurement of the similarity between two images.
     """
@@ -130,81 +177,62 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
     # image_gray = 1.*image_gray + image_gray*defocus
     return image_gray
 
-# def generate_pupil(theta=None, phi=None, image_size=None,
-#                    wavelength=None, pixel_size=None, na=None):
-#     """ Pupil center in cartesian coordinates.
-#
-#     Args:
-#         theta (int):      azimuthal angle
-#         phi (int):        zenithal angle
-#         image_size(list): size of the image of the pupil
-#
-#     Return:
-#         (array) image of the pupil
-#     """
-#     if image_size is not None:
-#         npx = image_size[0]  # Half image size  each side
-#     if theta is not None:
-#         theta_rad = np.radians(theta)
-#     if phi is not None:
-#         phi_rad = np.radians(phi)
-#     if wavelength is not None:
-#         wavelength = float(wavelength)
-#     if pixel_size is not None:
-#         pixel_size = float(pixel_size)
-#     if na is not None:
-#         na = float(na)
-#     phi_max = np.arcsin(wavelength/(2*pixel_size)-na)
-#     if phi_rad > phi_max:
-#         print("Zenithal angle has come to a limit, consider to extend the image size.")
-#         return None
-#         # return np.zeros(image_size, dtype=np.uint8)
-#     pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
-#     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
-#     [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
-#     xc, yc = image_center(image_size)
-#     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
-#     return image_gray
+def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
+                    pixel_size=None, wavelength=None):
+    """ GEnerate an aberrated pupil for corrections.
+    Args:
+        theta (int):      azimuthal angle
+        phi (int):        zenithal angle
+        image_size(list): size of the image of the pupil
 
-# def generate_pupil(theta=None, phi=None, image_size=None,
-#                    wavelength=None, pixel_size=None, na=None):
-#     """ Pupil center in cartesian coordinates.
-#
-#     Args:
-#         theta (int):      azimuthal angle
-#         phi (int):        zenithal angle
-#         image_size(list): size of the image of the pupil
-#
-#     Return:
-#         (array) image of the pupil
-#     """
-#     if image_size is not None:
-#         npx = image_size[0]  # Half image size  each side
-#     if theta is not None:
-#         theta_rad = np.radians(theta)
-#     if phi is not None:
-#         phi_rad = np.radians(phi)
-#     if wavelength is not None:
-#         wavelength = float(wavelength)
-#     if pixel_size is not None:
-#         pixel_size = float(pixel_size)
-#     if na is not None:
-#         na = float(na)
-#         # return np.zeros(image_size, dtype=np.uint8)
-#     pupil_radius = calculate_pupil_radius(na, npx, pixel_size, wavelength)
-#     coords = np.array([np.sin(phi_rad)*np.cos(theta_rad), np.sin(phi_rad)*np.sin(theta_rad)])
-#     [fx, fy] = (1/wavelength)*coords*(pixel_size*npx)
-#     xc, yc = image_center(image_size)
-#     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
-#     return image_gray
+    Return:
+        (array) image of the pupil
+    """
+    if image_size is not None:
+        npx = image_size[0]  # Half image size  each side
+    if pupil_radius is not None:
+        pupil_radius = float(pupil_radius)
+    if aberrations is not None:
+        defocus = aberrations[0]
+    xc, yc = image_center(image_size)
+    CTF = generate_pupil(0, 0, [image_size[0], image_size[1]], pupil_radius)
+    # focus test
+    # dky = 2*np.pi/(float(cfg.ps_req)*hrshape[0])
+    kmax = np.pi/pixel_size
+    step = kmax/((npx-1)/2)
+    kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step))
+    z = defocus
+    k0 = 2*np.pi/wavelength
+    kzm = np.sqrt(k0**2-kxm**2-kym**2)
+    pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
+    return pupil
 
 def generate_pupil(fx=None, fy=None, image_size=None,
                    pupil_radius=None):
-    """ Pupil center in cartesian coordinates.
+    """ Use generate_CTF. Pupil center in cartesian coordinates.
 
     Args:
         theta (int):      azimuthal angle
         phi (int):        zenithal angle
+        image_size(list): size of the image of the pupil
+
+    Return:
+        (array) image of the pupil
+    """
+    if image_size is not None:
+        npx = image_size[0]  # Half image size  each side
+    if pupil_radius is not None:
+        pupil_radius = float(pupil_radius)
+        # return np.zeros(image_size, dtype=np.uint8)
+    xc, yc = image_center(image_size)
+    image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
+    return image_gray
+
+def generate_CTF(fx=None, fy=None, image_size=None,
+                   pupil_radius=None):
+    """ Coherent transfer function without aberrations.
+
+    Args:
         image_size(list): size of the image of the pupil
 
     Return:

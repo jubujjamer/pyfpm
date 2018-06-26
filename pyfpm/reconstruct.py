@@ -244,8 +244,7 @@ def generate_il(im_array, f_ih, theta, phi, cfg):
 
 # im_array, theta, phi, lrsize, pupil_radius, kdsc
 
-def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
-                    kdsc=None, cfg=None,  debug=False):
+def fpm_reconstruct(samples=None, it=None, cfg=None,  debug=False):
     """ FPM reconstructon using the alternating projections algorithm. Here
     the complete samples and (optional) background images are loaded and Then
     cropped according to the patch size set in the configuration tuple (cfg).
@@ -269,22 +268,18 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
     # objectRecover = initialize(hrshape, cfg, 'zero')
+    lrsize = fpmm.get_image_size(cfg)
+    pupil_radius = fpmm.get_pupil_radius(cfg)
+    ps = fpmm.get_pixel_size(cfg)
+    wlen = fpmm.get_wavelength(cfg)
+    hrshape = fpmm.get_reconstructed_shape(cfg)
+    kdsc = fpmm.get_k_discrete(cfg)
+
     objectRecover = np.ones(hrshape)
-    lrsize = samples[(15, 15)].shape[0]
     xc, yc = fpmm.image_center(hrshape)
-    print(lrsize, pupil_radius)
-    CTF = fpmm.generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
-    # focus test
-    # dky = 2*np.pi/(float(cfg.ps_req)*hrshape[0])
-    kmax = np.pi/float(cfg.pixel_size)
-    step = kmax/((lrsize-1)/2)
-    kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step));
-    z = .5E-16
-    k0 = 2*np.pi/float(cfg.wavelength)
-    kzm = np.sqrt(k0**2-kxm**2-kym**2)
-    pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
-    # pupil = CTF*pupil
-    # pupil = 1
+    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
+    pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius,
+                                aberrations=[.25E-8,], pixel_size=ps, wavelength=wlen)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
@@ -309,8 +304,6 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
-            # if kx > 80 or ky > 80:
-            #      continue
             # [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
             # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
             #                    np.sin(phi_rad)*np.sin(theta_rad)])
@@ -329,21 +322,17 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
             # lowResFT = fftshift(fft2(im_lowRes))*CTF/pupil
             # Step 3: spectral pupil area replacement
             ## convergence index
-            conv_index += np.mean(np.abs(im_lowRes.ravel()))/np.sum(np.abs(im_lowRes.ravel()-lr_sample.ravel()))
+            # conv_index += np.mean(np.abs(im_lowRes.ravel()))/np.sum(np.abs(im_lowRes.ravel()-lr_sample.ravel()))
             ## pupil correction update
-            lowResFT2 = ifftshift(fft2(im_lowRes))*CTF/pupil
+            lowResFT2 = fftshift(fft2(im_lowRes))*CTF/pupil
             ORFT = objectRecoverFT[kyl:kyh, kxl:kxh].ravel()
-            objectRecoverFT[kyl:kyh, kxl:kxh] +=1E-6*(lowResFT-lowResFT2)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
-            pupil +=1E-2* (lowResFT-lowResFT2)*np.conjugate(objectRecoverFT[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
-            # pupil /=np.max(pupil.ravel())
-            pup_metrics = np.abs(ORFT)
-            # print('pupil', np.min(pup_metrics), np.max(pup_metrics))
-
+            objectRecoverFT[kyl:kyh, kxl:kxh] += .1E-2*(lowResFT2-lowResFT)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
+            pupil +=.1E-2*(lowResFT2-lowResFT)*np.conjugate(objectRecoverFT[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
             ####################################################################
             # If debug mode is on
             if debug and (indexes[0]+indexes[1]) % 40 == 0:
                 im_out = ifft2(ifftshift(objectRecoverFT))
-                fft_rec = np.log10(np.abs(objectRecoverFT))
+                fft_rec = np.log10(np.abs(objectRecoverFT)+1E-4)
                 # fft_rec *= (255.0/fft_rec.max())
                 # Il = Image.fromarray(np.uint8(Il), 'L')
                 # im_rec *= (255.0/im_rec.max())
@@ -356,10 +345,9 @@ def fpm_reconstruct(samples=None, hrshape=None, it=None, pupil_radius=None,
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image %i %i: %i' % (indexes[0], indexes[1], iteration)), (ax4, 'Phase [%.1f %.1f]' % (np.min(np.angle(im_out)), np.max(np.angle(im_out))))])
-                for image in [np.abs(fft_rec), np.abs(im_out), np.log(np.imag(pupil*CTF)+1), np.angle(im_out)]:
+                for image in [np.abs(fft_rec), np.abs(im_out), np.imag(pupil*CTF), np.angle(im_out)]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
-                time.sleep(1)
                 fig.canvas.draw()
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return np.abs(im_out), np.angle(im_out)
