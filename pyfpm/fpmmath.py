@@ -247,8 +247,7 @@ def generate_CTF(fx=None, fy=None, image_size=None,
     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
-def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
-                             pupil_radius, kdsc):
+def filter_by_pupil_simulate(im_array, lrsize, mode=None, cfg=None, theta=None, phi=None,  nx=None, ny=None):
     """ Filtered image by a pupil calculated using generate_pupil
     """
     if im_array is not None:
@@ -261,8 +260,14 @@ def filter_by_pupil_simulate(im_array, theta, phi, lrsize,
     # calculares low res image size
     xc, yc = image_center(im_array.shape)
     factor = (lrsize/im_array.shape[0])**2
+    kdsc= get_k_discrete(cfg)
+    pupil_radius = get_pupil_radius(cfg)
 
-    [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
+    if mode == 'angles':
+        [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
+    elif mode == 'ledmatrix':
+        indexes, kx_rel, ky_rel = ct.n_to_krels(nx=nx, ny=ny, led_gap = 6, height=136)
+        [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
     # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
     #                    np.sin(phi_rad)*np.sin(theta_rad)])
     #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)

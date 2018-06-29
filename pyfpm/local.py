@@ -189,7 +189,7 @@ class Laser3dCalibrate(BaseClient):
 class SimClient(BaseClient):
     def __init__(self, cfg):# Y Datos del microscopio
         self.cfg = cfg
-        HOME_FOLDER = os.path.expanduser("~/pyfpm")
+        HOME_FOLDER = os.path.expanduser("~/git/pyfpm")
         try:
             self.image_mag = self.load_image(os.path.join(HOME_FOLDER, cfg.input_mag))
             self.image_phase = self.load_image(os.path.join(HOME_FOLDER, cfg.input_phase))
@@ -245,6 +245,20 @@ class SimClient(BaseClient):
         # fpm.simulate_acquisition(theta, phi, acqpars)
         filtered = fpmm.filter_by_pupil_simulate(self.im_array, theta, phi,
                             self.lrsize, self.pupil_radius, self.kdsc)
+        return np.abs(filtered)
+
+    def acquire_ledmatrix(self, nx=None, ny=None, acqpars=None):
+        """ Returs a simulated acquisition with given acquisition parameters.
+        Args:
+            theta (float):
+            phi (float):
+            acqpars (list):     [iso, shutter_speed, led_power]
+
+        Returns:
+            (ndarray):          complex 2d array
+        """
+        filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx, ny=ny,
+                            lrsize=self.lrsize, cfg=self.cfg, mode='ledmatrix')
         return np.abs(filtered)
 
     def show_filtered(self, theta=None, phi=None, power=None):

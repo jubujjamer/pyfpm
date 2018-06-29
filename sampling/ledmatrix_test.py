@@ -33,22 +33,30 @@ client = web.Client(cfg.server_ip)
 out_file = dt.generate_out_file(out_folder=cfg.output_sample, fname=None)
 image_dict = dict()
 
-def acquire_image(client, nx, ny, shutter_speed, iso, power):
-    img = client.acquire_ledmatrix(nx, ny, power, shutter_speed=shutter_speed, iso=iso)
-    return misc.imread(img, 'F')
+def acquire_image(ss, nx, ny, Nmean=1):
+    image_mean = np.zeros(cfg.patch_size)
+    for i in range(Nmean):
+        print(i)
+        image_response = client.acquire_ledmatrix(nx=nx, ny=ny, power=255,
+                    shutter_speed=ss, iso=400, xoff=1296, yoff=950)
+        image_i = np.array(image_response).reshape(cfg.patch_size)
+        image_mean += image_i
+    return image_mean/(Nmean)
 
 # Start analysis
-fig, (ax1) = plt.subplots(1, 1, figsize=(25, 15))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 15))
 fig.show()
 iterator = ct.set_iterator(cfg)
 nx, ny = 15, 15
-for ss in np.linspace(100, 1000, 40):
-    print('Shutter time: %i' % ss)
+fig.canvas.draw()
+for ss in np.linspace(1000000, 5000000, 8):
     start = time.time()
-    image = acquire_image(client, nx, ny, power=255, shutter_speed=ss, iso=800)
-    print(np.shape(image))
-    # image_dict[it['indexes']] = im_array[:256, :256]
+    image = acquire_image(ss=ss, nx=15, ny=20, Nmean=1)
+    print('Shutter speed: %i' % ss)
+    print('Elapsed time: %.1f' % (time.time()-start))
+    print('Estimated time: %.3f' % (ss*1E-6))
     ax1.cla()
+    ax2.cla()
     ax1.imshow(image, cmap=cm.hot)
+    ax2.hist(image.ravel(), bins=50)
     fig.canvas.draw()
-    print(time.time()-start)

@@ -77,7 +77,14 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
 
     ss_dict = {}
     for led in ledmap:
-        ss_dict[(led[0], led[1])] = 1E4*(1+8*(np.abs(led[0]-15)+np.abs(led[0]-15)))
+        # if led == [15, 15]:
+        #     ss_dict[(led[0], led[1])] = 60E4
+        # else:
+        dist = (np.abs(led[0]-15)**2+np.abs(led[1]-15))**2
+        ss = 1.E4*(1+2*dist)
+        ss_dict[(led[0], led[1])] = ss
+        if ss >3E6:
+            ss_dict[(led[0], led[1])] = 3E6
 
     power = 255
     # Camera parameters
@@ -449,8 +456,8 @@ def spot_image(source_position, light_dir, radius=20, color='r'):
     image[:, :] = image_gray[0]
     return image
 
-def n_to_krels(it, cfg, xoff, yoff):
-    """ .
+def n_to_krels(it=None, xoff=0, yoff=0, nx=15, ny=15, cfg=None, led_gap=None, height=None):
+    """
 
     Parameters:
     -----------
@@ -461,14 +468,22 @@ def n_to_krels(it, cfg, xoff, yoff):
     -------
         theta: (tuple) .
     """
-    led_gap = float(cfg.led_gap)
-    height = float(cfg.sample_height)
+    if cfg is not None:
+        led_gap = float(cfg.led_gap)
+        height = float(cfg.sample_height)
+    else:
+        led_gap = led_gap
+    if it is not None:
+        nx, ny = it['nx'], it['ny']
+        indexes = it['indexes']
+    else:
+        nx=nx
+        ny=ny
+        indexes = (nx, ny)
     offset = np.array([xoff, yoff]) # offset
     mat_center = np.array([15, 15])-offset
-    nx, ny = it['nx'], it['ny']
     kx, ky = nx-mat_center[0], ny-mat_center[1]
-
     kx_rel= -np.sin(np.arctan(kx*led_gap/height))
     ky_rel= -np.sin(np.arctan(ky*led_gap/height))
 
-    return it['indexes'], kx_rel, ky_rel
+    return indexes, kx_rel, ky_rel

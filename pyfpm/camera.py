@@ -52,7 +52,6 @@ def yuv_to_rgb(input_stream=None, total_width=2592, total_height=1944,
     # # Take the dot product with the matrix to produce RGB output, clamp the
     # # results to byte range and convert to bytes
     # RGB = YUV.dot(M.T).clip(0, 255).astype(np.uint8)
-    print(xoff, yoff)
     boxed_image = Y[yoff:yoff+box_height, xoff:xoff+box_width]
     return boxed_image.ravel()
 
@@ -241,9 +240,12 @@ class RaspiYUV(BaseCamera):
         :rtype: bytes
         """
         with threading.Lock():
+            start = time.time()
             print('Acquiring %s' % threading.current_thread())
             try:
                 subprocess.check_call(self.cmd)
+                # print('command sent: %s' % self.cmd)
+                # print('Image acquired in %.1f s' % (time.time()-start))
             except subprocess.CalledProcessError as e:
                 print(e)
                 return self.NO_IMAGE
