@@ -17,6 +17,7 @@ from io import StringIO
 import time
 import yaml
 
+import itertools as it
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.optimize import fsolve
@@ -549,3 +550,85 @@ def fpm_reconstruct(input_file,  iterator, cfg=None, debug=False):
                 # implot.update_plot([pupil, im_rec, Im, np.angle(ifft2(f_ih))], fig, axes)
         # print("Testing quality metric", quality_metric(image_dict, Il, cfg, max_phi))
     return np.abs(np.power(ifft2(f_ih), 2))
+
+def hex_encode(matrix):
+    """ Encodes a 32 x 32 ones and zeros matrix to a 256-elements hexadecimal string.
+    Parameters
+    ----------
+    matrix : array
+        Description of parameter `matrix`.
+
+    Returns
+    -------
+    string
+        Description of returned object.
+
+    """
+    toencode = matrix.reshape(256, 4)
+    encoded_matrix = str()
+    for row in toencode:
+        # integer = int(row, 2)
+        hexa = int(''.join(map(str, row)), 2)
+        encoded_matrix += '%x' % hexa
+    return encoded_matrix
+
+def hex_decode(encoded_matrix):
+    """ decodes the 256 long hexadecimal string to a 32 x 32 matrix.
+
+    Parameters
+    ----------
+    encoded_matrix : type
+        Description of parameter `encoded_matrix`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+    decoded = []
+    for a in encoded_matrix:
+        row = '{0:04b}'.format(int(a, 16))
+        decoded += list(row)
+    decoded = np.array([int (d) for d in decoded])
+    return decoded.reshape(32, 32)
+
+
+def create_led_pattern(shape='semi', angle=0, radius=10):
+    """ Creates a 32 x 32 matrix with theleds arranged in some usefull paterns.
+
+    Parameters
+    ----------
+    side : type
+        Description of parameter `side`.
+    radius : type
+        Description of parameter `radius`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+    radius = 12
+    ledmat_shape = [32, 32]
+    indexes = range(ledmat_shape[0])
+    matrix = np.zeros(ledmat_shape, dtype=int)
+    matrix_indexes = it.product(indexes, indexes)
+    center = image_center(ledmat_shape)
+    arad = np.radians(angle)
+    # for x, y in matrix_indexes:
+    #     xp, yp = np.array([x, y])-center
+    #     xt = xp*np.tan(arad)
+    #     if xp**2 + yp**2 < radius**2:
+    #         matrix[x][y] = 1
+    xx, yy = np.meshgrid(indexes, indexes)
+    xx -= center[0]
+    yy -= center[0]
+    c = (xx)**2+(yy)**2
+    matrix = [c<radius**2][0]
+    if np.abs(angle) < 90:
+        matrix[(xx) > yy*np.tan(arad)] = 0
+    else:
+        matrix[(xx) < yy*np.tan(arad)] = 0
+    return matrix

@@ -155,6 +155,16 @@ def create_server(client):
             print("An error")
             pass
 
+    @app.route("/acquire_ledmatrix_pattern/<pattern>/<power>/<color>/<shutter_speed>/<iso>/<xoff>/<yoff>")
+    def acquire_ledmatrix_pattern(pattern, power, color, shutter_speed, iso, xoff, yoff):
+        try:
+            y_values = client.acquire_pattern(pattern, power, color, shutter_speed, iso, xoff, yoff)
+            json_stream = json.dumps(y_values.tolist())
+            return json_stream
+        except socket.error:
+            print("An error")
+            pass
+
     @app.route("/set_pixel/<nx>/<ny>/<power>/<color>")
     def set_pixel(nx, ny, power, color):
         try:

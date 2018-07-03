@@ -388,7 +388,7 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     xc, yc = fpmm.image_center(hrshape)
     CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
     pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius,
-                                aberrations=[.05E-6,], pixel_size=ps, wavelength=wlen)
+                                aberrations=[-2.001E-6,], pixel_size=ps, wavelength=wlen)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     if debug:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
@@ -408,12 +408,12 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
         for it in iterator:
             acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
-            indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=0)
+            indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=-1)
             # r = 10*np.sqrt(indexes[0]**2+indexes[1]**2)
             lr_sample = np.copy(samples[it['indexes']])
-            lr_sample[lr_sample > 250] = 0
+            lr_sample[lr_sample > 252] = 0
             lr_sample[lr_sample < 3] = 0
-            lr_sample*=(1.E3/(acqpars[1]))
+            lr_sample*=(5.E5/(5.E5+acqpars[1]))
             # print((1+5E4/acqpars[1]/4))
             # From generate_il
             # Calculating coordinates
@@ -440,8 +440,8 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             ## pupil correction update
             lowResFT2 = fftshift(fft2(im_lowRes))*CTF/pupil
             ORFT = objectRecoverFT[kyl:kyh, kxl:kxh].ravel()
-            objectRecoverFT[kyl:kyh, kxl:kxh] +=1E-3* (lowResFT2-lowResFT)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
-            pupil +=1E-3*(lowResFT2-lowResFT)*np.conjugate(objectRecoverFT[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
+            objectRecoverFT[kyl:kyh, kxl:kxh] +=1E-4* (lowResFT2-lowResFT)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
+            pupil +=1E-4*(lowResFT2-lowResFT)*np.conjugate(objectRecoverFT[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
             ####################################################################
             ####################################################################
             # If debug mode is on

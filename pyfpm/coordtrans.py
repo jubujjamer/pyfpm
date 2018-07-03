@@ -80,8 +80,8 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
         # if led == [15, 15]:
         #     ss_dict[(led[0], led[1])] = 60E4
         # else:
-        dist = (np.abs(led[0]-15)**2+np.abs(led[1]-15))**2
-        ss = 1.E4*(1+2*dist)
+        dist = (np.abs(led[0]-15)**2+np.abs(led[1]-15))
+        ss = 5.E5*(1+.5*dist)
         ss_dict[(led[0], led[1])] = ss
         if ss >3E6:
             ss_dict[(led[0], led[1])] = 3E6

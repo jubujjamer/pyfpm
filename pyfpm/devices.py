@@ -18,6 +18,7 @@ import numpy as np
 from . import camera
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 import pyfpm.data as dt
+import pyfpm.fpmmath as fpmm
 
 # from pyfpm.cordinates import PlatformCoordinates
 
@@ -59,6 +60,32 @@ class LedMatrixRGB(object):
             self.matrix.SetPixel(nx, ny, 0, power, 0)
         if color == 'B':
             self.matrix.SetPixel(nx, ny, 0, 0, power)
+
+    def set_pattern(self, pattern, power, color):
+        self.matrix.Clear()
+        matrix = fpmm.hex_decode(pattern)
+        offset_canvas = self.matrix.CreateFrameCanvas()
+        xx , yy = np.where(matrix==1)
+        for x, y in (zip(xx, yy)):
+            nx = int(x)
+            ny = int(y)
+            power = int(power)
+            if color == 'R':
+                offset_canvas.SetPixel(nx, ny, power, 0, 0)
+            if color == 'G':
+                offset_canvas.SetPixel(nx, ny, 0, power, 0)
+            if color == 'B':
+                offset_canvas.SetPixel(nx, ny, 0, 0, power)
+            # offset_canvas.SetPixel(nx, ny, power, color)
+        offset_canvas = self.matrix.SwapOnVSync(offset_canvas)
+
+        # nx, ny, power = int(x), int(y), int(power)
+        # if color == 'R':
+        #     self.matrix.SetPixel(nx, ny, power, 0, 0)
+        # if color == 'G':
+        #     self.matrix.SetPixel(nx, ny, 0, power, 0)
+        # if color == 'B':
+        #     self.matrix.SetPixel(nx, ny, 0, 0, power)
 
     def __del__(self):
         print('Goodbye')
