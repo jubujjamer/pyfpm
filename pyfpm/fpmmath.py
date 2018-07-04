@@ -594,12 +594,12 @@ def hex_decode(encoded_matrix):
     return decoded.reshape(32, 32)
 
 
-def create_led_pattern(shape='semi', angle=0, radius=10):
+def create_led_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10, ledmat_shape=[32, 32]):
     """ Creates a 32 x 32 matrix with theleds arranged in some usefull paterns.
 
     Parameters
     ----------
-    side : type
+    shape : type
         Description of parameter `side`.
     radius : type
         Description of parameter `radius`.
@@ -610,25 +610,40 @@ def create_led_pattern(shape='semi', angle=0, radius=10):
         Description of returned object.
 
     """
-    radius = 12
-    ledmat_shape = [32, 32]
+
     indexes = range(ledmat_shape[0])
     matrix = np.zeros(ledmat_shape, dtype=int)
-    matrix_indexes = it.product(indexes, indexes)
     center = image_center(ledmat_shape)
     arad = np.radians(angle)
-    # for x, y in matrix_indexes:
-    #     xp, yp = np.array([x, y])-center
-    #     xt = xp*np.tan(arad)
-    #     if xp**2 + yp**2 < radius**2:
-    #         matrix[x][y] = 1
     xx, yy = np.meshgrid(indexes, indexes)
     xx -= center[0]
     yy -= center[0]
-    c = (xx)**2+(yy)**2
-    matrix = [c<radius**2][0]
-    if np.abs(angle) < 90:
-        matrix[(xx) > yy*np.tan(arad)] = 0
-    else:
-        matrix[(xx) < yy*np.tan(arad)] = 0
-    return matrix
+    if shape == 'semicircle':
+        c = (xx)**2+(yy)**2
+        matrix = [c<radius**2][0]
+        if -90 < angle % 360 < 90:
+            matrix[(xx+1) > yy*np.tan(arad)] = 0
+        if 90 <= angle % 360 < 180:
+            matrix[ (yy-1) < -xx*np.tan(arad-np.pi/2)] = 0
+        if 180 <= angle % 360 < 270:
+            matrix[(xx-1) < yy*np.tan(arad-np.pi)] = 0
+        if 270 <= angle % 360 <= 359:
+            matrix[ (yy+1) > -xx*np.tan(arad-3*np.pi/2)] = 0
+
+    if shape == 'annulus':
+        c = (xx)**2+(yy)**2
+        matrix = 1*[c<radius**2][0]
+        matrix_int = 1*[c<int_radius**2][0]
+        matrix = matrix-matrix_int
+        if -90 < angle % 360 < 90:
+            matrix[(xx+1) > yy*np.tan(arad)] = 0
+        if 90 <= angle % 360 < 180:
+            matrix[ (yy-1) < -xx*np.tan(arad-np.pi/2)] = 0
+        if 180 <= angle % 360 < 270:
+            matrix[(xx-1) < yy*np.tan(arad-np.pi)] = 0
+        if 270 <= angle % 360 <= 359:
+            matrix[ (yy+1) > -xx*np.tan(arad-3*np.pi/2)] = 0
+    if shape == 'circle':
+        c = (xx)**2+(yy)**2
+        matrix = [c<radius**2][0]
+    return matrix*1
