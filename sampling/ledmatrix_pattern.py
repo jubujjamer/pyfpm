@@ -41,11 +41,11 @@ def acquire_image_pattern(ss, pattern, Nmean=1):
     return image_mean/(Nmean)
 
 def mencoded(angle):
-    matrix = fpm.create_led_pattern(shape='semicircle', angle=angle, int_radius=2, radius=10,)
+    matrix = fpm.create_source_pattern(shape='semicircle', angle=angle, int_radius=2, radius=10,)
     pattern = fpm.hex_encode(matrix)
     return pattern
 
-circ_matrix = fpm.create_led_pattern(shape='circle')
+circ_matrix = fpm.create_source_pattern(shape='circle')
 N = 1
 angles = [0, 180, 90, 270, 45, 225, 135, 315]
 # angles = [0]

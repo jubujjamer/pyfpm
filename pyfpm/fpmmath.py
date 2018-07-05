@@ -594,7 +594,7 @@ def hex_decode(encoded_matrix):
     return decoded.reshape(32, 32)
 
 
-def create_led_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10, ledmat_shape=[32, 32]):
+def create_source_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10, ledmat_shape=[32, 32]):
     """ Creates a 32 x 32 matrix with theleds arranged in some usefull paterns.
 
     Parameters
@@ -622,13 +622,13 @@ def create_led_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10, l
         c = (xx)**2+(yy)**2
         matrix = [c<radius**2][0]
         if -90 < angle % 360 < 90:
-            matrix[(xx+1) > yy*np.tan(arad)] = 0
+            matrix[(xx-1) > yy*np.tan(arad)] = 0
         if 90 <= angle % 360 < 180:
-            matrix[ (yy-1) < -xx*np.tan(arad-np.pi/2)] = 0
+            matrix[ (yy+1) < -xx*np.tan(arad-np.pi/2)] = 0
         if 180 <= angle % 360 < 270:
-            matrix[(xx-1) < yy*np.tan(arad-np.pi)] = 0
+            matrix[(xx+1) < yy*np.tan(arad-np.pi)] = 0
         if 270 <= angle % 360 <= 359:
-            matrix[ (yy+1) > -xx*np.tan(arad-3*np.pi/2)] = 0
+            matrix[ (yy-1) > -xx*np.tan(arad-3*np.pi/2)] = 0
 
     if shape == 'annulus':
         c = (xx)**2+(yy)**2
@@ -636,13 +636,13 @@ def create_led_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10, l
         matrix_int = 1*[c<int_radius**2][0]
         matrix = matrix-matrix_int
         if -90 < angle % 360 < 90:
-            matrix[(xx+1) > yy*np.tan(arad)] = 0
+            matrix[(xx) > yy*np.tan(arad)] = 0
         if 90 <= angle % 360 < 180:
-            matrix[ (yy-1) < -xx*np.tan(arad-np.pi/2)] = 0
+            matrix[ (yy) < -xx*np.tan(arad-np.pi/2)] = 0
         if 180 <= angle % 360 < 270:
-            matrix[(xx-1) < yy*np.tan(arad-np.pi)] = 0
+            matrix[(xx) < yy*np.tan(arad-np.pi)] = 0
         if 270 <= angle % 360 <= 359:
-            matrix[ (yy+1) > -xx*np.tan(arad-3*np.pi/2)] = 0
+            matrix[ (yy) > -xx*np.tan(arad-3*np.pi/2)] = 0
     if shape == 'circle':
         c = (xx)**2+(yy)**2
         matrix = [c<radius**2][0]

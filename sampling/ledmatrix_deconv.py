@@ -46,7 +46,8 @@ def mencoded(angle):
     return pattern
 
 def simple_dpc(image1, image2):
-    return (image1-image2) / (image1+image2)
+    den = image1+image2+np.ones_like(image1)
+    return (image1-image2) / den
 
 
 
@@ -60,10 +61,10 @@ def tik_deconvolution(pupil_list, image_list, alpha=0.1):
     for idpc in image_list:
         fft_list.append(fftshift(fft2(idpc)))
     for pupil in pupil_list:
-        H = pupil/(sum_idpc+1)
+        H = pupil/(sum_idpc)
         H_list.append(np.conjugate(H))
     tik_den = np.sum([np.abs(H.ravel())**2 for H in H_list])+alpha
-    print(tik_den)
+    print(np.max(H))
     tik_nom = 0
     for HC, FFT_IDPC in zip(H_list, fft_list):
         tik_nom += HC*FFT_IDPC
@@ -72,29 +73,30 @@ def tik_deconvolution(pupil_list, image_list, alpha=0.1):
 
 
 
-image_dict = np.load('out_sampling/DPC_sample_B.npy')
+image_dict = np.load('out_sampling/DPC_sample_G.npy')
+image_blanks = np.load('out_sampling/DPC_background_G.npy')
 
 angles = [0, 180, 90, 270, 45, 225, 135, 315]
 # angles = [0, 180]
 image_list = []
 pupil_list = []
 for angle in angles:
-    image_list.append(image_dict[()][angle])
+    image = image_dict[()][angle]
+    blank = image_blanks[()][angle]
+    image_corr = image-blank
+    image_corr -= np.min(image_corr)+1
+    image_list.append(image_corr)
     pupil_list.append(fpm.create_led_pattern(shape='semicircle', angle=angle, ledmat_shape=[1900, 1900], radius=600, int_radius=40))
 
-tik = tik_deconvolution(pupil_list, image_list, alpha=0.05)
+tik = tik_deconvolution(pupil_list, image_list, alpha=5E-10)
 # decoded_matrix = fpm.hex_decode(encoded_matrix)
 fig, (axes) = plt.subplots(2, 2, figsize=(25, 15))
 fig.show()
-# image_dpc2 = (image3-image4) / (image3+image4)
-# image_dpc3 = (image5-image6) / (image5+image6)
-# image_dpc4 = (image7-image8) / (image7+image8)
-dpc_rec = simple_dpc(image_list[0], image_list[1])+simple_dpc(image_list[2], image_list[3])
-dpc_rec += simple_dpc(image_list[4], image_list[5])+simple_dpc(image_list[6], image_list[7])
 
+dpc_rec = simple_dpc(image_list[0], image_list[1])
 
 axes[0][0].imshow(image_list[-1], cmap=plt.get_cmap('gray'))
 axes[0][1].imshow(dpc_rec, cmap=plt.get_cmap('gray'))
 axes[1][0].imshow(np.abs(tik), cmap=plt.get_cmap('gray'))
-axes[1][1].imshow(np.angle(tik), cmap=plt.get_cmap('gray'))
+axes[1][1].hist(np.abs(tik).ravel(), bins=30)
 plt.show()
