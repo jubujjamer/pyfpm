@@ -80,7 +80,7 @@ def make_kernel_2D(PSF, dims, debug=True):
         mydebug("Diagonals", diags) # only useful for small test matrices
     ## create linear operator
 
-    H = scipy.sparse.dia_matrix((diags, offsets),shape=(N,N))
+    H = scipy.sparse.dia_matrix((diags, offsets),shape=(N,N), dtype=np.complex128,)
     return(H)
 
 def make_blur_matrix(img, kernel_size=12, debug=True):
@@ -91,59 +91,24 @@ def make_blur_matrix(img, kernel_size=12, debug=True):
     # testk=scipy.ndimage.gaussian_filter(k2,sigma)  ## already normalized
     r = n//3
     P = fpm.create_source_pattern(shape='circle', ledmat_shape=[n, n], radius=r)
-    S1 = fpm.create_source_pattern(shape='semicircle', angle=0, ledmat_shape=[n, n], radius=r)
+    # S1 = fpm.create_source_pattern(shape='semicircle', angle=0, ledmat_shape=[n, n], radius=r)
     # S2 = fpm.create_source_pattern(shape='semicircle', angle=180, ledmat_shape=[n, n], radius=r)
     # Hph = 1j*(signal.correlate2d(P, S1*P)-signal.correlate2d(P, S2*P))
     # Hph /= np.pi*np.max(np.imag(Hph))
-    H = fftshift(fft2(fftshift(P)))
-    H_real = np.real(H)
-    H_imag = np.imag(H)
+    Hph = fftshift(fft2(P))
+    Hph = np.arange(1, n**2+1).reshape(n,-1)*(1+2*1j)
+    mydebug("kernel: ", Hph)
+
+    # Hph = Hph
     if (debug):
-        plt.imshow(fftshift(P))
-        plt.show()
+        plt.imshow(np.abs(Hph))
+        # plt.show()
         # plotkernel(np.abs(Hph), n)
-    b_real = make_kernel_2D(H_real, img.shape)
-    b_imag = make_kernel_2D(H_imag, img.shape)
-    return b_real, b_imag
 
-def make_complex_blur_matrix(img, kernel_size=12, debug=True):
-    n = kernel_size
-    # k2 = np.zeros(shape=(n,n))
-    # k2[n//2,n//2] = 1
-    # sigma = kernel_size/5.0 ## 2.5 sigma
-    # testk=scipy.ndimage.gaussian_filter(k2,sigma)  ## already normalized
-    r = n//4
-    P = fpm.create_source_pattern(shape='circle', ledmat_shape=[n, n], radius=r)
-    S1 = fpm.create_source_pattern(shape='semicircle', angle=0, ledmat_shape=[n, n], radius=r)
-    # S2 = fpm.create_source_pattern(shape='semicircle', angle=180, ledmat_shape=[n, n], radius=r)
-    # Hph = 1j*(signal.correlate2d(P, S1*P)-signal.correlate2d(P, S2*P))
-    # Hph /= np.pi*np.max(np.imag(Hph))
-    H = np.real(fftshift(fft2(fftshift(S1))))
-    if (debug):
-        plt.imshow(np.abs(H))
-        plt.show()
-        # plotkernel(np.abs(Hph), n)
-    b = make_kernel_2D(H, img.shape)
-    return b
+    blurmat = make_kernel_2D(Hph, img.shape)
+    mydebug("Convlolution matrix: ", blurmat.toarray())
 
-def solve_tykhonov_sparse(y, Degrad, Gamma):
-    """
-    Tykhonov regularization of an observed signal, given a linear degradation matrix
-    and a Gamma regularization matrix.
-    Formula is
-
-    x* = (H'H + G'G)^{-1} H'y
-
-    With y the observed signal, H the degradation matrix, G the regularization matrix.
-
-    This function is better than dense_tykhonov in the sense that it does
-    not attempt to invert the matrix H'H + G'G.
-    """
-    H1 = Degrad.T.dot(Degrad) # may not be sparse any longer in the general case
-    H2 = np.abs(H1) + Gamma.T.dot(Gamma) # same
-    b2 = Degrad.T.dot(y.reshape(-1))
-    result = scipy.sparse.linalg.cg(H2, b2, maxiter=5E2)
-    return result[0].reshape(y.shape)
+    return(blurmat)
 
 def blur_noise_image(given_image, blur_matrix, noise_scale=0.002):
     '''
@@ -158,7 +123,7 @@ def blur_noise_image(given_image, blur_matrix, noise_scale=0.002):
     blurredimg = blurredvect.reshape(imgshape)
     return blurredimg
 
-def makespdiag(pattern,N):
+def makespdiag(pattern, N):
     """
     This makes a diagonal sparse matrix,similar to a convolution kernel operator
 
@@ -181,43 +146,8 @@ def makespdiag(pattern,N):
     mat = scipy.sparse.dia_matrix((diags, positions), shape=(N, N))
     return mat
 
-def deblur_tikh_sparse(blurred,PSF_matrix,mylambda,method='Id'):
-    t1=time.time()
-    N = np.prod(blurred.shape)
-    if (method=='Grad'):
-        G=makespdiag([0,-1,1],N).toarray()
-    elif (method=='Lap'):
-        G=make_kernel_2D(np.array([[-1,-1,-1],
-                                          [-1,8,-1],
-                                          [-1,-1,-1]]),blurred.shape)
-    else:
-        G=makespdiag([1],N)  ## identity
+A = make_blur_matrix(np.zeros((3, 3)), kernel_size=2, debug=True)
 
-    elapsed1= time.time()-t1
-    t2=time.time()
-    deblurred = solve_tykhonov_sparse(blurred, PSF_matrix, mylambda*G)
-    elapsed2=time.time()-t2
-    print("Time: %2f s constructing the matrix ; %2f s solving it\n" % (elapsed1, elapsed2))
-    return deblurred
 
-npx = 100
-radius = 60
-mag_array = scipy.misc.imread('sandbox/alambre.png', 'F')[:npx, :npx]
-image_phase = scipy.misc.imread('sandbox/lines0_0.png', 'F')[:npx,:npx]
-ph_array = np.pi*(image_phase)/np.amax(image_phase)
-image_array = mag_array*np.exp(1j*ph_array)
-image_fft = fftshift(fft2(image_array))
-
-b = make_complex_blur_matrix(image_array, kernel_size=12, debug=True)
-I1 =  blur_noise_image(image_array, b, noise_scale=0.0)
-N = np.prod(I1.shape)
-deblur_tikh = deblur_tikh_sparse(I1, b, 0.025, method='Lap')
-
-fig, (axes) = plt.subplots(2, 2, figsize=(25, 15))
-fig.show()
-S1 = fpm.create_source_pattern(shape='semicircle', angle=180, ledmat_shape=[npx, npx], radius=npx//3)
-# P = fpm.create_source_pattern(shape='circle', angle=180, ledmat_shape=[npx, npx], radius=npx//6)
-Ilp1 = np.abs(ifft2(S1*image_fft))
-axes[0][0].imshow(np.abs(I1))
-axes[0][1].imshow(np.abs(deblur_tikh))
-plt.show()
+b = A.dot(np.ones((9, 1)))
+print(b)
