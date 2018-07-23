@@ -24,6 +24,7 @@ from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.optimize import fsolve, nnls, lsq_linear
 from PIL import Image
 from scipy import ndimage
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 
 
 def convmat(pattern, N):
@@ -55,9 +56,7 @@ def make_convolution_matrix(img, kernel=None, debug=True):
 
 def nl_solve(A, b, lm):
     n_variables = A.shape[1]
-    print(n_variables)
     A2 = scipy.sparse.vstack((A, np.sqrt(lm)*np.eye(n_variables)))
-    # A2 = np.concatenate([A, np.sqrt(lm)*np.eye(n_variables)])
     b2 = np.concatenate([b, np.zeros(n_variables)])
     result = lsq_linear(A=A2, b=b2)
     return result.x
@@ -85,3 +84,64 @@ def sparse_solve(A, b, lm):
     b2 = A.T.dot(b)
     result = scipy.sparse.linalg.cg(H2, b2)
     return result[0]
+
+
+def dpc_difference(image1, image2):
+    """Solve DPC problem by simple difference of images.
+
+    Parameters
+    ----------
+    image1 : type
+        Description of parameter `image1`.
+    image2 : type
+        Description of parameter `image2`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+    den = image1+image2
+    if np.any(den<=0):
+        den -=(min(den.ravel())-1)
+    dpc_diff = image1-image2
+    dpc_diff /=den
+    return dpc_diff
+
+
+def direct_tikhonov(pupil_list, image_list, alpha=0.1):
+    """ Solve directly tikhonov deconvolution.
+
+    Parameters
+    ----------
+    pupil_list : type
+        Description of parameter `pupil_list`.
+    image_list : type
+        Description of parameter `image_list`.
+    alpha : type
+        Description of parameter `alpha`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
+
+    fft_list = []
+    H_list = []
+    sum_idpc = np.sum(image_list)
+    # print(sum(image_list))
+    for idpc in image_list:
+        fft_list.append(fftshift(fft2(idpc)))
+    for pupil in pupil_list:
+        H = pupil/(sum_idpc)
+        H_list.append(np.conjugate(H))
+    tik_den = np.sum([np.abs(H.ravel())**2 for H in H_list])+alpha
+    print(np.max(H))
+    tik_nom = 0
+    for HC, FFT_IDPC in zip(H_list, fft_list):
+        tik_nom += HC*FFT_IDPC
+    tik = (ifft2(tik_nom/tik_den))
+    return tik

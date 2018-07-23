@@ -188,8 +188,8 @@ def deblur_tikh_sparse(blurred,PSF_matrix,mylambda,method='Id'):
         G=makespdiag([0,-1,1],N).toarray()
     elif (method=='Lap'):
         G=make_kernel_2D(np.array([[-1,-1,-1],
-                                          [-1,8,-1],
-                                          [-1,-1,-1]]),blurred.shape)
+                                   [-1,8,-1],
+                                   [-1,-1,-1]]),blurred.shape)
     else:
         G=makespdiag([1],N)  ## identity
 
@@ -215,8 +215,8 @@ deblur_tikh = deblur_tikh_sparse(I1, b, 0.025, method='Lap')
 
 fig, (axes) = plt.subplots(2, 2, figsize=(25, 15))
 fig.show()
-S1 = fpm.create_source_pattern(shape='semicircle', angle=180, ledmat_shape=[npx, npx], radius=npx//3)
-# P = fpm.create_source_pattern(shape='circle', angle=180, ledmat_shape=[npx, npx], radius=npx//6)
+# S1 = fpm.create_source_pattern(shape='semicircle', angle=180, ledmat_shape=[npx, npx], radius=npx//3)
+S1 = fpm.create_source_pattern(shape='circle', angle=180, ledmat_shape=[npx, npx], radius=npx//6)
 Ilp1 = np.abs(ifft2(S1*image_fft))
 axes[0][0].imshow(np.abs(I1))
 axes[0][1].imshow(np.abs(deblur_tikh))

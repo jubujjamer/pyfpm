@@ -197,8 +197,7 @@ def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
         defocus = aberrations[0]
     xc, yc = image_center(image_size)
     CTF = generate_pupil(0, 0, [image_size[0], image_size[1]], pupil_radius)
-    # focus test
-    # dky = 2*np.pi/(float(cfg.ps_req)*hrshape[0])
+
     kmax = np.pi/pixel_size
     step = kmax/((npx-1)/2)
     kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step))

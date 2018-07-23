@@ -24,6 +24,8 @@ import pyfpm.fpmmath as fpm
 from pyfpm import web
 import pyfpm.coordtrans as ct
 import pyfpm.data as dt
+import pyfpm.solvertools as st
+
 
 # Simulation parameters
 cfg = dt.load_config()
@@ -51,28 +53,6 @@ def simple_dpc(image1, image2):
 
 
 
-def tik_deconvolution(pupil_list, image_list, alpha=0.1):
-    from numpy.fft import fft2, ifft2, fftshift, ifftshift
-
-    fft_list = []
-    H_list = []
-    sum_idpc = np.sum(image_list)
-    # print(sum(image_list))
-    for idpc in image_list:
-        fft_list.append(fftshift(fft2(idpc)))
-    for pupil in pupil_list:
-        H = pupil/(sum_idpc)
-        H_list.append(np.conjugate(H))
-    tik_den = np.sum([np.abs(H.ravel())**2 for H in H_list])+alpha
-    print(np.max(H))
-    tik_nom = 0
-    for HC, FFT_IDPC in zip(H_list, fft_list):
-        tik_nom += HC*FFT_IDPC
-    tik = (ifft2(tik_nom/tik_den))
-    return tik
-
-
-
 image_dict = np.load('out_sampling/DPC_sample_G.npy')
 image_blanks = np.load('out_sampling/DPC_background_G.npy')
 
@@ -88,12 +68,12 @@ for angle in angles:
     image_list.append(image_corr)
     pupil_list.append(fpm.create_led_pattern(shape='semicircle', angle=angle, ledmat_shape=[1900, 1900], radius=600, int_radius=40))
 
-tik = tik_deconvolution(pupil_list, image_list, alpha=5E-10)
+tik = st.direct_tikhonov(pupil_list, image_list, alpha=5E-10)
 # decoded_matrix = fpm.hex_decode(encoded_matrix)
 fig, (axes) = plt.subplots(2, 2, figsize=(25, 15))
 fig.show()
 
-dpc_rec = simple_dpc(image_list[0], image_list[1])
+dpc_rec = st.dpc_difference(image_list[0], image_list[1])
 
 axes[0][0].imshow(image_list[-1], cmap=plt.get_cmap('gray'))
 axes[0][1].imshow(dpc_rec, cmap=plt.get_cmap('gray'))

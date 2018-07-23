@@ -106,7 +106,7 @@ def make_blur_matrix(img, kernel_size=12, debug=True):
         # plotkernel(np.abs(Hph), n)
 
     blurmat = make_kernel_2D(Hph, img.shape)
-    mydebug("Convlolution matrix: ", blurmat.toarray())
+    mydebug("Convolution matrix: ", blurmat.toarray())
 
     return(blurmat)
 
