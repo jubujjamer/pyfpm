@@ -34,6 +34,7 @@ if cfg.servertype == 'sampling':
         from pyfpm.devices import LedMatrixRGB
         ledmat = LedMatrixRGB()
     # Run the camera with open cv
+    print('camtype is', cfg.camtype)
     cam = Camera(video_id=cfg.video_id, camtype=cfg.camtype)
     client = local.LedMatrixClient(cam, ledmat)
     # client = local.Laser3dCalibrate(cam, laser3d)

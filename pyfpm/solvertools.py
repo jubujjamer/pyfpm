@@ -32,15 +32,15 @@ def convmat(pattern, N):
         Creates a convolution matrix from kernel
     """
 def make_convolution_matrix(img, kernel=None, debug=True):
-    kernel_size=kernel.shape
-    PSF = kernel
+    kernel_size = kernel.shape
+    PSF = kernel.astype('complex64')
     dims = img.shape
     d = len(PSF) ## assmuming square PSF (but not necessarily square image)
     N = dims[0]*dims[1]
     ## pre-fill a 2D matrix for the diagonals
-    diags = np.zeros((d*d, N))*1j
-    offsets = np.zeros((d*d))
-    heads = np.zeros((d*d))*1j ## for this a list is OK
+    diags = np.zeros((d*d, N), dtype='complex64')
+    offsets = np.zeros((d*d), dtype='float32')
+    heads = np.zeros((d*d), dtype='complex64') ## for this a list is OK
     i = 0
     for y in range(len(PSF)):
         for x in range(len(PSF[y])):
@@ -50,7 +50,29 @@ def make_convolution_matrix(img, kernel=None, debug=True):
             ydist = d/2 - y ## y direction pointing down
             offsets[i] = (ydist*dims[1]+xdist)
             i+=1
-    H = scipy.sparse.dia_matrix((diags, offsets),shape=(N,N))
+    H = scipy.sparse.dia_matrix((diags, offsets), shape=(N,N), dtype='complex64')
+    return H
+
+def make_real_convolution_matrix(img, kernel=None, debug=True):
+    kernel_size = kernel.shape
+    PSF = kernel
+    dims = img.shape
+    d = len(PSF) ## assmuming square PSF (but not necessarily square image)
+    N = dims[0]*dims[1]
+    ## pre-fill a 2D matrix for the diagonals
+    diags = np.zeros((d*d, N))
+    offsets = np.zeros((d*d))
+    heads = np.zeros((d*d)) ## for this a list is OK
+    i = 0
+    for y in range(len(PSF)):
+        for x in range(len(PSF[y])):
+            diags[i,:] += PSF[y,x]
+            heads[i] = PSF[y,x]
+            xdist = d/2 - x
+            ydist = d/2 - y ## y direction pointing down
+            offsets[i] = (ydist*dims[1]+xdist)
+            i+=1
+    H = scipy.sparse.dia_matrix((diags, offsets), shape=(N,N))
     return H
 
 
@@ -102,6 +124,8 @@ def dpc_difference(image1, image2):
         Description of returned object.
 
     """
+    image1 -= np.mean(image1)
+    image2 -= np.mean(image2)
     den = image1+image2
     if np.any(den<=0):
         den -=(min(den.ravel())-1)

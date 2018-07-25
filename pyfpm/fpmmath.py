@@ -205,7 +205,42 @@ def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
     k0 = 2*np.pi/wavelength
     kzm = np.sqrt(k0**2-kxm**2-kym**2)
     pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
-    return pupil
+    return pupil*CTF
+
+def simple_defocus(image_size=None, pupil_radius=None, aberrations=None,
+                    pixel_size=None, wavelength=None):
+    """ GEnerate an aberrated pupil for corrections.
+    Args:
+        theta (int):      azimuthal angle
+        phi (int):        zenithal angle
+        image_size(list): size of the image of the pupil
+
+    Return:
+        (array) image of the pupil
+    """
+    if image_size is not None:
+        npx = image_size[0]  # Half image size  each side
+    if pupil_radius is not None:
+        pupil_radius = float(pupil_radius)
+    if aberrations is not None:
+        defocus = aberrations[0]
+    xc, yc = image_center(image_size)
+    CTF = generate_pupil(0, 0, [image_size[0], image_size[1]], pupil_radius)
+
+    # kmax = np.pi/pixel_size
+    # step = kmax/((npx-1)/2)
+    # kxm, kym = np.meshgrid(np.arange(-kmax,kmax+1,step), np.arange(-kmax,kmax+1, step))
+    # z = defocus
+    # k0 = 2*np.pi/wavelength
+    # kzm = np.sqrt(k0**2-kxm**2-kym**2)
+    # pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
+    # yy, xx = np.meshgrid(np.arange(-npx//2, npx//2,), np.arange(-npx//2, npx//2,))
+    # rs = (xx)**2+(yy)**2+1E-6
+    # pupil = 1/(np.pi*rs)
+    R = pupil_radius
+    pupil = 1/(np.pi*R**2)
+    return pupil*CTF
+
 
 def generate_pupil(fx=None, fy=None, image_size=None,
                    pupil_radius=None):

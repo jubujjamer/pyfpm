@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-""" File acquire_complete_set.py
+""" dpc_rgb.py
 
-Last update: 28/10/2016
-Use to locally simulate FPM.
+Last update: 24/07/2018
+Use reconstruct DPC images.
 
 Usage:
 
@@ -34,14 +34,6 @@ out_file = dt.generate_out_file(cfg.output_sample)
 client = web.Client(cfg.server_ip)
 
 # xoff=1250, yoff=950
-def acquire_image_pattern(ss, pattern, Nmean=1):
-    image_mean = np.zeros(cfg.patch_size)
-    for i in range(Nmean+1):
-        image_response = client.acquire_ledmatrix_pattern(pattern=pattern, power=255, color='R', shutter_speed=ss, iso=400, xoff=0, yoff=0)
-        image_i = np.array(image_response).reshape(cfg.patch_size)
-        image_mean += image_i
-    return image_mean/(Nmean)
-
 def mencoded(angle):
     matrix = fpm.create_led_pattern(shape='semicircle', angle=angle)
     pattern = fpm.hex_encode(matrix)
@@ -88,19 +80,20 @@ fig1, (axes) = plt.subplots(2, 3, figsize=(25, 15))
 fig1.show()
 for i, color in enumerate(image_channels.keys()):
     colorArray = np.zeros((1900, 1900, 3))
-    rgbArray[..., 0] = np.zeros((1900, 1900))
+    # rgbArray[..., 0] = np.zeros((1900, 1900))
     ax = axes[0][i]
     hax = axes[1][i]
     image = get_dpc_reconstruction(color, angles)
     # image = rgbArray[..., i]
     image -= image.min()
     image /= image.max()
-    image -= np.mean(image)
-    image += 0.5
+    # image -= np.mean(image)
+    # image += 0.5
     rgbArray[..., i] = image
     colorArray[..., i] = image
     ax.imshow(colorArray)
     hax.hist(image.ravel(), bins=30)
+
 
 # next(axiter).imshow(image_list[-1], cmap=plt.get_cmap('gray'))
 fig2, ax = plt.subplots(1, 2, figsize=(15, 15))

@@ -41,14 +41,14 @@ def acquire_image_pattern(ss, pattern, Nmean=1):
     return image_mean/(Nmean)
 
 def mencoded(angle):
-    matrix = fpm.create_source_pattern(shape='semicircle', angle=angle, int_radius=2, radius=10,)
+    matrix = fpm.create_source_pattern(shape='semicircle', angle=angle, int_radius=2, radius=5,)
     pattern = fpm.hex_encode(matrix)
     return pattern
 
 circ_matrix = fpm.create_source_pattern(shape='circle')
 N = 1
-angles = [0, 180, 90, 270, 45, 225, 135, 315]
-# angles = [0]
+# angles = [0, 180, 90, 270, 45, 225, 135, 315]
+angles = [0, 0]
 pupil_list = []
 image_dict = dict()
 
@@ -66,4 +66,6 @@ for angle in angles:
 image_dict[-1] = acquire_image_pattern(ss=5E4, pattern=fpm.hex_encode(circ_matrix), Nmean=N)
 # decoded_matrix = fpm.hex_decode(encoded_matrix)
 
-np.save('out_sampling/DPC_background_R.npy', image_dict)
+out_file = dt.generate_out_file(cfg.output_sample)
+dt.save_yaml_metadata(out_file, cfg)
+np.save(out_file, image_dict)
