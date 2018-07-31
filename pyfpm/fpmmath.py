@@ -205,7 +205,7 @@ def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
     k0 = 2*np.pi/wavelength
     kzm = np.sqrt(k0**2-kxm**2-kym**2)
     pupil = np.exp(1j*z*np.real(kzm))*np.exp(-np.abs(z)*np.abs(np.imag(kzm)))
-    return pupil*CTF
+    return pupil
 
 def simple_defocus(image_size=None, pupil_radius=None, aberrations=None,
                     pixel_size=None, wavelength=None):

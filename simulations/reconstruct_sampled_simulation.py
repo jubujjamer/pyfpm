@@ -36,7 +36,7 @@ iterator = ct.set_iterator(cfg)
 
 # First inspection
 # iterator = ins.inspect_iterator(iterator, sample_cfg)
-iterator = ins.inspect_samples(iterator, samples, sample_cfg)
+# iterator = ins.inspect_samples(iterator, samples, sample_cfg)
 # ins.inspect_pupil(sample_cfg)
 # Reconstruction
 mag, phase = fpm_reconstruct_epry(samples=samples, it=iterator,
