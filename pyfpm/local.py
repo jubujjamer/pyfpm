@@ -234,7 +234,7 @@ class SimClient(BaseClient):
         """
         with open(input_image, 'rb') as imageFile:
             image_array = misc.imread(imageFile, 'F')
-            npx = int(self.cfg.patch_size[0])
+            npx = int(self.cfg.simulation_size[0])
             return image_array[0:npx, 0:npx]
 
     def acquire(self, theta=None, phi=None, acqpars=None):
@@ -254,7 +254,7 @@ class SimClient(BaseClient):
                             self.lrsize, self.pupil_radius, self.kdsc)
         return np.abs(filtered)
 
-    def acquire_ledmatrix(self, nx=None, ny=None, acqpars=None):
+    def acquire_ledmatrix(self, nx=None, ny=None, acqpars=None, pupil_radius=None):
         """ Returs a simulated acquisition with given acquisition parameters.
         Args:
             theta (float):
@@ -265,7 +265,7 @@ class SimClient(BaseClient):
             (ndarray):          complex 2d array
         """
         filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx, ny=ny,
-                            lrsize=self.lrsize, cfg=self.cfg, mode='ledmatrix')
+                            cfg=self.cfg, mode='ledmatrix', pupil_radius=pupil_radius)
         return np.abs(filtered)
 
     def show_filtered(self, theta=None, phi=None, power=None):

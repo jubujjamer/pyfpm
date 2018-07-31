@@ -282,7 +282,8 @@ def generate_CTF(fx=None, fy=None, image_size=None,
     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
-def filter_by_pupil_simulate(im_array, lrsize, mode=None, cfg=None, theta=None, phi=None,  nx=None, ny=None):
+def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None, phi=None,
+                            nx=None, ny=None, pupil_radius=None):
     """ Filtered image by a pupil calculated using generate_pupil
     """
     if im_array is not None:
@@ -292,31 +293,20 @@ def filter_by_pupil_simulate(im_array, lrsize, mode=None, cfg=None, theta=None, 
     if phi is not None:
         phi_rad = np.radians(phi)
 
+    imsize = np.shape(im_array)[0]
     # calculares low res image size
     xc, yc = image_center(im_array.shape)
-    factor = (lrsize/im_array.shape[0])**2
+    # factor = (lrsize/im_array.shape[0])**2
     kdsc= get_k_discrete(cfg)
-    pupil_radius = get_pupil_radius(cfg)
+    # pupil_radius = get_pupil_radius(cfg)
 
     if mode == 'angles':
         [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
     elif mode == 'ledmatrix':
-        indexes, kx_rel, ky_rel = ct.n_to_krels(nx=nx, ny=ny, led_gap = 6, height=136)
+        indexes, kx_rel, ky_rel = ct.n_to_krels(nx=nx, ny=ny, led_gap=cfg.led_gap, height=cfg.sample_height)
         [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
-    # coords = np.array([np.sin(phi_rad)*np.cos(theta_rad),
-    #                    np.sin(phi_rad)*np.sin(theta_rad)])
-    #[kx, ky] = (1/wavelength)*coords*(pixel_size*npx)
-    # [kx, ky] = coords*kdsc
-
-    pupil = generate_pupil(0, 0, [lrsize-1, lrsize-1], pupil_radius)
+    pupil = generate_pupil(kx, ky, [imsize, imsize], pupil_radius)
     f_ih_shift = fftshift(fft2(im_array))
-    kyl = int(np.round(yc+ky-(lrsize)/2))
-    kyh = kyl + lrsize - 1
-    kxl = int(np.round(xc+kx-(lrsize)/2))
-    kxh = kxl + lrsize - 1
-    # print(im_array.shape, pupil_radius, kyl, kyh, kxl, kxh)
-    f_ih_shift = f_ih_shift[kyl:kyh, kxl:kxh]
-    # Step 2: lr of the estimated image using the known pupil
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
     proc_array = ifft2(ifftshift(proc_array))
     # proc_array = resize_complex_image(proc_array, original_shape)

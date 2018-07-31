@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """ File coordtrans.py
-
 Last update: 12/04/2018
 
 Description:
@@ -25,7 +24,7 @@ cfg = dt.load_config()
 
 
 def inspect_iterator(iterator, cfg):
-    N=1024
+    N = 1024
     xx, yy = np.meshgrid(range(N), range(N))
     image = np.ones((N, N))
     def circle_mask(nx, ny, rad=10):
@@ -44,6 +43,7 @@ def inspect_iterator(iterator, cfg):
     plt.imshow(image)
     plt.show()
     return ct.set_iterator(cfg)
+
 
 def inspect_samples(iterator, samples, cfg):
     # nplots = int(cfg.array_size)
