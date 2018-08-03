@@ -37,5 +37,6 @@ for it in iterator:
     ax1.cla()
     img = ax1.imshow(im_array, cmap=plt.get_cmap('hot'))
     fig.canvas.draw()
+    time.sleep(0.1)
 dt.save_yaml_metadata(out_file, cfg)
 np.save(out_file, image_dict)
