@@ -14,6 +14,7 @@ __all__ = ['image_center', 'generate_pupil', 'fpm_reconstruct', 'calculate_pupil
 import scipy
 import numpy as np
 from scipy.fftpack import dct
+import pyfpm.fpmmath as fpm
 
 
 def dcts(x):
@@ -163,3 +164,31 @@ def tik_dct(PSF, B, alpha=0, cg=False, **kwargs):
         G = sum(abs(bhat*phi_d)**2)/(np.sum(phi_d)**2)
         G =  np.sum(G)
     return X, G
+
+# def get_dpc(image, angle, npx, radius):
+#     sc = fpm.SemiCircle(dim=npx, radius=radius, angle=angle)
+#     dpc_psf = sc.psf-sc.complementary_psf()
+#
+#     # Aplico la convolución dada por las PSFs de las pupilas asimétricas
+#     blurred1 = np.abs(blured_image(PSF=sc.psf, X=image))**2
+#     blurred2 = np.abs(blured_image(PSF=sc.complementary_psf(), X=image))**2
+#
+#     # La reconstrucción naif viene dado por sumas y restas de las imagenes con pupilas asimetricas
+#     dpc_naive = (blurred1-blurred2)/(blurred1+blurred2)
+#     return dpc_naive
+
+def get_dpc(image, angle, npx, radius):
+    sc1 = fpm.SemiCircle(dim=npx, radius=radius, angle=angle)
+    sc2 = fpm.SemiCircle(dim=npx, radius=radius, angle=angle+90)
+    dpc1_psf = sc1.psf-sc1.complementary_psf()
+    dpc2_psf = sc2.psf-sc2.complementary_psf()
+
+    # Aplico la convolución dada por las PSFs de las pupilas asimétricas
+    b1 = np.abs(blured_image(PSF=sc1.psf, X=image))**2
+    b2 = np.abs(blured_image(PSF=sc1.complementary_psf(), X=image))**2
+    b3 = np.abs(blured_image(PSF=sc2.psf, X=image))**2
+    b4 = np.abs(blured_image(PSF=sc2.complementary_psf(), X=image))**2
+
+    # La reconstrucción naif viene dado por sumas y restas de las imagenes con pupilas asimetricas
+    dpc_naive = (b1-b2+b3-b4)/(b1+b2+b3+b4)
+    return dpc_naive
