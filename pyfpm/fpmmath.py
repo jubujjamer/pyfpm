@@ -103,7 +103,7 @@ def get_image_size(cfg):
 
 def get_pixel_size_required(cfg):
     ps = get_pixel_size(cfg)
-    ps_req = ps/2.5
+    ps_req = ps/4
     return ps_req
 
 def get_times_improvement(cfg):
@@ -177,6 +177,7 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
     # # print(np.max(image_gray*np.sqrt((c-xx)**2+(c-yy)**2) ))
     # image_gray = 1.*image_gray + image_gray*defocus
     return image_gray
+
 
 def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
                     pixel_size=None, wavelength=None):
@@ -671,3 +672,110 @@ def create_source_pattern(shape='semicircle', angle=0, int_radius = 5, radius=10
         c = (xx)**2+(yy)**2
         matrix = [c<radius**2][0]
     return matrix*1
+
+class MatrixShape(object):
+    """ Matrix of integers.
+
+    Parameters
+    ----------
+    dim : type
+        Description of parameter `dim`.
+    form : type
+        Description of parameter `form`.
+
+    Attributes
+    ----------
+    matrix : type
+        Description of attribute `matrix`.
+    center : type
+        Description of attribute `center`.
+    set_shape : type
+        Description of attribute `set_shape`.
+    draw_form : type
+        Description of attribute `draw_form`.
+    def __init__(self, dim, form : type
+        Description of attribute `def __init__(self, dim, form`.
+
+    """
+
+    def __init__(self, dim):
+        self.matrix = None
+        self.center = None
+        self.set_shape(dim)
+
+    def set_shape(self, dim):
+        if type(dim) is list:
+            self.shape = dim
+        elif type(dim) is int:
+            self.shape = [dim]*2
+        # self.matrix = np.zeros(self.shape, dtype=int)
+        self.center = image_center(self.shape)
+
+
+class SemiCircle(MatrixShape):
+
+    def __init__(self, dim, radius, angle):
+        self.set_shape(dim)
+        self.radius = radius
+        self.angle_deg = angle
+        self.matrix = self.draw_form(angle)
+        self.psf = self.make_psf()
+
+
+    def draw_form(self, angle):
+        angle_rad = np.radians(angle)
+        xind = range(self.shape[0])
+        yind = range(self.shape[1])
+        yy, xx = np.meshgrid(yind, xind)
+        xx -= self.center[1]
+        yy -= self.center[0]
+        c = (xx)**2+(yy)**2
+        matrix = [c<self.radius**2][0]
+
+        if -90 < angle % 360 < 90:
+            matrix[(xx-1) > yy*np.tan(angle_rad)] = 0
+        if 90 <= angle % 360 < 180:
+            matrix[ (yy+1) < -xx*np.tan(angle_rad-np.pi/2)] = 0
+        if 180 <= angle % 360 < 270:
+            matrix[(xx+1) < yy*np.tan(angle_rad-np.pi)] = 0
+        if 270 <= angle % 360 <= 359:
+            matrix[ (yy-1) > -xx*np.tan(angle_rad-3*np.pi/2)] = 0
+        return matrix
+
+    def make_psf(self, matrix=None):
+        if matrix is None:
+            matrix = self.matrix
+        psf = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(matrix)))/np.sum(matrix.ravel())
+        return psf
+
+    def complementary(self):
+        """Complementary psf of a desired object.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
+        comp_angle = self.angle_deg+180
+        matrix = self.draw_form(comp_angle)
+        return matrix
+
+    def complementary_psf(self):
+        """Complementary psf of a desired object.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
+        comp_angle = self.angle_deg+180
+        matrix = self.draw_form(comp_angle)
+        return self.make_psf(matrix)
+
+    def psf_real(self):
+        return np.real(self.psf)
+
+    def psf_imag(self):
+        return np.imag(self.psf)
