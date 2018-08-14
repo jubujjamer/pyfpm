@@ -180,7 +180,7 @@ def pupil_image(cx=None, cy=None, pup_rad=None, image_size=None):
 
 def aberrated_pupil(image_size=None, pupil_radius=None, aberrations=None,
                     pixel_size=None, wavelength=None):
-    """ GEnerate an aberrated pupil for corrections.
+    """ Generate an aberrated pupil for corrections.
     Args:
         theta (int):      azimuthal angle
         phi (int):        zenithal angle

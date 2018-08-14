@@ -9,7 +9,7 @@ Usage:
 """
 __version__ = "1.1.1"
 __author__ = 'Juan M. Bujjamer'
-__all__ = ['image_center', 'generate_pupil', 'fpm_reconstruct', 'calculate_pupil_radius', 'adjust_shutter_speed',
+__all__ = ['dcts', 'dct2', 'dctshift', 'calculate_pupil_radius', 'adjust_shutter_speed',
            'pixel_size_required', 'crop_image']
 import scipy
 import numpy as np
@@ -90,11 +90,6 @@ def idct2(x):
 
 def gcv_tik(s, bhat):
     """ GCV_TIK Choose GCV parameter for Tikhonov image deblurring.
-
-    function alpha = gcv_tik(s, bhat)
-
-     alpha = gcv_tik(s, bhat);
-
      This function uses generalized cross validation (GCV) to choose
      a regularization parameter for Tikhonov filtering.
 
