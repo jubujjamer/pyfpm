@@ -264,7 +264,7 @@ def generate_pupil(fx=None, fy=None, image_size=None,
     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
-def generate_CTF(fx=None, fy=None, image_size=None,
+def generate_CTF(fx=0, fy=0, image_size=None,
                    pupil_radius=None):
     """ Coherent transfer function without aberrations.
 

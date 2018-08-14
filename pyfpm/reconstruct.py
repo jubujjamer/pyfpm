@@ -13,7 +13,7 @@ import time
 import yaml
 
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift, ifftshift
@@ -694,13 +694,20 @@ def fpm_reconstruct_classic(samples=None, it=None, cfg=None,  debug=False):
     ps = fpmm.get_pixel_size(cfg)
     wlen = fpmm.get_wavelength(cfg)
     hrshape = fpmm.get_reconstructed_shape(cfg)
-    kdsc = fpmm.get_k_discrete(cfg)
+    # k relative to absolute k factor
+    npx = fpmm.get_image_size(cfg)
+    ps_req = fpmm.get_pixel_size_required(cfg)
+    wlen = fpmm.get_wavelength(cfg)
+    led_gap = float(cfg.led_gap)
+    height = float(cfg.sample_height)
+
+    kdsc = ps_req*npx/wlen
 
     objectRecover = np.ones(hrshape)
-    xc, yc = fpmm.image_center(hrshape)
-    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)*1.
-    pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius,
-                                aberrations=[0,], pixel_size=ps, wavelength=wlen)
+    center = fpmm.image_center(hrshape)
+    CTF = fpmm.generate_CTF(image_size=[lrsize, lrsize], pupil_radius=pupil_radius)
+    # pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius,
+    #                             aberrations=[0,], pixel_size=ps, wavelength=wlen)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
@@ -710,43 +717,48 @@ def fpm_reconstruct_classic(samples=None, it=None, cfg=None,  debug=False):
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
         fig.show()
     # Steps 2-5
-
-    for iteration in range(cfg.n_iter):
+    for iteration in range(10):
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
         for it in iterator:
-            acqpars = it['acqpars']
-            indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=0)
+            # indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=0)
+            indexes = it['indexes']
             lr_sample = np.copy(samples[it['indexes']])
-            [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
-            kyl = int(np.round(yc+ky-(lrsize+1)/2))
-            kyh = kyl + lrsize
-            kxl = int(np.round(xc+kx-(lrsize+1)/2))
-            kxh = kxl + lrsize
-            lowResFT = factor * objectRecoverFT[kyl:kyh, kxl:kxh]*CTF
+            led_number = np.array([it['ny'], it['nx']])
+            # Convert indexes to pupil center coordinates kx, ky
+            mc = np.array([15, 15]) #  Matrix center
+            k_rel = np.sin(np.arctan((led_number-mc)*led_gap/height))
+            k_abs = k_rel*ps_req*npx/wlen
+            pup_center = k_abs+center
+            # Pupil borders
+            lp = np.round(pup_center-(lrsize+1)/2).astype(int) # Extreme left low point
+            hp = lp + lrsize # Extreme right high point
+            pupil_square = [slice(lp[0], hp[0]), slice(lp[1], hp[1])]
 
+            lowResFT = factor * objectRecoverFT[pupil_square]*CTF
             im_lowRes = ifft2(ifftshift(lowResFT))
             im_lowRes = (1/factor) * lr_sample *np.exp(1j*np.angle(im_lowRes))
-
             lowResFT = fftshift(fft2(im_lowRes))*CTF
 
             if debug and  (indexes[0]+indexes[1]) % 1 == 0:
-                fft_rec = np.log10(np.abs(objectRecoverFT[kyl:kyh, kxl:kxh])+1)
+                fft_rec = np.log10(np.abs(objectRecoverFT[pupil_square])+1)
                 # fft_rec = fftshift(objectRecoverFT)
-                im_out = ifft2(fftshift(objectRecoverFT))
+
                 def plot_image(ax, image, title):
                     ax.cla()
                     ax.imshow(image, cmap=plt.get_cmap('hot'))
                     ax.set_title(title)
                 axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
                             (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
-                for image in [np.abs(objectRecoverFT[kyl:kyh, kxl:kxh]), np.abs(lowResFT), np.abs(im_out), np.abs(objectRecoverFT)]:
+                for image in [np.log(np.abs(lowResFT)),
+                              np.abs(lowResFT), np.abs(im_out),
+                              np.log(np.abs(objectRecoverFT))]:
                     ax, title = next(axiter)
                     plot_image(ax, image, title)
                 fig.canvas.draw()
-            objectRecoverFT[kyl:kyh, kxl:kxh] = (1-CTF)*objectRecoverFT[kyl:kyh, kxl:kxh]+lowResFT
-
+            objectRecoverFT[pupil_square] = (1-CTF)*objectRecoverFT[pupil_square]+lowResFT
+    im_out = ifft2(fftshift(objectRecoverFT))
             # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return im_out
 

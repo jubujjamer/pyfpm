@@ -12,7 +12,7 @@ server_ip: http://10.99.39.174:5000 #http://10.200.0.99:5000 http://10.99.39.174
 # Microscope parameters
 # objective_na: 0.1 #0.12
 x: 1.
-na: 0.1 # Numerical aperture
+na: 0.05 # Numerical aperture
 # pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
 wavelength: 532E-9 # TODO: Should match with color
 pixel_size: 2.2E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6

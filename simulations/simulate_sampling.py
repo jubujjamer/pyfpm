@@ -32,7 +32,8 @@ fig.show()
 image_dict = dict()
 for it in iterator:
     print('kx: %.1f ky: %.1f' % (it['nx'], it['ny']))
-    im_array = simclient.acquire_ledmatrix(nx=it['nx'], ny=it['ny'], acqpars=it['acqpars'], pupil_radius= 50)
+    im_array = simclient.acquire_ledmatrix(nx=it['nx'], ny=it['ny'],
+                                           acqpars=it['acqpars'], pupil_radius = fpmm.get_pupil_radius(cfg))
     image_dict[it['indexes']] = im_array
     ax1.cla()
     img = ax1.imshow(im_array, cmap=plt.get_cmap('hot'))

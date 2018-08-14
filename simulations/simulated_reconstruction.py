@@ -30,7 +30,7 @@ samples, sim_cfg = dt.open_sampled('simtest.npy', mode='simulation')
 # Reconstruction
 start_time = time.time()
 hr = int(client.lhscale)*int(cfg.patch_size[0])
-im_out = fpm_reconstruct_classic(samples=samples, it=iterator, cfg=sim_cfg,  debug=True)
+im_out = fpm_reconstruct_classic(samples=samples, it=iterator, cfg=sim_cfg,  debug=False)
 print('--- %s seconds ---' % (time.time() - start_time))
 fig, axes = plt.subplots(1, 2, figsize = [15, 8])
 axes[0].imshow(np.abs(im_out)), axes[0].set_title('A')
