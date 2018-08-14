@@ -14,6 +14,7 @@ from io import StringIO
 import os
 ## To work with py 2 or
 import pyfpm.fpmmath as fpmm
+import pyfpm.deconvolution as dc
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -211,7 +212,7 @@ class SimClient(BaseClient):
         # Some repetitively used parameters
         self.ps = float(cfg.pixel_size)/float(cfg.x)
         self.wavelength = float(cfg.wavelength)
-        npx = float(cfg.patch_size[0])
+        npx = float(cfg.simulation_size[0])
         na = float(cfg.na)
         # NOTE: I had to put 2.2 in the denominator in place of 2 in order to
         # have a ps a bit smaller than strictly necesary, because of rounding errors
@@ -267,6 +268,24 @@ class SimClient(BaseClient):
         filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx, ny=ny,
                             cfg=self.cfg, mode='ledmatrix', pupil_radius=pupil_radius)
         return np.abs(filtered)
+
+    def acquire_pattern(self, angle=None, acqpars=None, pupil_radius=None):
+        """ Returs a simulated acquisition with given acquisition parameters.
+        Args:
+            theta (float):
+            phi (float):
+            acqpars (list):     [iso, shutter_speed, led_power]
+
+        Returns:
+            (ndarray):          complex 2d array
+        """
+        image_array = self.im_array
+        print(np.shape(image_array))
+        sc = fpmm.SemiCircle(dim=np.shape(image_array), radius=pupil_radius, angle=angle)
+        # Aplico la convolución dada por las PSFs de las pupilas asimétricas
+        blurred_up = dc.blured_image(PSF=sc.psf, X=image_array)
+
+        return np.abs(blurred_up)
 
     def show_filtered(self, theta=None, phi=None, power=None):
         theta = float(theta)

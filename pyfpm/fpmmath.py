@@ -128,7 +128,11 @@ def get_k_discrete(cfg):
     return kdsc
 
 def get_reconstructed_shape(cfg):
-    npx_hr = int(get_times_improvement(cfg)*int(get_image_size(cfg)))
+    npx_hr = int(get_times_improvement(cfg)*get_image_size(cfg))
+    return [npx_hr, npx_hr]
+
+def get_simulated_lrshape(cfg):
+    npx_hr = int(get_image_size(cfg))
     return [npx_hr, npx_hr]
 
 
@@ -310,8 +314,8 @@ def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None, phi=None
     f_ih_shift = fftshift(fft2(im_array))
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
     proc_array = ifft2(ifftshift(proc_array))
-    # proc_array = resize_complex_image(proc_array, original_shape)
-    # proc_array = np.abs(proc_array*np.conj(proc_array))
+    proc_array = resize_complex_image(proc_array, get_simulated_lrshape(cfg)
+)
     return proc_array
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):
@@ -339,6 +343,7 @@ def filter_by_pupil(im_array, theta, phi, power, cfg):
     proc_array = ifft2(proc_array)
     proc_array = resize_complex_image(proc_array, original_shape)
     proc_array = np.real(proc_array*np.conj(proc_array))
+
     return proc_array
 
 def show_filtered_image(self, image, theta, phi, power, pup_rad):
@@ -704,7 +709,7 @@ class MatrixShape(object):
         self.set_shape(dim)
 
     def set_shape(self, dim):
-        if type(dim) is list:
+        if type(dim) is list or tuple:
             self.shape = dim
         elif type(dim) is int:
             self.shape = [dim]*2

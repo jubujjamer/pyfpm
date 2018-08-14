@@ -679,7 +679,6 @@ def fpm_reconstruct_classic(samples=None, it=None, cfg=None,  debug=False):
         cfg: configuration (named tuple)
         debug: set it to 'True' if you want to see the reconstruction proccess
                (it slows down the reconstruction).
-
     Returns:
     --------
         (ndarray) The reconstructed modulus and phase of the sampled image.
@@ -701,33 +700,32 @@ def fpm_reconstruct_classic(samples=None, it=None, cfg=None,  debug=False):
     led_gap = float(cfg.led_gap)
     height = float(cfg.sample_height)
 
-    kdsc = ps_req*npx/wlen
-
+    objectRecover_mag = (samples[(0, -1)])/np.amax(samples[(0, -1)])
+    objectRecover_phase = (samples[(0, -1)]-samples[(-1, 0)])/(samples[(0 ,-1)]+samples[(-1, 0)])
+    objectRecover_phase = np.pi*(objectRecover_phase)/np.amax(objectRecover_phase)
+    objectRecover = objectRecover_mag*np.exp(1j*objectRecover_phase)
     objectRecover = np.ones(hrshape)
+    # plt.imshow(objectRecover_phase)
+    # plt.show()
     center = fpmm.image_center(hrshape)
-    CTF = fpmm.generate_CTF(image_size=[lrsize, lrsize], pupil_radius=pupil_radius)
+    CTF = fpmm.generate_CTF(image_size=[lrsize, lrsize], pupil_radius=pupil_radius)*.1
     # pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius,
     #                             aberrations=[0,], pixel_size=ps, wavelength=wlen)
     objectRecoverFT = fftshift(fft2(objectRecover))  # shifted transform
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
     # For the convergence index
-    N = len(samples)
-    if debug:
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(25, 15))
-        fig.show()
     # Steps 2-5
     for iteration in range(10):
         iterator = ct.set_iterator(cfg)
-        print('Iteration n. %d' % iteration)
-        # Patching for testing
+        # print('Iteration n. %d' % iteration)
         for it in iterator:
             # indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=0)
             indexes = it['indexes']
             lr_sample = np.copy(samples[it['indexes']])
             led_number = np.array([it['ny'], it['nx']])
             # Convert indexes to pupil center coordinates kx, ky
-            mc = np.array([15, 15]) #  Matrix center
+            mc = np.array(cfg.mat_center) #  Matrix center
             k_rel = np.sin(np.arctan((led_number-mc)*led_gap/height))
             k_abs = k_rel*ps_req*npx/wlen
             pup_center = k_abs+center
@@ -741,25 +739,8 @@ def fpm_reconstruct_classic(samples=None, it=None, cfg=None,  debug=False):
             im_lowRes = (1/factor) * lr_sample *np.exp(1j*np.angle(im_lowRes))
             lowResFT = fftshift(fft2(im_lowRes))*CTF
 
-            if debug and  (indexes[0]+indexes[1]) % 1 == 0:
-                fft_rec = np.log10(np.abs(objectRecoverFT[pupil_square])+1)
-                # fft_rec = fftshift(objectRecoverFT)
-
-                def plot_image(ax, image, title):
-                    ax.cla()
-                    ax.imshow(image, cmap=plt.get_cmap('hot'))
-                    ax.set_title(title)
-                axiter = iter([(ax1, 'Reconstructed FFT'), (ax2, 'Reconstructed magnitude'),
-                            (ax3, 'Acquired image'), (ax4, 'Reconstructed phase')])
-                for image in [np.log(np.abs(lowResFT)),
-                              np.abs(lowResFT), np.abs(im_out),
-                              np.log(np.abs(objectRecoverFT))]:
-                    ax, title = next(axiter)
-                    plot_image(ax, image, title)
-                fig.canvas.draw()
             objectRecoverFT[pupil_square] = (1-CTF)*objectRecoverFT[pupil_square]+lowResFT
     im_out = ifft2(fftshift(objectRecoverFT))
-            # print("Testing quality metric", fpmm.quality_metric(samples, Il, cfg))
     return im_out
 
 # def fpm_reconstruct(samples=None, backgrounds=None, it=None, init_point=None,
