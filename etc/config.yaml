@@ -12,10 +12,10 @@ server_ip: http://10.99.39.174:5000 #http://10.200.0.99:5000 http://10.99.39.174
 # Microscope parameters
 # objective_na: 0.1 #0.12
 x: 1.
-na: 0.085 # Numerical aperture
+na: 0.08 # Numerical aperture
 # pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
 wavelength: 532E-9 # TODO: Should match with color
-pixel_size: 1.8E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
+pixel_size: 2.6E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
 color: blue
 # Reconstruction parameters
 n_iter: 5 # Max number of iterations
@@ -58,6 +58,6 @@ phi_spr: 2048
 ################################################################################
 led_gap: 6 ## in mm
 # Led matrix specific
-array_size: 15 ## Should be odd
+array_size: 21 ## Should be odd
 matsize: 32
 mat_center: [15, 15]

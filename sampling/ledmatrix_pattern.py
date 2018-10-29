@@ -62,7 +62,6 @@ for angle in angles:
     ax.imshow(image_dict[angle], cmap=cm.gray)
     fig.canvas.draw()
 
-
 image_dict[-1] = acquire_image_pattern(ss=5E4, pattern=fpm.hex_encode(circ_matrix), Nmean=N)
 # decoded_matrix = fpm.hex_decode(encoded_matrix)
 

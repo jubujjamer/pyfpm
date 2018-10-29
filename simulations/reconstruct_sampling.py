@@ -35,9 +35,10 @@ samples, sim_cfg = dt.open_sampled('20180622_175208.npy', mode='sampling')
 # Reconstruction
 start_time = time.time()
 hr = int(client.lhscale)*int(cfg.patch_size[0])
-rec, phase = fpm_reconstruct_epry(samples=samples, hrshape=[hr, hr], it=iterator,
-                             cfg=sim_cfg, debug=cfg.debug, pupil_radius=client.pupil_radius,
-                             kdsc=client.kdsc)
+rec, phase = fpm_reconstruct_epry(samples=samples, hrshape=[hr, hr],
+                    it=iterator, cfg=sim_cfg, debug=cfg.debug,
+                    pupil_radius=client.pupil_radius,
+                    kdsc=client.kdsc)
 print('--- %s seconds ---' % (time.time() - start_time))
 plt.show()
 if not cfg.debug:

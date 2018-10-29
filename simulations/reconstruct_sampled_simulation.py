@@ -11,6 +11,7 @@ Usage:
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import abs, angle
 
 import pyfpm.local as local
 from pyfpm.reconstruct import fpm_reconstruct_epry, fpm_reconstruct
@@ -39,10 +40,11 @@ iterator = ct.set_iterator(cfg)
 # iterator = ins.inspect_samples(iterator, samples, sample_cfg)
 # ins.inspect_pupil(sample_cfg)
 # Reconstruction
-mag, phase = fpm_reconstruct_epry(samples=samples, it=iterator,
-                             cfg=sample_cfg, debug=cfg.debug)
+im_out = fpm_reconstruct_epry(samples=samples, it=iterator,
+                             cfg=sample_cfg, debug=sample_cfg.debug)
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+ax1.imshow(abs(im_out)), plt.gray()
+ax2.imshow(angle(im_out)), plt.gray()
+ax3.imshow(client.image_mag), plt.gray()
+ax4.imshow(client.image_phase), plt.gray()
 plt.show()
-if not cfg.debug:
-    import matplotlib.pylab as plt
-    plt.imshow(mag), plt.gray()
-    plt.show()
