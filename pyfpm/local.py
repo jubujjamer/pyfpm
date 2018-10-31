@@ -14,7 +14,6 @@ from io import StringIO
 import os
 ## To work with py 2 or
 import pyfpm.fpmmath as fpmm
-import pyfpm.deconvolution as dc
 
 class BaseClient(object):
     def acquire_to(self, filename, theta, phi, power):
@@ -279,6 +278,7 @@ class SimClient(BaseClient):
         Returns:
             (ndarray):          complex 2d array
         """
+        import pyfpm.deconvolution as dc
         image_array = self.im_array
         print(np.shape(image_array))
         sc = fpmm.SemiCircle(dim=np.shape(image_array), radius=pupil_radius, angle=angle)

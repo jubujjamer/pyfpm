@@ -222,6 +222,7 @@ def set_iterator(cfg=None):
         xx = range(int(matsize/2-asize/2), int(matsize/2+asize/2))
         zz = product(xx, xx)
 
+
         for x, y in zz:
             acqpars = get_acquisition_pars(theta=0, phi=0, cfg=cfg)
             yield {'indexes': (x, y), 'nx': x, 'ny': y, 'acqpars': acqpars}
@@ -241,11 +242,14 @@ def set_iterator(cfg=None):
             ny = yc+y
             acqpars = get_acquisition_pars(nx=nx, ny=ny, cfg=cfg)
             return {'indexes': (int(nx), int(ny)), 'nx': nx, 'ny': ny, 'acqpars': acqpars}
+        from random import shuffle
 
         yield out_dict(0, 0)
         for i in np.arange(1, lasti+1):
             increasing = np.arange(-i+1, i+1)
             decreasing= np.arange(i-1, -i-1, -1)
+            # shuffle(increasing)
+            # shuffle(decreasing)
             for y in increasing:
                 yield out_dict(i, y)
             for x in decreasing:

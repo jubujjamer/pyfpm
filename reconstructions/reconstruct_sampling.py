@@ -11,6 +11,7 @@ Usage:
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import abs, angle
 
 import pyfpm.local as local
 from pyfpm.reconstruct import fpm_reconstruct_epry, fpm_reconstruct
@@ -24,7 +25,9 @@ mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
 client = local.SimClient(cfg=cfg)
-samples, sample_cfg = dt.open_sampled('20180704_151758.npy', mode='sampling')
+samples, sample_cfg = dt.open_sampled('20181031_160345.npy', mode='sampling')
+# samples, sample_cfg = dt.open_sampled('simtest.npy', mode='simulation')
+
 iterator = ct.set_iterator(cfg)
 
 # total_time = 0
@@ -36,13 +39,15 @@ iterator = ct.set_iterator(cfg)
 
 # First inspection
 # iterator = ins.inspect_iterator(iterator, sample_cfg)
-iterator = ins.inspect_samples(iterator, samples, sample_cfg)
+# iterator = ins.inspect_samples(iterator, samples, sample_cfg)
 # ins.inspect_pupil(sample_cfg)
 # Reconstruction
-mag, phase = fpm_reconstruct_epry(samples=samples, it=iterator,
+im_out, pupil =  fpm_reconstruct_epry(samples=samples, it=iterator,
                              cfg=sample_cfg, debug=cfg.debug)
+
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+ax1.imshow(abs(im_out)), plt.gray()
+ax2.imshow(angle(im_out), vmin=-.5, vmax=.5), plt.gray()
+ax3.imshow(abs(pupil)), plt.hot()
+ax4.imshow(angle(pupil)), plt.hot()
 plt.show()
-if not cfg.debug:
-    import matplotlib.pylab as plt
-    plt.imshow(mag), plt.gray()
-    plt.show()

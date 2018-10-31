@@ -40,11 +40,11 @@ iterator = ct.set_iterator(cfg)
 # iterator = ins.inspect_samples(iterator, samples, sample_cfg)
 # ins.inspect_pupil(sample_cfg)
 # Reconstruction
-im_out = fpm_reconstruct_epry(samples=samples, it=iterator,
+im_out, pupil = fpm_reconstruct_epry(samples=samples, it=iterator,
                              cfg=sample_cfg, debug=sample_cfg.debug)
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.imshow(abs(im_out)), plt.gray()
 ax2.imshow(angle(im_out)), plt.gray()
-ax3.imshow(client.image_mag), plt.gray()
-ax4.imshow(client.image_phase), plt.gray()
+ax3.imshow(abs(pupil)), plt.hot()
+ax4.imshow(angle(pupil)), plt.hot()
 plt.show()

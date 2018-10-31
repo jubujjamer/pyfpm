@@ -19,7 +19,7 @@ import numpy as np
 from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from PIL import Image
 from scipy import ndimage
-from numpy import abs, exp, angle, pi, imag, real, arctan
+from numpy import abs, exp, angle, pi, imag, real, arctan, amax, conj
 from numpy.random import rand
 
 # from pyfpm.coordinates import PlatformCoordinates
@@ -328,7 +328,7 @@ def fpm_reconstruct(samples=None, it=None, cfg=None,  debug=False):
             delta_gfk = fftshift(fft2(gk_prime))*CTF
             gfk[kyl:kyh, kxl:kxh] = (1-CTF)*gfk[kyl:kyh, kxl:kxh]+delta_gfk
         gk = ifft2(fftshift(gfk))
-    return gk
+    return gk, gk
 
 def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     """ FPM reconstructon using the alternating projections algorithm. Here
@@ -353,7 +353,6 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     """
     # Getting the maximum angle by the given configuration
     # Step 1: initial estimation
-    # objectRecover = initialize(hrshape, cfg, 'zero')
     lrsize = fpmm.get_image_size(cfg)
     pupil_radius = fpmm.get_pupil_radius(cfg)
     ps = fpmm.get_pixel_size(cfg)
@@ -363,43 +362,42 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
 
     objectRecover = np.ones(hrshape)
     xc, yc = fpmm.image_center(hrshape)
-    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], 1.*pupil_radius)
-    pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius, aberrations=[0,], pixel_size=ps, wavelength=wlen)
-    gfk = fftshift(fft2(objectRecover))  # shifted transform
-    # gfk = np.zeros(hrshape, dtype='complex')
-    # gfk[200, 200] = 160000
+    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
+    pupil = np.ones_like(CTF, dtype='complex')
+    gfk = np.zeros(hrshape)*exp(1j*rand(hrshape[0], hrshape[1])*pi)
+    gfk[yc, xc] = 1
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
-    # For the convergence index
-    # N = len(samples)
-    # lrarray = np.zeros((lrsize, lrsize, N))
+    # For convergence index
     e_gk = 0
     gk_prev = np.zeros_like(gfk)
-    gk = np.ones_like(gfk)
+    gk = np.ones_like(gfk)*(1+1j)
     gpk_prev = np.zeros_like(gfk)
     gpk = np.ones_like(gfk)
-    gm=5
-    for iteration in range(50):
+    ek = 1
+    gm = 0
+    a = 2
+    b = 1
+    sum_lr = 0
+    for it in ct.set_iterator(cfg):
+        indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg)
+        sum_lr += np.sum(samples[it['indexes']])
+    for iteration in range(10):
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
         e_gk = np.sum((abs(gk) - abs(gk_prev))**2)/(np.sum(abs(gk)**2))
         e_gpk = np.sum((angle(gk)-angle(gk_prev))**2)/(np.sum(angle(gk)**2))
         gk_prev = gk
-        print('Iteration %d | gk error %.4f | gpk error %.4f' % (iteration, e_gk, e_gpk))
-        if (e_gk < 1E-2):
+        print('Iteration %d | gk error %.2e | gpk error %.4f | ek %.2e |' % (iteration, e_gk, e_gpk, ek))
+        if (ek < 0.15):
             break
+        ek = 0
+        gm = gm*e_gk
         for it in iterator:
-            gm = gm*e_gk
             acqpars = it['acqpars']
-            # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
-            indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0, yoff=0)
-            # r = 10*np.sqrt(indexes[0]**2+indexes[1]**2)
+            indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0., yoff=0.)
             lr_sample = np.copy(samples[it['indexes']])
-            # lr_sample[lr_sample > 252] = 0
-            # lr_sample[lr_sample < 3] = 0
-            # lr_sample*=(5E4/(5.E5+acqpars[1]))
-            # print((1+5E4/acqpars[1]/4))
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
@@ -407,18 +405,21 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             kyh = kyl + lrsize
             kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
-            # Il = generate_il(im_array, f_ih, theta, phi, cfg)
             delta_gfk1 = factor*gfk[kyl:kyh, kxl:kxh]*pupil*CTF
             # Step 2: lr of the estimated image using the known pupil
-            delta_gk = ifft2(ifftshift(delta_gfk1))+gm*rand(lrsize,lrsize)
-            gk_prime = 1/factor * lr_sample * np.exp(1j*np.angle(delta_gk))
+            delta_gk = ifft2(fftshift(delta_gfk1))+gm*rand(lrsize,lrsize)
+            gk_prime = 1/factor*(lr_sample)*delta_gk/abs(delta_gk)
             delta_gfk2 = fftshift(fft2(gk_prime))*CTF/pupil
-            ORFT = gfk[kyl:kyh, kxl:kxh].ravel()
-            gfk[kyl:kyh, kxl:kxh] +=1E-2* (delta_gfk2-delta_gfk1)*np.conjugate(pupil)/np.max(np.abs(pupil.ravel())**2)
-            pupil +=1E-2*(delta_gfk2-delta_gfk1)*np.conjugate(gfk[kyl:kyh,kxl:kxh])/np.max(np.abs(ORFT)**2)
-            # print(np.sum((abs(delta_gfk2) - abs(delta_gfk1))**2))
+            # update of the pupil and the fourier transform of the sample.
+            delta_phi = delta_gfk2-delta_gfk1
+            sampled_gfk = gfk[kyl:kyh, kxl:kxh]
+            sampled_gfk += a*delta_phi*conj(pupil)/amax(abs(pupil))**2
+            if iteration > 0:
+                pupil += b*delta_phi*conj(sampled_gfk)/amax(abs(sampled_gfk))**2
+            gfk[kyl:kyh, kxl:kxh] = sampled_gfk
+            ek += np.sum(abs(delta_gfk2-delta_gfk1)**2)/sum_lr**2
         gk = ifft2(fftshift(gfk))
-    return gk
+    return gk, pupil*CTF
 
 # def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
 #     """ FPM reconstructon using the alternating projections algorithm. Here
