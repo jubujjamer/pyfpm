@@ -54,18 +54,18 @@ iterator = ct.set_iterator(cfg)
 total_time = 0
 for it in iterator:
     nx, ny = it['nx'], it['ny']
-    iso, ss, power = it['acqpars']
+    print(it['acqpars'])
+    iso, ss, power, nmeans = it['acqpars']
     total_time += ss/1E6
-    print(nx, ny, ss, total_time)
+    # print(nx, ny, ss, nmeans)
 iterator = ct.set_iterator(cfg)
-
 fig.canvas.draw()
 
 for it in iterator:
     nx, ny = it['nx'], it['ny']
-    iso, ss, power = it['acqpars']
+    iso, ss, power, nmeans = it['acqpars']
     print(nx, ny, ss)
-    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=1)
+    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=nmeans)
     image_dict[it['indexes']] = im_array
     for ax in axes:
         ax.cla()

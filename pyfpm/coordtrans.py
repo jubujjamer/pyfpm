@@ -70,30 +70,118 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
     #                (15, 13): 1E7, (15, 14): 1E5, (15, 15): 5E4, (15, 16): 1E5, (15, 17): 1E7,
     #                (16, 13): 1E7, (16, 14): 1E5, (16, 15): 1E5, (16, 16): 1E5, (16, 17): 1E7,
     #                (17, 13): 1E7, (17, 14): 1E7, (17, 15): 1E7, (17, 16): 1E7, (17, 17): 1E7}
-    led_center = 15
-    led_disp = (int(cfg.array_size)+1)//2
-    led_range = range(led_center-led_disp, led_center+led_disp)
-    ledmap = product(led_range, led_range)
+    nmeans_dict = {(15, 15): 1,
+(16, 15): 1,
+(16, 16): 1,
+(15, 16): 1,
+(14, 16): 1,
+(14, 15): 1,
+(14, 14): 1,
+(15, 14): 1,
+(16, 14): 1,
+(17, 14): 2,
+(17, 15): 1,
+(17, 16): 1,
+(17, 17): 2,
+(16, 17): 1,
+(15, 17): 1,
+(14, 17): 1,
+(13, 17): 1,
+(13, 16): 2,
+(13, 15): 1,
+(13, 14): 1,
+(13, 13): 5,
+(14, 13): 2,
+(15, 13): 1,
+(16, 13): 5,
+(17, 13): 5,
+(18, 13): 5,
+(18, 14): 5,
+(18, 15): 5,
+(18, 16): 5,
+(18, 17): 5,
+(18, 18): 5,
+(17, 18): 5,
+(16, 18): 2,
+(15, 18): 1,
+(14, 18): 1,
+(13, 18): 5,
+(12, 18): 5,
+(12, 17): 5,
+(12, 16): 5,
+(12, 15): 5,
+(12, 14): 5,
+(12, 13): 5,
+(12, 12): 5,
+(13, 12): 5,
+(14, 12): 5,
+(15, 12): 5,
+(16, 12): 5,
+(17, 12): 5,
+(18, 12): 5,
+(19, 12): 5,
+(19, 13): 5,
+(19, 14): 5,
+(19, 15): 5,
+(19, 16): 5,
+(19, 17): 5,
+(19, 18): 5,
+(19, 19): 5,
+(18, 19): 5,
+(17, 19): 5,
+(16, 19): 5,
+(15, 19): 5,
+(14, 19): 5,
+(13, 19): 5,
+(12, 19): 5,
+(11, 19): 5,
+(11, 18): 5,
+(11, 17): 5,
+(11, 16): 5,
+(11, 15): 5,
+(11, 14): 5,
+(11, 13): 5,
+(11, 12): 5,
+(11, 11): 5,
+(12, 11): 5,
+(13, 11): 5,
+(14, 11): 5,
+(15, 11): 5,
+(16, 11): 5,
+(17, 11): 5,
+(18, 11): 5,
+(19, 11): 5}
 
-    ss_dict = {}
-    for led in ledmap:
-        # if led == [15, 15]:
-        #     ss_dict[(led[0], led[1])] = 60E4
-        # else:
-        dist = (np.abs(led[0]-15)**2+np.abs(led[1]-15))
-        ss = 5.E5*(1+.5*dist)
-        ss_dict[(led[0], led[1])] = ss
-        if ss >3E6:
-            ss_dict[(led[0], led[1])] = 3E6
+
+
+    # led_center = 15
+    # led_disp = (int(cfg.array_size)+1)//2
+    # led_range = range(led_center-led_disp, led_center+led_disp)
+    # ledmap = product(led_range, led_range)
+    #
+    # ss_dict = {}
+    # for led in ledmap:
+    #     # if led == [15, 15]:
+    #     #     ss_dict[(led[0], led[1])] = 60E4
+    #     # else:
+    #     dist = (np.abs(led[0]-15)**2+np.abs(led[1]-15))
+    #     ss = 5.E5*(1+.5*dist)
+    #     ss_dict[(led[0], led[1])] = ss
+    #     if ss >3E6:
+    #         ss_dict[(led[0], led[1])] = 3E6
 
     power = 255
     # Camera parameters
     if nx is not None:
         try:
-            shutter_speed = ss_dict[nx, ny]
+            # shutter_speed = ss_dict[nx, ny]
+            shutter_speed = 500000
+            nmeans = nmeans_dict[nx, ny]
         except:
             shutter_speed = 1E5
-        return float(cfg.iso), shutter_speed, power
+            nmeans = 1
+        return float(cfg.iso), shutter_speed, power, nmeans
+
     shutter_speed_min = cfg.shutter_speed[0]
     shutter_speed_max = cfg.shutter_speed[0]
     if phi == None:
@@ -106,7 +194,7 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
                                   shutter_speed_min, shutter_speed_max)
     # Led parameters
     led_power = cfg.max_led_power
-    return cfg.iso, shutter_speed, led_power
+    return cfg.iso, shutter_speed, led_power, nmeans
 
 
 def angles_to_k(theta, phi, kdsc):

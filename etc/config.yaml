@@ -58,6 +58,6 @@ phi_spr: 2048
 ################################################################################
 led_gap: 6 ## in mm
 # Led matrix specific
-array_size: 15 ## Should be odd
+array_size: 9 ## Should be odd
 matsize: 32
 mat_center: [15, 15]

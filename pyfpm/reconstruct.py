@@ -20,7 +20,7 @@ from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from PIL import Image
 from scipy import ndimage
 from numpy import abs, exp, angle, pi, imag, real, arctan, amax, conj
-from numpy.random import rand
+from numpy.random import rand, randn
 
 # from pyfpm.coordinates import PlatformCoordinates
 import pyfpm.fpmmath as fpmm
@@ -295,7 +295,7 @@ def fpm_reconstruct(samples=None, it=None, cfg=None,  debug=False):
     gk = np.ones_like(gfk)
     gpk_prev = np.zeros_like(gfk)
     gpk = np.ones_like(gfk)
-    for iteration in range(50):
+    for iteration in range(10):
         iterator = ct.set_iterator(cfg)
         # Patching for testing
         e_gk = np.sum((abs(gk) - abs(gk_prev))**2)/(np.sum(abs(gk)**2))
@@ -360,11 +360,15 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     hrshape = fpmm.get_reconstructed_shape(cfg)
     kdsc = fpmm.get_k_discrete(cfg)
 
-    objectRecover = np.ones(hrshape)
+    # objectRecover = randn(hrshape[0], hrshape[1])*fpmm.generate_CTF(0, 0, [hrshape[0], hrshape[1]], pupil_radius*.2)
     xc, yc = fpmm.image_center(hrshape)
     CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
     pupil = np.ones_like(CTF, dtype='complex')
-    gfk = np.zeros(hrshape)*exp(1j*rand(hrshape[0], hrshape[1])*pi)
+    # pupil = (rand(lrsize, lrsize)*(1+0*1j)+1)*0.5
+    gfk = exp(1j*rand(hrshape[0], hrshape[1])*pi)*fpmm.generate_CTF(0, 0, [hrshape[0], hrshape[1]], pupil_radius*1)
+    gfk = np.zeros(hrshape, dtype='complex')
+    # gfk += rand(hrshape[0], hrshape[1])+1
+    # gfk[yc-lrsize//2:yc+lrsize//2, xc-lrsize//2:xc+lrsize//2] = 1+rand(lrsize, lrsize)*exp(1j*(rand(lrsize, lrsize)+1)*0.5*pi)
     gfk[yc, xc] = 1
     # Steps 2-5
     factor = (lrsize/hrshape[0])**2
@@ -375,8 +379,8 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     gpk_prev = np.zeros_like(gfk)
     gpk = np.ones_like(gfk)
     ek = 1
-    gm = 0
-    a = 2
+    gm = 1
+    a = 1
     b = 1
     sum_lr = 0
     for it in ct.set_iterator(cfg):
@@ -390,8 +394,8 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
         e_gpk = np.sum((angle(gk)-angle(gk_prev))**2)/(np.sum(angle(gk)**2))
         gk_prev = gk
         print('Iteration %d | gk error %.2e | gpk error %.4f | ek %.2e |' % (iteration, e_gk, e_gpk, ek))
-        if (ek < 0.15):
-            break
+        # if (ek < 0.00001):
+        #     break
         ek = 0
         gm = gm*e_gk
         for it in iterator:
@@ -408,18 +412,18 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             delta_gfk1 = factor*gfk[kyl:kyh, kxl:kxh]*pupil*CTF
             # Step 2: lr of the estimated image using the known pupil
             delta_gk = ifft2(fftshift(delta_gfk1))+gm*rand(lrsize,lrsize)
-            gk_prime = 1/factor*(lr_sample)*delta_gk/abs(delta_gk)
+            gk_prime = 1/factor*lr_sample*delta_gk/abs(delta_gk)
             delta_gfk2 = fftshift(fft2(gk_prime))*CTF/pupil
             # update of the pupil and the fourier transform of the sample.
             delta_phi = delta_gfk2-delta_gfk1
             sampled_gfk = gfk[kyl:kyh, kxl:kxh]
             sampled_gfk += a*delta_phi*conj(pupil)/amax(abs(pupil))**2
-            if iteration > 0:
+            if iteration > 2:
                 pupil += b*delta_phi*conj(sampled_gfk)/amax(abs(sampled_gfk))**2
             gfk[kyl:kyh, kxl:kxh] = sampled_gfk
             ek += np.sum(abs(delta_gfk2-delta_gfk1)**2)/sum_lr**2
         gk = ifft2(fftshift(gfk))
-    return gk, pupil*CTF
+    return gk, pupil
 
 # def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
 #     """ FPM reconstructon using the alternating projections algorithm. Here

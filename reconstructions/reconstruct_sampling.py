@@ -25,7 +25,7 @@ mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
 client = local.SimClient(cfg=cfg)
-samples, sample_cfg = dt.open_sampled('20181031_160345.npy', mode='sampling')
+samples, sample_cfg = dt.open_sampled('20181102_165822.npy', mode='sampling')
 # samples, sample_cfg = dt.open_sampled('simtest.npy', mode='simulation')
 
 iterator = ct.set_iterator(cfg)
