@@ -25,7 +25,7 @@ mode = cfg.task
 itertype = cfg.sweep
 server_ip = cfg.server_ip
 client = local.SimClient(cfg=cfg)
-samples, sample_cfg = dt.open_sampled('20181102_165822.npy', mode='sampling')
+samples, sample_cfg = dt.open_sampled('20181105_154018.npy', mode='sampling')
 # samples, sample_cfg = dt.open_sampled('simtest.npy', mode='simulation')
 
 iterator = ct.set_iterator(cfg)
@@ -48,6 +48,6 @@ im_out, pupil =  fpm_reconstruct_epry(samples=samples, it=iterator,
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 ax1.imshow(abs(im_out)), plt.gray()
 ax2.imshow(angle(im_out), vmin=-.5, vmax=.5), plt.gray()
-ax3.imshow(abs(pupil)), plt.hot()
+ax3.imshow(samples[(15, 15)][:sample_cfg.patch_size[0],:sample_cfg.patch_size[1]]), plt.hot()
 ax4.imshow(angle(pupil)), plt.hot()
 plt.show()

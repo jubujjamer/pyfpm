@@ -37,7 +37,7 @@ def acquire_image(ss, nx, ny, Nmean=1):
     image_mean = np.zeros(cfg.patch_size)
     for i in range(Nmean+1):
         image_response = client.acquire_ledmatrix(nx=nx, ny=ny, power=255,
-                    shutter_speed=ss, iso=400, xoff=1500, yoff=1250, color='B')
+                    shutter_speed=ss, iso=400, xoff=1100, yoff=850, color='R')
 
         image_i = np.array(image_response).reshape(cfg.patch_size)
         image_mean += image_i
