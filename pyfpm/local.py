@@ -209,23 +209,22 @@ class SimClient(BaseClient):
             self.image_mag = None
             self.image_phase = None
         # Some repetitively used parameters
-        self.ps = float(cfg.pixel_size)/float(cfg.x)
-        self.wavelength = float(cfg.wavelength)
-        npx = float(cfg.simulation_size[0])
-        na = float(cfg.na)
+        # self.ps = float(cfg.pixel_size)/float(cfg.x)
+        # self.wavelength = float(cfg.wavelength)
+        # npx = float(cfg.simulation_size[0])
+        # na = float(cfg.na)
         # NOTE: I had to put 2.2 in the denominator in place of 2 in order to
         # have a ps a bit smaller than strictly necesary, because of rounding errors
         # self.ps_req = self.wavelength/(4*(na+np.sin(np.radians(cfg.phi[1]))))
-        self.ps_req = self.ps/2.5
-        self.lhscale = self.ps/self.ps_req
-        self.lrsize = int(np.floor(npx/self.lhscale))
+        # self.ps_req = self.ps/2.5
+        # self.lhscale = self.ps/self.ps_req
+        # self.lrsize = int(np.floor(npx/self.lhscale))
          # NOTE: I was using ps here, but in the tutorial uses ps_req
-        self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
-        print('radius', self.pupil_radius, self.ps_req*na*npx/self.wavelength)
+        # self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
         ## To convert coordinates to discretized kself.
         # k_discrete = sin(theta)*k0/dk = sin(t)*2pi/l*1/(2*pi/(ps*npx))
         # NOTE: The same observation about ps and ps_req
-        self.kdsc = self.ps_req*npx/self.wavelength
+        # self.kdsc = self.ps_req*npx/self.wavelength
         # self.pupil_rad = cfg.pupil_size
         # self.image_size = cfg.video_size
 
@@ -264,8 +263,9 @@ class SimClient(BaseClient):
         Returns:
             (ndarray):          complex 2d array
         """
-        filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx, ny=ny,
-                            cfg=self.cfg, mode='ledmatrix', pupil_radius=pupil_radius)
+        filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx,
+                        ny=ny, cfg=self.cfg, mode='ledmatrix',
+                        pupil_radius=pupil_radius)
         return np.abs(filtered)
 
     def acquire_pattern(self, angle=None, acqpars=None, pupil_radius=None):

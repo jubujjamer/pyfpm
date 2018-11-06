@@ -314,8 +314,7 @@ def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None, phi=None
     f_ih_shift = fftshift(fft2(im_array))
     proc_array = pupil * f_ih_shift  # space pupil * fourier im
     proc_array = ifft2(ifftshift(proc_array))
-    proc_array = resize_complex_image(proc_array, get_simulated_lrshape(cfg)
-)
+    proc_array = resize_complex_image(proc_array, get_simulated_lrshape(cfg))
     return proc_array
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):

@@ -364,8 +364,8 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     xc, yc = fpmm.image_center(hrshape)
     CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
     # pupil = np.ones_like(CTF, dtype='complex')
-    # pupil = 1
-    pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius, aberrations=[.5E-6,], pixel_size=ps, wavelength=wlen)
+    pupil = 1
+    # pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius, aberrations=[.5E-6,], pixel_size=ps, wavelength=wlen)
     # pupil = (rand(lrsize, lrsize)*(1+0*1j)+1)*0.5
     # gfk = exp(1j*rand(hrshape[0], hrshape[1])*pi)*fpmm.generate_CTF(0, 0, [hrshape[0], hrshape[1]], pupil_radius*1)
     # gfk = np.zeros(hrshape, dtype='complex')
@@ -389,7 +389,7 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     for it in ct.set_iterator(cfg):
         indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg)
         sum_lr += np.sum(samples[it['indexes']])
-    for iteration in range(30):
+    for iteration in range(10):
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
@@ -413,6 +413,7 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
             delta_gfk1 = gfk[kyl:kyh, kxl:kxh]*pupil*CTF
+            print(kyl, kyh, kxl, kxh, yc+kx, yc+ky)
             # Step 2: lr of the estimated image using the known pupil
             delta_gk = ifft2(ifftshift(delta_gfk1))
             gk_prime = 1/factor*lr_sample*delta_gk/abs(delta_gk)
@@ -424,6 +425,9 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             if iteration > -1:
                 pupil += b*delta_phi*conj(sampled_gfk)/amax(abs(sampled_gfk))**2
             gfk[kyl:kyh, kxl:kxh] = sampled_gfk
+            test_img = delta_phi
+            # plt.plot(abs(delta_phi[25,:]))
+            # plt.show()
             ek += np.sum(abs(delta_gfk2-delta_gfk1)**2)/sum_lr**2
         gk = ifft2(fftshift(gfk))
     return gk, pupil
