@@ -37,8 +37,7 @@ def acquire_image(ss, nx, ny, Nmean=1):
     image_mean = np.zeros(cfg.patch_size)
     for i in range(Nmean+1):
         image_response = client.acquire_ledmatrix(nx=nx, ny=ny, power=255,
-                    shutter_speed=ss, iso=400, xoff=1100, yoff=850, color='R')
-
+                    shutter_speed=ss, iso=800, xoff=1150, yoff=850, color='B')
         image_i = np.array(image_response).reshape(cfg.patch_size)
         image_mean += image_i
     return image_mean/(Nmean)
@@ -64,8 +63,10 @@ fig.canvas.draw()
 for it in iterator:
     nx, ny = it['nx'], it['ny']
     iso, ss, power, nmeans = it['acqpars']
+    start = time.time()
     print(nx, ny, ss)
-    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=nmeans)
+    im_array = acquire_image(ss=ss, nx=nx, ny=ny, Nmean=1)
+    print(time.time()-start)
     image_dict[it['indexes']] = im_array
     for ax in axes:
         ax.cla()

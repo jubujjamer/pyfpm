@@ -26,7 +26,6 @@ def save_yaml_metadata(outname, cfg):
         yaml.dump(out_dict, outfile, default_flow_style=False)
     return
 
-
 def load_config():
     config_dict = yaml.load(open(CONFIG_FILE, 'r'))
     config = collections.namedtuple('config', config_dict.keys())
@@ -64,14 +63,11 @@ def iter_dict(image_dict):
     for ((theta, phi), (img, power)) in image_dict.items():
         yield theta, phi, power, img
 
-
 def open_sampled(filename, mode='sampling'):
     if mode == 'sampling':
         datafile = os.path.join(OUT_SAMLPING, filename)
     if mode == 'simulation':
         datafile = os.path.join(OUT_SIMULATION, filename)
-    print(datafile)
-
     configfile = os.path.splitext(datafile)[0]+'.yaml'
     config_dict = yaml.load(open(configfile, 'r'))
     config = collections.namedtuple('config', config_dict.keys())

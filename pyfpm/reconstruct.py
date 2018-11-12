@@ -288,14 +288,14 @@ def fpm_reconstruct(samples=None, it=None, cfg=None,  debug=False):
     # For the convergence index
     N = len(samples)
     beta = 0.
-    gm=5
+    gm=0
     # lrarray = np.zeros((lrsize, lrsize, N))
     e_gk = 0
     gk_prev = np.zeros_like(gfk)
     gk = np.ones_like(gfk)
     gpk_prev = np.zeros_like(gfk)
     gpk = np.ones_like(gfk)
-    for iteration in range(10):
+    for iteration in range(5):
         iterator = ct.set_iterator(cfg)
         # Patching for testing
         e_gk = np.sum((abs(gk) - abs(gk_prev))**2)/(np.sum(abs(gk)**2))
@@ -311,7 +311,7 @@ def fpm_reconstruct(samples=None, it=None, cfg=None,  debug=False):
             acqpars = it['acqpars']
             # indexes, theta, phi = it['indexes'], it['theta'], it['phi']
             indexes, kx_rel, ky_rel = ct.n_to_krels(it, cfg=cfg)
-            lr_sample = np.copy(samples[it['indexes']])
+            lr_sample = np.copy(samples[it['indexes']][:lrsize, :lrsize])
             # Calculating coordinates
             [ky, kx] = kdsc*ky_rel, kdsc*kx_rel
             kyl = int(np.round(yc+ky-(lrsize+1)/2))
@@ -362,16 +362,19 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
 
     objectRecover = np.ones(hrshape)
     xc, yc = fpmm.image_center(hrshape)
-    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], pupil_radius)
+    CTF = fpmm.generate_CTF(0, 0, [lrsize, lrsize], 1.*pupil_radius)
+    # print(lrsize,hrshape)
+    # plt.imshow(CTF)
+    # plt.show()
     # pupil = np.ones_like(CTF, dtype='complex')
     pupil = 1
-    # pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius, aberrations=[.5E-6,], pixel_size=ps, wavelength=wlen)
+    # pupil = fpmm.aberrated_pupil(image_size=[lrsize, lrsize], pupil_radius=pupil_radius, aberrations=[-.1E-6,], pixel_size=ps, wavelength=wlen)*CTF
     # pupil = (rand(lrsize, lrsize)*(1+0*1j)+1)*0.5
-    # gfk = exp(1j*rand(hrshape[0], hrshape[1])*pi)*fpmm.generate_CTF(0, 0, [hrshape[0], hrshape[1]], pupil_radius*1)
+    # gfk = exp(1j*rand(hrshape[0], hrshape[1])*pi)*fpmm.generate_CTF(0, 0, [hrshape[0], hrshape[1]], pupil_radius*.1)
     # gfk = np.zeros(hrshape, dtype='complex')
     gfk = fftshift(fft2(objectRecover))
     # gfk += rand(hrshape[0], hrshape[1])+1
-    # gfk[yc-lrsize//2:yc+lrsize//2, xc-lrsize//2:xc+lrsize//2] = 1+rand(lrsize, lrsize)*exp(1j*(rand(lrsize, lrsize)+1)*0.5*pi)
+    # gfk[yc-lrsize//2:yc+lrsize//2, xc-lrsize//2:xc+lrsize//2] = 1+rand(lrsize, lrsize)
     # gfk[yc, xc] = 1
     # Steps 2-5
     factor = (float(lrsize)/hrshape[0])**2
@@ -389,7 +392,8 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
     for it in ct.set_iterator(cfg):
         indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg)
         sum_lr += np.sum(samples[it['indexes']])
-    for iteration in range(10):
+    for iteration in range(15):
+
         iterator = ct.set_iterator(cfg)
         print('Iteration n. %d' % iteration)
         # Patching for testing
@@ -407,13 +411,14 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             lr_sample = np.copy(samples[it['indexes']][:lrsize, :lrsize])
             # From generate_il
             # Calculating coordinates
-            [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
+            [kx, ky] = kdsc*kx_rel, kdsc*ky_rel # k_rel is sin(phi)
+            # print(kdsc)
             kyl = int(np.round(yc+ky-(lrsize+1)/2))
             kyh = kyl + lrsize
             kxl = int(np.round(xc+kx-(lrsize+1)/2))
             kxh = kxl + lrsize
             delta_gfk1 = gfk[kyl:kyh, kxl:kxh]*pupil*CTF
-            print(kyl, kyh, kxl, kxh, yc+kx, yc+ky)
+            # print(kyl, kyh, kxl, kxh, yc+kx, yc+ky)
             # Step 2: lr of the estimated image using the known pupil
             delta_gk = ifft2(ifftshift(delta_gfk1))
             gk_prime = 1/factor*lr_sample*delta_gk/abs(delta_gk)
@@ -425,11 +430,13 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
             if iteration > -1:
                 pupil += b*delta_phi*conj(sampled_gfk)/amax(abs(sampled_gfk))**2
             gfk[kyl:kyh, kxl:kxh] = sampled_gfk
-            test_img = delta_phi
+            # test_img = delta_phi
             # plt.plot(abs(delta_phi[25,:]))
             # plt.show()
             ek += np.sum(abs(delta_gfk2-delta_gfk1)**2)/sum_lr**2
         gk = ifft2(fftshift(gfk))
+        # plt.imshow(np.log(abs(gfk)))
+        # plt.show()
     return gk, pupil
 
 # def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):

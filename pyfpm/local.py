@@ -197,36 +197,22 @@ class SimClient(BaseClient):
     def __init__(self, cfg):# Y Datos del microscopio
         self.cfg = cfg
         HOME_FOLDER = os.path.expanduser("~/git/pyfpm")
-        try:
-            self.image_mag = self.load_image(os.path.join(HOME_FOLDER, cfg.input_mag))
-            self.image_phase = self.load_image(os.path.join(HOME_FOLDER, cfg.input_phase))
-            # Transform into complete field image
-            mag_array = self.image_mag
-            ph_array = np.pi*(self.image_phase)/np.amax(self.image_phase)
-            self.im_array = mag_array*np.exp(1j*ph_array)
-        except:
-            print('File not found.')
-            self.image_mag = None
-            self.image_phase = None
-        # Some repetitively used parameters
-        # self.ps = float(cfg.pixel_size)/float(cfg.x)
-        # self.wavelength = float(cfg.wavelength)
-        # npx = float(cfg.simulation_size[0])
-        # na = float(cfg.na)
-        # NOTE: I had to put 2.2 in the denominator in place of 2 in order to
-        # have a ps a bit smaller than strictly necesary, because of rounding errors
-        # self.ps_req = self.wavelength/(4*(na+np.sin(np.radians(cfg.phi[1]))))
-        # self.ps_req = self.ps/2.5
-        # self.lhscale = self.ps/self.ps_req
-        # self.lrsize = int(np.floor(npx/self.lhscale))
-         # NOTE: I was using ps here, but in the tutorial uses ps_req
-        # self.pupil_radius = int(np.ceil(self.ps*na*npx/self.wavelength))
-        ## To convert coordinates to discretized kself.
-        # k_discrete = sin(theta)*k0/dk = sin(t)*2pi/l*1/(2*pi/(ps*npx))
-        # NOTE: The same observation about ps and ps_req
-        # self.kdsc = self.ps_req*npx/self.wavelength
-        # self.pupil_rad = cfg.pupil_size
-        # self.image_size = cfg.video_size
+        # try:
+        from scipy import ndimage
+        self.image_mag = self.load_image(os.path.join(HOME_FOLDER, cfg.input_mag))
+        self.image_phase = self.load_image(os.path.join(HOME_FOLDER, cfg.input_phase))
+        # Transform into complete field image
+        mag_array = self.image_mag
+        ph_array = np.pi*(self.image_phase)/np.amax(self.image_phase)
+        scale_factor = fpmm.get_times_improvement(cfg)
+
+        mag_array = ndimage.zoom(mag_array, scale_factor)
+        ph_array = ndimage.zoom(ph_array, scale_factor)
+        self.im_array = mag_array*np.exp(1j*ph_array)
+        # except:
+        #     print('File not found.')
+        #     self.image_mag = None
+        #     self.image_phase = None
 
     def load_image(self, input_image):
         """ Loads phase and magnitude input images and crops to patch size.

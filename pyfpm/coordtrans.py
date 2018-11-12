@@ -173,9 +173,22 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
     power = 255
     # Camera parameters
     if nx is not None:
+        # if nx == 14 or nx == 15 or nx ==16 or ny == 15 or ny ==16 or ny == 14:
+        #     shutter_speed = 50000
+        # else:
+        #     shutter_speed = 500000
+        # nmeans = nmeans_dict[nx, ny]
+        # if [nx, ny] in [[15, 15], [15, 16], [14, 17], [14,16], [14, 15],
+        #                 [14, 14], [13,16], [13, 15]]:
+        #     shutter_speed = 100000
+        #     nmeans = 1
+        # else:
+        #     shutter_speed = 600000
+        #     nmeans = 1
+
         try:
             # shutter_speed = ss_dict[nx, ny]
-            shutter_speed = 500000
+            shutter_speed = 400000
             nmeans = nmeans_dict[nx, ny]
         except:
             shutter_speed = 1E5
@@ -309,8 +322,6 @@ def set_iterator(cfg=None):
         asize = int(cfg.array_size)
         xx = range(int(matsize/2-asize/2), int(matsize/2+asize/2))
         zz = product(xx, xx)
-
-
         for x, y in zz:
             acqpars = get_acquisition_pars(theta=0, phi=0, cfg=cfg)
             yield {'indexes': (x, y), 'nx': x, 'ny': y, 'acqpars': acqpars}

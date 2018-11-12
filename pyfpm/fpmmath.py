@@ -125,6 +125,7 @@ def get_k_discrete(cfg):
     ps_req = get_pixel_size_required(cfg)
     wlen = get_wavelength(cfg)
     kdsc = ps_req*npx/wlen
+    kdsc *= get_times_improvement(cfg)
     return kdsc
 
 def get_reconstructed_shape(cfg):
@@ -287,8 +288,8 @@ def generate_CTF(fx=0, fy=0, image_size=None,
     image_gray = pupil_image(xc+fx, yc+fy, pupil_radius, image_size)
     return image_gray
 
-def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None, phi=None,
-                            nx=None, ny=None, pupil_radius=None):
+def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None,
+                            phi=None, nx=None, ny=None, pupil_radius=None):
     """ Filtered image by a pupil calculated using generate_pupil
     """
     if im_array is not None:
@@ -303,18 +304,28 @@ def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None, phi=None
     xc, yc = image_center(im_array.shape)
     # factor = (lrsize/im_array.shape[0])**2
     kdsc= get_k_discrete(cfg)
-    # pupil_radius = get_pupil_radius(cfg)
+    lrsize = get_image_size(cfg)
+# pupil_radius = get_pupil_radius(cfg)
 
     if mode == 'angles':
         [kx, ky] = ct.angles_to_k(theta, phi, kdsc)
     elif mode == 'ledmatrix':
         indexes, kx_rel, ky_rel = ct.n_to_krels(nx=nx, ny=ny, led_gap=cfg.led_gap, height=cfg.sample_height)
         [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
-    pupil = generate_pupil(kx, ky, [imsize, imsize], pupil_radius)
+    # pupil = generate_pupil(kx, ky, [imsize, imsize], pupil_radius)
+    CTF = generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
+    # import matplotlib.pylab as plt
+    # plt.imshow(CTF)
+    # plt.show()
     f_ih_shift = fftshift(fft2(im_array))
-    proc_array = pupil * f_ih_shift  # space pupil * fourier im
-    proc_array = ifft2(ifftshift(proc_array))
-    proc_array = resize_complex_image(proc_array, get_simulated_lrshape(cfg))
+    kyl = int(np.round(yc+ky-(lrsize+1)/2))
+    kyh = kyl + lrsize
+    kxl = int(np.round(xc+kx-(lrsize+1)/2))
+    kxh = kxl + lrsize
+    f_lr = f_ih_shift[kyl:kyh, kxl:kxh]*CTF
+    # proc_array = pupil * f_ih_shift  # space pupil * fourier im
+    proc_array = ifft2(ifftshift(f_lr))
+    # proc_array = resize_complex_image(proc_array, get_simulated_lrshape(cfg))
     return proc_array
 
 def filter_by_pupil(im_array, theta, phi, power, cfg):
@@ -369,7 +380,7 @@ def show_pupil(theta, phi, power, pup_rad):
 def array_as_image(image_array):
     image_array *= (1.0/image_array.max())
     # Converts the image to 8 bit png and stores it into ram
-    img = Image.fromarray(image_array*255, 'L')
+    img = Image.fromarray(imasample_heightge_array*255, 'L')
     with BytesIO() as output:
         img.save(output, 'png')
         output = output.getvalue()
