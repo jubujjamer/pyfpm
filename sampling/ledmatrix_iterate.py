@@ -55,7 +55,7 @@ for it in iterator:
     nx, ny = it['nx'], it['ny']
     print(it['acqpars'])
     iso, ss, power, nmeans = it['acqpars']
-    total_time += ss/1E6
+    total_time += 1#ss/1E6
     # print(nx, ny, ss, nmeans)
 iterator = ct.set_iterator(cfg)
 fig.canvas.draw()

@@ -4,15 +4,15 @@ serialport: '/dev/ttyACM0' # It will also test ACM1/ACM0 if this doesn't work
 camtype:  picamerayuv # picamera, opencv, pycamerayuv, test
 video_id: 0 # This is for the raspberry pi camera /dev
 video_size: [1944, 2592] #[480, 640] #[1944, 2592] #[972, 1296] #[480, 640] # [240, 324] #[346, 540] #[1944, 2592] #[375, 500] #[120, 120] #[346, 540] #[80, 80] #[150, 150]
-patch_size: [800, 800] # Size of the image frame to acquire, square
-simulation_size: [300, 300]
+patch_size: [200,200] # Size of the image frame to acquire, square
+simulation_size: [100, 100]
 client: ledclient #ledclient, matrixclient
 server_host: '0.0.0.0'
 server_ip: http://10.99.39.174:5000 #http://10.200.0.99:5000 http://10.99.39.174:5000 #http://0.0.0.0:5000
 # Microscope parameters
 # objective_na: 0.1 #0.12
 x: 2.54
-na: 0.18 # Numerical aperture
+na: 0.1 # Numerical aperture
 # pupil_size: 500 # In pixels. Function of NA, wavelength video size and magnification
 wavelength: 480E-9 # TODO: Should match with color
 pixel_size: 1.4E-6 #2.8E-6 #·2.75E-6 #1.8E-6 #1.80E-6 # 2.15E-6 # 5.67E-6
@@ -31,9 +31,9 @@ servertype: sampling # simulation or sampling
 output_cal: ./etc/calibration_20170302.npy
 output_sample: out_sampling/
 output_sim: out_simulation/
-input_mag: 'imgs/alambre.png' # If task is simulation
-input_phase: 'imgs/lines0_0.png' # If task is simulation
-input_image: ./imgs/modeled_image.png
+input_mag: 'imgs/peppers.tiff' # If task is simulation
+input_phase: 'imgs/moon.tiff' # If task is simulation
+input_image: ./imgs/peppers.tiff
 model_name: model_2017-03-06_01.yaml #./out/model_20170302.yaml
 plat_model: nomodel #nomodel #normal
 debug: True # Show me images and be verbose
@@ -58,6 +58,6 @@ phi_spr: 2048
 ################################################################################
 led_gap: 6 ## in mm
 # Led matrix specific
-array_size: 7 ## Should be odd
+array_size: 11 ## Should be odd
 matsize: 32
 mat_center: [15, 15]

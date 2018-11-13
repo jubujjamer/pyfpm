@@ -188,7 +188,7 @@ def get_acquisition_pars(theta=None, phi=None, shift=None, nx=None, ny=None, cfg
 
         try:
             # shutter_speed = ss_dict[nx, ny]
-            shutter_speed = 400000
+            shutter_speed = 50000
             nmeans = nmeans_dict[nx, ny]
         except:
             shutter_speed = 1E5
@@ -585,6 +585,7 @@ def n_to_krels(it=None, xoff=0, yoff=0, nx=15, ny=15, cfg=None, led_gap=None, he
         indexes = (nx, ny)
     offset = np.array([xoff, yoff]) # offset
     mat_center = np.array([15, 15])-offset
+    # ny = 30-ny
     kx, ky = nx-mat_center[0], ny-mat_center[1]
     kx_rel= -np.sin(np.arctan(kx*led_gap/height))
     ky_rel= -np.sin(np.arctan(ky*led_gap/height))

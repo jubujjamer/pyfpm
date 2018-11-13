@@ -408,7 +408,7 @@ def fpm_reconstruct_epry(samples=None, it=None, cfg=None,  debug=False):
         for it in iterator:
             acqpars = it['acqpars']
             indexes, kx_rel, ky_rel = ct.n_to_krels(it=it, cfg=cfg, xoff=0., yoff=0.)
-            lr_sample = np.copy(samples[it['indexes']][:lrsize, :lrsize])
+            lr_sample = np.copy(np.sqrt(samples[it['indexes']][:lrsize, :lrsize]))
             # From generate_il
             # Calculating coordinates
             [kx, ky] = kdsc*kx_rel, kdsc*ky_rel # k_rel is sin(phi)

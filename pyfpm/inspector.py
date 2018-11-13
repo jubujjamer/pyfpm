@@ -48,17 +48,18 @@ def inspect_iterator(iterator, cfg):
 def inspect_samples(iterator, samples, cfg):
     # nplots = int(cfg.array_size)
     center = 15
-    nplots = 13
+    nplots = 7
     f, axarr = plt.subplots(nplots, nplots)
     for it in iterator:
         nx, ny = it['indexes']
+        ny = 30-ny
+        print(nx ,ny)
         sample = samples[it['indexes']]
         tocenter = center - (nplots-1)/2
         if np.abs(nx-center)>(nplots-1)/2 or np.abs(ny-center)>(nplots-1)/2:
             break
         cx = int(nx-tocenter)
         cy = int(ny-tocenter)
-        print(nx, ny)
         axarr[cx, cy].imshow(sample)
         axarr[cx, cy].axis('off')
         axarr[cx, cy].text(30, 200, '%i %i' % (nx, ny))

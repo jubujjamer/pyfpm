@@ -237,7 +237,7 @@ class SimClient(BaseClient):
         # fpm.simulate_acquisition(theta, phi, acqpars)
         filtered = fpmm.filter_by_pupil_simulate(self.im_array, theta, phi,
                             self.lrsize, self.pupil_radius, self.kdsc)
-        return np.abs(filtered)
+        return np.abs(filtered)**2
 
     def acquire_ledmatrix(self, nx=None, ny=None, acqpars=None, pupil_radius=None):
         """ Returs a simulated acquisition with given acquisition parameters.

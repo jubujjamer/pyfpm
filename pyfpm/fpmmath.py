@@ -103,7 +103,7 @@ def get_image_size(cfg):
 
 def get_pixel_size_required(cfg):
     ps = get_pixel_size(cfg)
-    ps_req = ps/4
+    ps_req = ps/6
     return ps_req
 
 def get_times_improvement(cfg):
@@ -316,7 +316,7 @@ def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None,
     CTF = generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
     # import matplotlib.pylab as plt
     # plt.imshow(CTF)
-    # plt.show()
+    # plt.draw()
     f_ih_shift = fftshift(fft2(im_array))
     kyl = int(np.round(yc+ky-(lrsize+1)/2))
     kyh = kyl + lrsize
