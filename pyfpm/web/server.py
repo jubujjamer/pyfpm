@@ -119,7 +119,6 @@ def create_server(client):
 
     @app.route('/calibrate', methods=['GET', 'POST'])
     def temptest():
-        print(app.template_folder)
         theta, phi, shift = client.get_parameters()
         return render_template('index.html',
                                 title='Home', theta=theta, phi=phi,
@@ -149,8 +148,16 @@ def create_server(client):
             # print('sending', jsonify(y_values.tolist()), y_values.tolist())
             # json_stream = jsonify(y_values.tolist())
             json_stream = json.dumps(y_values.tolist())
-            print('json ready')
             return json_stream
+        except socket.error:
+            print("An error")
+            pass
+
+    @app.route("/set_pixel/<nx>/<ny>/<power>/<color>")
+    def set_pixel(nx, ny, power, color):
+        try:
+            client.set_pixel(nx, ny, power, color)
+            return Response()
         except socket.error:
             print("An error")
             pass
@@ -165,26 +172,10 @@ def create_server(client):
             print("An error")
             pass
 
-    @app.route("/set_pixel/<nx>/<ny>/<power>/<color>")
-    def set_pixel(nx, ny, power, color):
-        try:
-            return Response(client.set_pixel(nx, ny, power, color))
-        except socket.error:
-            print("An error")
-            pass
-
-
-    # @app.route("/acquire/<theta>/<phi>/<shift>/<power>/<color>/<shutter_speed>/<iso>")
-    # def acquire_async(theta, phi, shift, power, color, shutter_speed, iso):
-    #     print ("app", float(theta), float(phi), color)
+    # @app.route("/set_pixel/<nx>/<ny>/<power>/<color>")
+    # def set_pixel(nx, ny, power, color):
     #     try:
-    #         if len(cache) > 10:
-    #             return Response('no hay lugar')
-    #
-    #         # TODO COMO DICT
-    #         setings = theta, phi, shift, power, color, shutter_speed, iso
-    #         settings['uuid'] = out = uuid.uuid4().hex
-    #         return Response(out)
+    #         return Response(client.set_pixel(nx, ny, power, color))
     #     except socket.error:
     #         print("An error")
     #         pass

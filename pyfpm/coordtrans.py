@@ -589,5 +589,4 @@ def n_to_krels(it=None, xoff=0, yoff=0, nx=15, ny=15, cfg=None, led_gap=None, he
     kx, ky = nx-mat_center[0], ny-mat_center[1]
     kx_rel= -np.sin(np.arctan(kx*led_gap/height))
     ky_rel= -np.sin(np.arctan(ky*led_gap/height))
-
     return indexes, kx_rel, ky_rel

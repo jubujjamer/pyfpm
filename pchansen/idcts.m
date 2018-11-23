@@ -1,0 +1,9 @@
+function y = idcts(x)
+    [n, m] = size(x);
+    omega = exp(i*pi/(2*n));
+    d = sqrt(2*n)*omega.^(0:n-1).';
+    d(1) = d(1)*sqrt(2);
+    d = d(:, ones(1, m));
+    xt = [d.*x; zeros(1,m); -i*d(2:n,:).*flipud(x(2:n,:))]
+    yt = ifft(xt)
+    y = real(yt(1:n,:))

@@ -8,6 +8,8 @@ Usage:
 """
 import shutil
 from scipy import misc
+from imageio import imread
+from skimage import color
 import numpy as np
 import time
 from io import StringIO
@@ -65,7 +67,9 @@ class LedMatrixClient(BaseClient):
         return out_image
 
     def set_pixel(self, nx=None, ny=None, power=None, color=None):
+        print("Calling led_matrix")
         self.led_matrix.set_pixel(nx, ny, power, color)
+        print("Retunned from led_matrix")
         return
 
 class LedClient(BaseClient):
@@ -205,20 +209,17 @@ class SimClient(BaseClient):
         mag_array = self.image_mag
         ph_array = np.pi*(self.image_phase)/np.amax(self.image_phase)
         scale_factor = fpmm.get_times_improvement(cfg)
-
         mag_array = ndimage.zoom(mag_array, scale_factor)
         ph_array = ndimage.zoom(ph_array, scale_factor)
         self.im_array = mag_array*np.exp(1j*ph_array)
-        # except:
-        #     print('File not found.')
-        #     self.image_mag = None
-        #     self.image_phase = None
 
     def load_image(self, input_image):
         """ Loads phase and magnitude input images and crops to patch size.
         """
         with open(input_image, 'rb') as imageFile:
-            image_array = misc.imread(imageFile, 'F')
+            image = imread(imageFile)
+            image_array = color.rgb2gray(image)    # Convert image to grayscale.
+            # image_array = misc.imread(imageFile, 'F')
             npx = int(self.cfg.simulation_size[0])
             return image_array[0:npx, 0:npx]
 
@@ -252,7 +253,7 @@ class SimClient(BaseClient):
         filtered = fpmm.filter_by_pupil_simulate(im_array=self.im_array, nx=nx,
                         ny=ny, cfg=self.cfg, mode='ledmatrix',
                         pupil_radius=pupil_radius)
-        return np.abs(filtered)
+        return np.abs(filtered)**2
 
     def acquire_pattern(self, angle=None, acqpars=None, pupil_radius=None):
         """ Returs a simulated acquisition with given acquisition parameters.
