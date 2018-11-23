@@ -38,6 +38,14 @@ class Client(BaseClient):
             else:
                 print("Failed to load webpage")
 
+    def set_pixel(self, nx=15, ny=15, power=255, color='G'):
+        response = requests.get(self.url +
+                                '/set_pixel/%d/%d/%d/%s' % (nx, ny, power, color), stream=True)
+        if response.status_code == 200:
+            return
+        else:
+            print("Failed to load webpage")
+
     def acquire_ledmatrix_pattern(self, pattern=None,power=255, color='G', shutter_speed=100, iso=100, xoff=0, yoff=0):
         """ This has been directly implemented in yuv. It passes a binary code.
         """
@@ -47,15 +55,6 @@ class Client(BaseClient):
         if response.status_code == 200:
             json_receive = response.json()
             return json_receive
-        else:
-            print("Failed to load webpage")
-
-    def set_pixel(self, nx=0, ny=0, power=255, color='G'):
-        response = requests.get(self.url +
-                                '/set_pixel/%d/%d/%d/%s/' % (nx, ny, power, color),
-                                stream=True)
-        if response.status_code == 200:
-            return response.raw
         else:
             print("Failed to load webpage")
 

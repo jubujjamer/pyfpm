@@ -117,15 +117,18 @@ def get_pupil_radius(cfg):
     wlen = get_wavelength(cfg)
     na = get_na(cfg)
     npx = float(cfg.patch_size[0])
-    pupil_radius = int(np.ceil(ps*na*npx/wlen))
+    pupil_radius = int(ps*na*npx/wlen)
+    print(ps, na, npx, wlen)
     return pupil_radius
 
 def get_k_discrete(cfg):
     npx = float(cfg.patch_size[0])
-    ps_req = get_pixel_size_required(cfg)
+    # ps_req = get_pixel_size_required(cfg)
+    ps = get_pixel_size(cfg)
     wlen = get_wavelength(cfg)
-    kdsc = ps_req*npx/wlen
-    kdsc *= get_times_improvement(cfg)
+    # kdsc = ps_req*npx/wlen
+    # kdsc *= get_times_improvement(cfg)
+    kdsc = ps*npx/wlen
     return kdsc
 
 def get_reconstructed_shape(cfg):
@@ -312,7 +315,9 @@ def filter_by_pupil_simulate(im_array, mode=None, cfg=None, theta=None,
     elif mode == 'ledmatrix':
         indexes, kx_rel, ky_rel = ct.n_to_krels(nx=nx, ny=ny, led_gap=cfg.led_gap, height=cfg.sample_height)
         [kx, ky] = kdsc*kx_rel, kdsc*ky_rel
+        print(kx)
     # pupil = generate_pupil(kx, ky, [imsize, imsize], pupil_radius)
+    print(pupil_radius)
     CTF = generate_pupil(0, 0, [lrsize, lrsize], pupil_radius)
     # import matplotlib.pylab as plt
     # plt.imshow(CTF)
